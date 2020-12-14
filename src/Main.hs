@@ -286,13 +286,13 @@ printHelp _ = logInfo "hello" >> return CMD.Continue
 -- TODO pass a dict of command ? that will parse
 -- TODO turn it into a library
 -- TODO embed InputT
-inputLoop :: InputT (Sem [Log, Cache, P.State MyState, P.Embed IO]) ()
+inputLoop :: Sem [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
 inputLoop = do
-    s <- lift P.get
-    minput <- getInputLine (view prompt s)
+    s <- P.get
+    minput <- P.embedFinal $ getInputLine (view prompt s)
     cmdCode <- case fmap words minput of
         Nothing -> do
-          lift $ logInfo "please enter a valid command, see help"
+          logInfo "please enter a valid command, see help"
           return CMD.Continue
         Just [] -> return $ CMD.Error "Please enter a command"
 
@@ -301,12 +301,12 @@ inputLoop = do
           let cmd = HM.lookup commandStr commands
           case cmd of
             Nothing -> return $ CMD.Error "Unknown command"
-            Just cb -> lift $ runCommand cb args
+            Just cb -> runCommand cb args
 
     case cmdCode of
         CMD.Exit -> return ()
         CMD.Error msg -> do
-          lift $ logInfo $ "Last command failed with message:\n" ++ show msg
+          logInfo $ "Last command failed with message:\n" ++ show msg
           inputLoop
         _behavior -> inputLoop
 
