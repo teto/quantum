@@ -32,4 +32,7 @@ source-repository-package
 --     location: https://github.com/TravisWhitaker/diagrams-core
 --     tag: a9456cf1c6cd3aff2c4dbf095df6dec6e51fa21c
 
-packages: ../mptcppm/  ./*.cabal ../Frames
+packages:
+  ../mptcppm/
+  ./*.cabal
+-- - ../Frames
