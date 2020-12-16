@@ -48,8 +48,8 @@ loadOpts = info (loadPcapParser <**> helper)
 -- TODO move commands to their own module
 -- TODO it should update the loadedFile in State !
 -- handleParseResult
-loadPcap :: CMD.CommandCb
--- loadPcap :: Members [Log, P.State MyState, Cache, Embed IO] m => [String] -> Sem m RetCode
+-- loadPcap :: CMD.CommandCb
+loadPcap :: Members [Log, P.State MyState, Cache, Embed IO] m => [String] -> Sem m RetCode
 loadPcap args = do
     logInfo "Called loadPcap"
     -- s <- gets
@@ -119,7 +119,8 @@ loadPcapIntoFrame params path = do
       opts = TempFileOptions True
 
 -- TODO should disappear after testing phase
-loadCsv :: CMD.CommandCb
+-- loadCsv :: CMD.CommandCb
+loadCsv :: Members [Log, Cache, P.State MyState, Embed IO] m => [String] -> Sem m RetCode
 loadCsv args = do
     logInfo "Called loadCsv"
     let parserResult = execParserPure defaultParserPrefs loadOpts args

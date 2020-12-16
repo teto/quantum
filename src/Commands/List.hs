@@ -72,19 +72,18 @@ optsListSubflows = info (parserSubflow <**> helper)
     -- Search for SYN flags
     -- (view tcpstream <$> frame)
 
-listTcpConnections :: CMD.CommandCb
-listTcpConnections _params = do
-    state <- P.get
-    let loadedPcap = view loadedFile state
-    case loadedPcap of
-      Nothing -> logInfo "please load a pcap first" >> return CMD.Continue
-      Just frame -> do
-        let _tcpstreams = getTcpStreams frame
-        logInfo $ "Number of rows " ++ show (frameLength frame)
-        >> return CMD.Continue
-                    -- liftIO $ listTcpConnectionsInFrame frame >> return CMD.Continue
+-- listTcpConnections :: CMD.CommandCb
+-- listTcpConnections :: P.Members '[ (P.Embed IO)] r => CMD.CommandCb r
+-- listTcpConnections _params = do
+--     state <- P.get
+--     let loadedPcap = view loadedFile state
+--     case loadedPcap of
+--       Nothing -> logInfo "please load a pcap first" >> return CMD.Continue
+--       Just frame -> do
+--         let _tcpstreams = getTcpStreams frame
+--         logInfo $ "Number of rows " ++ show (frameLength frame)
+--         >> return CMD.Continue
 
-    -- liftIO $ putStrLn "list tcp connections:" >> return CMD.Continue
 
 listTcpConnectionsInFrame :: PcapFrame -> IO ()
 listTcpConnectionsInFrame frame = do
@@ -101,6 +100,3 @@ listTcpConnectionsInFrame frame = do
 --     return ()
 
 
---
--- cmdMptcpSummary :: CMD.CommandConstraint m => [String] -> m CMD.RetCode
--- cmdMptcpSummary = undefined

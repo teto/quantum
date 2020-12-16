@@ -245,17 +245,14 @@ main = do
       historyFile = Just $ cacheFolderXdg </> "history"
       }
   -- runInputT haskelineSettings inputLoop
-  -- [Log, P.State MyState, Cache, Embed IO]
-  -- embedFinal
-  _res <- runM . P.runState myState . runCache . logToIO $ do
-        runInputT haskelineSettings inputLoop
-    -- runInputT haskelineSettings inputLoop
+  _res <- runInputT haskelineSettings $ do
+      P.runFinal . runCache . logToIO . P.runState myState . inputLoop
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 
 -- type CommandList m = HM.Map String (CommandCb m)
-commands :: HM.Map String CommandCb
--- commands :: Members DefaultMembers r => HM.Map String (Sem r CMD.RetCode)
+-- commands :: HM.Map String CommandCb
+commands :: Members DefaultMembers r => HM.Map String ([String] -> Sem r CMD.RetCode)
 commands = HM.fromList [
     -- ("load", loadPcap)
     -- ("load_csv", loadCsv)
@@ -265,8 +262,8 @@ commands = HM.fromList [
     ]
 
 
--- printHelp :: P.Members '[Log] r => [String] -> Sem r CMD.RetCode
-printHelp :: CommandCb
+printHelp :: P.Members '[Log] r => [String] -> Sem r CMD.RetCode
+-- printHelp :: [String] -> 
 printHelp _ = logInfo "hello" >> return CMD.Continue
 
 -- getHelp :: String
@@ -279,7 +276,9 @@ printHelp _ = logInfo "hello" >> return CMD.Continue
 
 -- | Main loop of the program, will run commands in turn
 -- TODO turn it into a library
-inputLoop :: Sem [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
+-- [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
+-- , P.Embed IO
+inputLoop :: Members  [Log, Cache, P.State MyState, P.Final (InputT IO)] r => Sem r ()
 inputLoop = do
     s <- P.get
     minput <- P.embedFinal $ getInputLine (view prompt s)
@@ -293,7 +292,7 @@ inputLoop = do
           let cmd = HM.lookup commandStr commands
           case cmd of
             Nothing -> return $ CMD.Error "Unknown command"
-            Just cb -> runCommand cb args
+            Just cb -> cb args
 
     case cmdCode of
         CMD.Exit -> return ()
@@ -304,9 +303,9 @@ inputLoop = do
 
 
 -- TODO pass the command
-runCommand :: Members DefaultMembers r => CommandCb -> [String] -> Sem r CMD.RetCode
-runCommand callback args = do
-    callback args
+-- runCommand :: CommandCb -> [String] -> Sem r CMD.RetCode
+-- runCommand callback args = do
+--     callback args
 
 
 data SimpleData = SimpleData {
