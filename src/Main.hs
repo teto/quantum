@@ -38,7 +38,7 @@ import Commands.List
 import Commands.Load
 
 -- Member, , Embed 
-import Polysemy (Sem, Members, runM, runFinal)
+import Polysemy (Sem, Members, runM, runFinal, Final)
 import qualified Polysemy as P
 import Polysemy.Reader as P
 import qualified Polysemy.State as P
@@ -241,16 +241,22 @@ main = do
 
   putStrLn "Commands"
   print $ extraCommands options
-  -- let haskelineSettings = defaultSettings 
--- {
---       historyFile = Just $ cacheFolderXdg </> "history"
---       }
+  let haskelineSettings = defaultSettings {
+      historyFile = Just $ cacheFolderXdg </> "history"
+      }
 --
   -- runInputT haskelineSettings inputLoop
   -- runInputT haskelineSettings $ do
-  _res <- runFinal . runCache . logToIO . P.runState myState  $ inputLoop
+  -- _ <- runInputT haskelineSettings $ runFinal @(InputT IO) $ P.embedFinal $ pure ()
+  _ <- runInputT haskelineSettings $ runFinal @(InputT IO) $ testLoop
+  -- _res <- runInputT haskelineSettings $ runFinal @(InputT IO) $ runCache . logToIO . P.runState myState  $ P.embedFinal $ inputLoop
   putStrLn "Thanks for flying with mptcpanalyzer"
 
+-- , P.Embed IO
+testLoop :: Members '[ Final (InputT IO)  ] r => Sem r ()
+testLoop = do
+  -- _ <- getInputLine
+  return ()
 
 -- type CommandList m = HM.Map String (CommandCb m)
 -- commands :: HM.Map String CommandCb
