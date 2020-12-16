@@ -210,11 +210,6 @@ exportToCsv params pcapPath path fd = do
     err <- hGetContents herr
     -- TODO retrun stderr
     return (path, exitCode, err)
-    -- return $ (path, res)
-    -- liftIO $ callProcess bin args
-    -- if exitCode == 0 then
-    --   putCache cacheId
-    -- else
     where
       fields :: [T.Text]
       fields = map (\(_, desc) -> fullname desc) baseFields

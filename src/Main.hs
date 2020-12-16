@@ -30,9 +30,6 @@ import System.Directory
 -- import System.IO (stdout)
 import Prelude hiding (concat, init)
 import Options.Applicative
--- import Control.Monad.Trans (liftIO, MonadIO)
--- import Control.Monad.Trans.State (StateT(..), runStateT, withStateT)
--- import Control.Monad.State (StateT(..), runStateT, withStateT, MonadState, gets, get)
 -- for monadmask
 import Control.Monad.Catch
 import qualified Data.Map         as HM
@@ -41,8 +38,8 @@ import qualified Commands.Utils as CMD
 import Commands.List
 import Commands.Load
 
--- Member, , Embed Members, 
-import Polysemy (Sem, runM, runFinal)
+-- Member, , Embed 
+import Polysemy (Sem, Members, runM, runFinal)
 import qualified Polysemy as P
 import Polysemy.Reader as P
 import qualified Polysemy.State as P
@@ -253,25 +250,23 @@ main = do
   -- embedFinal
   _res <- runM . P.runState myState . runCache . logToIO $ do
         runInputT haskelineSettings inputLoop
-      
     -- runInputT haskelineSettings inputLoop
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 
 -- type CommandList m = HM.Map String (CommandCb m)
-commands :: HM.Map String CommandCb
+-- commands :: HM.Map String CommandCb
+commands :: Members DefaultMembers r => HM.Map String (Sem r CMD.RetCode)
 commands = HM.fromList [
-    ("load", loadPcap)
-    , ("load_csv", loadCsv)
-    , ("list_tcp", listTcpConnections)
-    , ("help", printHelp)
+    -- ("load", loadPcap)
+    -- ("load_csv", loadCsv)
+    -- , ("list_tcp", listTcpConnections)
+    ("help", printHelp)
     -- , ("list_mptcp", listMpTcpConnections)
     ]
 
 
--- (CMD.CommandConstraint m) => [String] -> Sem m CMD.RetCode
-printHelp :: CommandCb
--- printHelp _ = logInfo getHelp >> return CMD.Continue
+printHelp :: P.Members '[Log] r => [String] -> Sem r CMD.RetCode
 printHelp _ = logInfo "hello" >> return CMD.Continue
 
 -- getHelp :: String
@@ -283,21 +278,18 @@ printHelp _ = logInfo "hello" >> return CMD.Continue
 -- liftIO $ putStrLn doPrintHelp >> 
 
 -- | Main loop of the program, will run commands in turn
--- TODO pass a dict of command ? that will parse
 -- TODO turn it into a library
--- TODO embed InputT
 inputLoop :: Sem [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
 inputLoop = do
     s <- P.get
     minput <- P.embedFinal $ getInputLine (view prompt s)
-    cmdCode <- case fmap words minput of
+    cmdCode <- case fmap Prelude.words minput of
         Nothing -> do
           logInfo "please enter a valid command, see help"
           return CMD.Continue
         Just [] -> return $ CMD.Error "Please enter a command"
 
         Just (commandStr:args) -> do
-          -- let commandStr = head args
           let cmd = HM.lookup commandStr commands
           case cmd of
             Nothing -> return $ CMD.Error "Unknown command"
@@ -312,7 +304,7 @@ inputLoop = do
 
 
 -- TODO pass the command
-runCommand :: CommandCb -> [String] -> Sem DefaultMembers CMD.RetCode
+runCommand :: Members DefaultMembers r => CommandCb -> [String] -> Sem r CMD.RetCode
 runCommand callback args = do
     callback args
 
