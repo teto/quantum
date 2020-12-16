@@ -27,7 +27,6 @@ module Main where
 
 import System.FilePath
 import System.Directory
--- import System.IO (stdout)
 import Prelude hiding (concat, init)
 import Options.Applicative
 -- for monadmask
@@ -255,8 +254,8 @@ main = do
 
 
 -- type CommandList m = HM.Map String (CommandCb m)
--- commands :: HM.Map String CommandCb
-commands :: Members DefaultMembers r => HM.Map String (Sem r CMD.RetCode)
+commands :: HM.Map String CommandCb
+-- commands :: Members DefaultMembers r => HM.Map String (Sem r CMD.RetCode)
 commands = HM.fromList [
     -- ("load", loadPcap)
     -- ("load_csv", loadCsv)
@@ -266,7 +265,8 @@ commands = HM.fromList [
     ]
 
 
-printHelp :: P.Members '[Log] r => [String] -> Sem r CMD.RetCode
+-- printHelp :: P.Members '[Log] r => [String] -> Sem r CMD.RetCode
+printHelp :: CommandCb
 printHelp _ = logInfo "hello" >> return CMD.Continue
 
 -- getHelp :: String
