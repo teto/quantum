@@ -241,12 +241,14 @@ main = do
 
   putStrLn "Commands"
   print $ extraCommands options
-  let haskelineSettings = defaultSettings {
-      historyFile = Just $ cacheFolderXdg </> "history"
-      }
+  -- let haskelineSettings = defaultSettings 
+-- {
+--       historyFile = Just $ cacheFolderXdg </> "history"
+--       }
+--
   -- runInputT haskelineSettings inputLoop
-  _res <- runInputT haskelineSettings $ do
-      P.runFinal . runCache . logToIO . P.runState myState . inputLoop
+  -- runInputT haskelineSettings $ do
+  _res <- runFinal . runCache . logToIO . P.runState myState  $ inputLoop
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 
