@@ -18,8 +18,8 @@ import qualified Polysemy.State as P
 data RetCode = Exit | Error Text | Continue
 
 -- TODO remove IO
-type DefaultMembers = [Log, Cache, P.State MyState]
-
+-- type DefaultMembers = [Log, Cache, P.State MyState]
+type DefaultMembers = '[ Log, Cache, P.State MyState, Embed IO]
 -- TODO because of commands :: HM.Map String (CommandCb m)
 -- all commands need to have the same type
 

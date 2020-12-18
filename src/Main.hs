@@ -42,6 +42,7 @@ import Polysemy (Sem, Members, runM, runFinal, Final)
 import qualified Polysemy as P
 import Polysemy.Reader as P
 import qualified Polysemy.State as P
+import qualified Polysemy.Embed as P
 -- import qualified Polysemy.Output as P
 -- import qualified Polysemy.Trace as P
 
@@ -244,28 +245,31 @@ main = do
   let haskelineSettings = defaultSettings {
       historyFile = Just $ cacheFolderXdg </> "history"
       }
---
-  -- runInputT haskelineSettings inputLoop
-  -- runInputT haskelineSettings $ do
-  -- _ <- runInputT haskelineSettings $ runFinal @(InputT IO) $ P.embedFinal $ pure ()
-  _ <- runInputT haskelineSettings $ runFinal @(InputT IO) $ testLoop
-  -- _res <- runInputT haskelineSettings $ runFinal @(InputT IO) $ runCache . logToIO . P.runState myState  $ P.embedFinal $ inputLoop
+
+  _ <- runInputT haskelineSettings $
+          runFinal @(InputT IO) 
+          $ P.embedToFinal . P.runEmbedded lift
+          $ P.runState myState
+          $ runCache
+          $ logToIO inputLoop
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 -- , P.Embed IO
-testLoop :: Members '[ Final (InputT IO)  ] r => Sem r ()
+testLoop :: Members '[ Log, P.Embed IO, Final (InputT IO)] r => Sem r ()
 testLoop = do
-  -- _ <- getInputLine
+  _minput <- P.embedFinal $ getInputLine "prompt>"
+  logInfo "test"
   return ()
 
 -- type CommandList m = HM.Map String (CommandCb m)
 -- commands :: HM.Map String CommandCb
+-- commands :: Members DefaultMembers r => HM.Map String ([String] -> Sem r CMD.RetCode)
 commands :: Members DefaultMembers r => HM.Map String ([String] -> Sem r CMD.RetCode)
 commands = HM.fromList [
     -- ("load", loadPcap)
-    -- ("load_csv", loadCsv)
+    ("load_csv", loadCsv)
     -- , ("list_tcp", listTcpConnections)
-    ("help", printHelp)
+    , ("help", printHelp)
     -- , ("list_mptcp", listMpTcpConnections)
     ]
 
@@ -286,7 +290,7 @@ printHelp _ = logInfo "hello" >> return CMD.Continue
 -- TODO turn it into a library
 -- [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
 -- , P.Embed IO
-inputLoop :: Members  [Log, Cache, P.State MyState, P.Final (InputT IO)] r => Sem r ()
+inputLoop :: Members  [Log, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => Sem r ()
 inputLoop = do
     s <- P.get
     minput <- P.embedFinal $ getInputLine (view prompt s)
