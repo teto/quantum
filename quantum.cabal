@@ -32,20 +32,21 @@ common shared-properties
       -- diagrams is not ready for 8.10
       -- , diagrams
     -- polysemybased logger
-      -- , co-log
+      -- , co-log-polysemy
       , readable
       , polysemy
       -- , polysemy-plugin
       , bytestring, process
       , ip
       -- , netlink >= 1.1.1.0
+       , transformers-base
        , transformers
+       , mtl
        , template-haskell
        , exceptions
        , ghc-prim
        , foldl
        , text
-       , mtl
        -- microlens taken from Frames
        -- , microlens
        , lens
@@ -53,16 +54,15 @@ common shared-properties
        , aeson
        , aeson-pretty
        , aeson-extra
-       , monad-control
+       -- , monad-control
        , pipes
        -- to help with merging json content
        -- , unordered-containers
        -- to create temp folder/files
        , temporary
-       , transformers-base
        , singletons
        , filepath
-       , repline
+       -- , repline
        , Frames
        , Cabal
        , directory
