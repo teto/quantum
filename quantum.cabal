@@ -32,7 +32,7 @@ common shared-properties
       -- diagrams is not ready for 8.10
       -- , diagrams
     -- polysemybased logger
-      -- , co-log-polysemy
+      , co-log-polysemy
       , readable
       , polysemy
       -- , polysemy-plugin
@@ -105,7 +105,9 @@ common shared-properties
 -- and delegate the behavior to a monitor
 executable mptcpanalyzer
     import: shared-properties
-    Other-modules:     Tshark.TH, Pcap, Mptcp.Cache, Commands.Load, Columns, Commands.Utils, Commands.List, Utils, Connection, Mptcp.Logging,
+    Other-modules:     Tshark.TH, Pcap, Mptcp.Cache
+        , Commands.Commands
+        , Commands.Load, Columns, Commands.Utils, Commands.List, Utils, Connection, Mptcp.Logging,
         Plots.Stream
     -- for now reference mptcp-pm but later move part to a core
     -- build-depends: mptcp-pm >= 0.0.3

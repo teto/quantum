@@ -29,6 +29,8 @@ import System.FilePath
 import System.Directory
 import Prelude hiding (concat, init)
 import Options.Applicative
+-- import Colog.Core.IO (logStringStdout)
+import Colog.Polysemy (Log, log, runLogAction)
 -- for monadmask
 import Control.Monad.Catch
 import qualified Data.Map         as HM
@@ -46,7 +48,7 @@ import qualified Polysemy.Embed as P
 -- import qualified Polysemy.Output as P
 -- import qualified Polysemy.Trace as P
 
-import Mptcp.Logging (logInfo, logToIO, Severity(..))
+-- import Mptcp.Logging (logInfo, logToIO, Severity(..))
 import Mptcp.Logging
 import Mptcp.Cache
 
@@ -59,9 +61,6 @@ import Control.Lens ( (^.), view, set)
 -- for now we focus on the simple usecase with repline
 -- import System.Console.Repline
 import Pcap ()
-import Mptcp.Cache (runCache,)
--- import System.Environment.Blank   (getEnvDefault)
--- import           Frames
 import Pipes hiding (Proxy)
 
 
@@ -251,14 +250,14 @@ main = do
           $ P.embedToFinal . P.runEmbedded lift
           $ P.runState myState
           $ runCache
-          $ logToIO inputLoop
+          $ runLogAction @Text logStringStdout inputLoop
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 -- , P.Embed IO
 testLoop :: Members '[ Log, P.Embed IO, Final (InputT IO)] r => Sem r ()
 testLoop = do
   _minput <- P.embedFinal $ getInputLine "prompt>"
-  logInfo "test"
+  log "test"
   return ()
 
 -- type CommandList m = HM.Map String (CommandCb m)
@@ -301,6 +300,9 @@ inputLoop = do
         Just [] -> return $ CMD.Error "Please enter a command"
 
         Just (commandStr:args) -> do
+        -- then call the parser and call Commands.runCommand
+          -- let parserResult = execParserPure defaultParserPrefs loadOpts args
+
           let cmd = HM.lookup commandStr commands
           case cmd of
             Nothing -> return $ CMD.Error "Unknown command"

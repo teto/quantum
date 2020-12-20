@@ -8,10 +8,12 @@ where
 -- import Control.Monad.Trans (MonadIO)
 -- import System.Console.Haskeline.MonadException
 import Utils
-import Data.Text
 import Polysemy
 import Mptcp.Logging
 import Mptcp.Cache
+import Data.Text
+
+
 
 import qualified Polysemy.State as P
 
@@ -25,4 +27,4 @@ type DefaultMembers = '[ Log, Cache, P.State MyState, Embed IO]
 
 -- type CommandCb m = CommandConstraint m => [String] -> Sem m RetCode
 -- type CommandCb = [String] -> Sem DefaultMembers RetCode
-type CommandCb r = [String] -> Sem r RetCode
+-- type CommandCb r = [String] -> Sem r RetCode

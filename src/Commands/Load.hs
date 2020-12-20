@@ -12,27 +12,30 @@ import Control.Lens hiding (argument)
 
 import Mptcp.Cache
 import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
-import System.Exit
+import System.Exit (ExitCode(..))
 import Utils
-import Mptcp.Logging (Log, logInfo)
+import Prelude hiding (log)
+import Colog.Polysemy (Log, log, runLogAction)
+-- import Mptcp.Logging (Log, log)
 -- import System.Environment (withProgName)
 import Polysemy (Sem, Members, Embed)
 import Polysemy.State as P
+import Data.Text
 
 
-newtype LoadPcap = LoadPcap {
+newtype ArgsLoadPcap = ArgsLoadPcap {
   pcap :: FilePath
 }
 
-loadPcapParser :: Parser LoadPcap
-loadPcapParser = LoadPcap
+loadPcapParser :: Parser ArgsLoadPcap
+loadPcapParser = ArgsLoadPcap
       -- TODO complete with filepath
       <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
           <> help "Target for the greeting"
       )
 
 -- TODO factor out
-loadOpts :: ParserInfo LoadPcap
+loadOpts :: ParserInfo ArgsLoadPcap
 loadOpts = info (loadPcapParser <**> helper)
   ( fullDesc
   <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
@@ -49,44 +52,45 @@ loadOpts = info (loadPcapParser <**> helper)
 -- TODO it should update the loadedFile in State !
 -- handleParseResult
 -- loadPcap :: CMD.CommandCb
-loadPcap :: Members [Log, P.State MyState, Cache, Embed IO] m => [String] -> Sem m RetCode
-loadPcap args = do
-    logInfo "Called loadPcap"
+-- loadPcap :: Members [Log, P.State MyState, Cache, Embed IO] m => [String] -> Sem m RetCode
+loadPcap :: Members [Log Text, P.State MyState, Cache, Embed IO] m => ArgsLoadPcap -> Sem m RetCode
+loadPcap parsedArgs = do
+    log "Called loadPcap"
     -- s <- gets
     -- liftIO $ withProgName "load" (
     -- TODO fix the name of the program, by "load"
-    let parserResult = execParserPure defaultParserPrefs loadOpts args
-    case parserResult of
-      -- logInfo $ show failure >>
-      (Failure _failure) -> return $ CMD.Error "could not parse"
-      -- TODO here we should complete autocompletion
-      (CompletionInvoked _compl) -> return CMD.Continue
-      (Success parsedArgs) -> do
-          mFrame <- loadPcapIntoFrame defaultTsharkPrefs (pcap parsedArgs)
-          -- fmap onSuccess mFrame
-          case mFrame of
-            Nothing -> return CMD.Continue
-            Just _frame -> do
-              -- prompt .= pcap parsedArgs ++ "> "
-              modify (\s -> s { _prompt = pcap parsedArgs ++ "> ",
-                    _loadedFile = mFrame
-                  })
-              logInfo "Frame loaded" >> return CMD.Continue
+    -- let parserResult = execParserPure defaultParserPrefs loadOpts args
+    -- case parserResult of
+    --   -- log $ show failure >>
+    --   (Failure _failure) -> return $ CMD.Error "could not parse"
+    --   -- TODO here we should complete autocompletion
+    --   (CompletionInvoked _compl) -> return CMD.Continue
+    --   (Success parsedArgs) -> do
+    mFrame <- loadPcapIntoFrame defaultTsharkPrefs (pcap parsedArgs)
+    -- fmap onSuccess mFrame
+    case mFrame of
+      Nothing -> return CMD.Continue
+      Just _frame -> do
+        -- prompt .= pcap parsedArgs ++ "> "
+        modify (\s -> s { _prompt = pcap parsedArgs ++ "> ",
+              _loadedFile = mFrame
+            })
+        log "Frame loaded" >> return CMD.Continue
 
 -- TODO return an Either or Maybe ?
 -- MonadIO m, KatipContext m
   -- EmbedIO
-loadPcapIntoFrame :: Members [Cache, Log, Embed IO ] m => TsharkParams -> FilePath -> Sem m (Maybe PcapFrame)
+loadPcapIntoFrame :: Members [Cache, Log Text, Embed IO ] m => TsharkParams -> FilePath -> Sem m (Maybe PcapFrame)
 loadPcapIntoFrame params path = do
-    logInfo ("Start loading pcap " ++ show path)
+    log ("Start loading pcap " <> pack path)
     x <- getCache cacheId
     case x of
       Right frame -> do
-          logInfo "Frame in cache"
+          log "Frame in cache"
           return $ Just frame
       Left err -> do
-          logInfo $ "getCache error: " ++ show err
-          logInfo "Calling tshark"
+          log $ "getCache error: " <> pack err
+          log "Calling tshark"
           -- TODO need to create a temporary file
           -- mkstemps
           -- TODO use showCommandForUser to display the run command to the user
@@ -94,23 +98,21 @@ loadPcapIntoFrame params path = do
           (tempPath , exitCode, stdErr) <- liftIO $ withTempFileEx opts "/tmp" "mptcp.csv" (exportToCsv params path)
           if exitCode == ExitSuccess
               then do
-                logInfo $ "exported to file " ++ show tempPath
+                log $ "exported to file " <> pack tempPath
                 frame <- liftIO $ loadRows tempPath
-                logInfo $ "Number of rows after loading " ++ show (frameLength frame)
+                log $ "Number of rows after loading " <> pack $ show (frameLength frame)
                 cacheRes <- putCache cacheId tempPath
                 -- use ifThenElse instead
                 if cacheRes then
-                  logInfo "Saved into cache"
+                  log "Saved into cache"
                 else
                   pure ()
 
                 return $ Just frame
               else do
-                let msg = "Error happened: " ++ show exitCode
-                logInfo msg
-                -- let stdErr = "TODO"
-                logInfo (stdErr :: String)
-                logInfo "error happened: exitCode"
+                log $ "Error happened: " <> pack $ show exitCode
+                log $ pack stdErr
+                log "error happened: exitCode"
                 return Nothing
 
     where
@@ -120,24 +122,23 @@ loadPcapIntoFrame params path = do
 
 -- TODO should disappear after testing phase
 -- loadCsv :: CMD.CommandCb
-loadCsv :: Members [Log, Cache, P.State MyState, Embed IO] m => [String] -> Sem m RetCode
-loadCsv args = do
-    logInfo "Called loadCsv"
-    let parserResult = execParserPure defaultParserPrefs loadOpts args
-    _ <- case parserResult of
-      (Failure _failure) -> return ( CMD.Error "could not load csv")
-      -- TODO here we should complete autocompletion
-      (CompletionInvoked _compl) -> return CMD.Continue
-      (Success parsedArgs) -> do
+-- loadCsv :: Members [Log, Cache, P.State MyState, Embed IO] m => [String] -> Sem m RetCode
+loadCsv :: Members [Log Text, Cache, P.State MyState, Embed IO] m => ArgsLoadPcap -> Sem m CMD.RetCode
+loadCsv parsedArgs = do
+    -- let parserResult = execParserPure defaultParserPrefs loadOpts args
+    -- _ <- case parserResult of
+    --   (Failure _failure) -> return ( CMD.Error "could not load csv")
+    --   -- TODO here we should complete autocompletion
+    --   (CompletionInvoked _compl) -> return CMD.Continue
+    --   (Success parsedArgs) -> do
 
-          logInfo $ "Loading " ++ csvFilename
-          -- parsedArgs <- liftIO $ myHandleParseResult parserResult
-          frame <- liftIO $ loadRows csvFilename
-          -- TODO restore
-          -- loadedFile .= Just frame
-          logInfo $ "Number of rows " ++ show (frameLength frame)
-          logInfo "Frame loaded" >> return CMD.Continue
-          where
-            csvFilename = pcap parsedArgs
-    return CMD.Continue
+    log $ "Loading " <> pack csvFilename
+    -- parsedArgs <- liftIO $ myHandleParseResult parserResult
+    frame <- liftIO $ loadRows csvFilename
+    -- TODO restore
+    -- loadedFile .= Just frame
+    log $ "Number of rows " <> pack $ show (frameLength frame)
+    log "Frame loaded" >> return CMD.Continue
+    where
+      csvFilename = pcap parsedArgs
 
