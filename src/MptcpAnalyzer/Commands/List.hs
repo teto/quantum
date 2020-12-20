@@ -1,11 +1,11 @@
 {-# LANGUAGE FlexibleContexts           #-}
 
-module Commands.List
+module MptcpAnalyzer.Commands.List
 where
 
 -- import Data.Text
 -- import Net.Tcp
-import Commands.Utils as CMD
+import MptcpAnalyzer.Commands.Utils as CMD
 import Options.Applicative
 import Pcap
 import Frames

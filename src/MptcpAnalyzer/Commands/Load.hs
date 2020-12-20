@@ -1,11 +1,11 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, QuasiQuotes, TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
-module Commands.Load
+module MptcpAnalyzer.Commands.Load
 where
 import Frames
 -- import Frames.CSV
 import Pcap
-import Commands.Utils as CMD
+import MptcpAnalyzer.Commands.Utils as CMD
 import Options.Applicative
 import Control.Monad.Trans (liftIO)
 -- import Control.Lens hiding (argument)

@@ -1,12 +1,12 @@
-module Commands.Commands
+module MptcpAnalyzer.Commands
 where
-import Polysemy (Sem, Members, runM, runFinal, Final, makeSem, interpret)
+import Polysemy (Sem, Members, makeSem, interpret)
 import qualified Polysemy.Embed as P
-import Colog.Polysemy (Log, log, runLogAction)
+import Colog.Polysemy (Log)
 
-import Commands.Utils (RetCode)
+import MptcpAnalyzer.Commands.Utils (RetCode)
 import MptcpAnalyzer.Cache
-import qualified Commands.Load as CL (ArgsLoadPcap, loadCsv)
+import qualified MptcpAnalyzer.Commands.Load as CL (ArgsLoadPcap, loadCsv)
 
 
 data Command m r where

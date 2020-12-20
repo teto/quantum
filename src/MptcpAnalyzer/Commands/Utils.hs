@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Commands.Utils
+module MptcpAnalyzer.Commands.Utils
 where
 
 -- import Katip

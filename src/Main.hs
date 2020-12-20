@@ -32,12 +32,12 @@ import Options.Applicative
 -- import Colog.Core.IO (logStringStdout)
 import Colog.Polysemy (Log, log, runLogAction)
 -- for monadmask
-import Control.Monad.Catch
-import qualified Data.Map         as HM
-import Commands.Utils (RetCode(..), DefaultMembers)
-import qualified Commands.Utils as CMD
-import Commands.List
-import Commands.Load
+-- import Control.Monad.Catch
+-- import qualified Data.Map         as HM
+import MptcpAnalyzer.Commands.Utils (RetCode(..), DefaultMembers)
+import qualified MptcpAnalyzer.Commands.Utils as CMD
+import MptcpAnalyzer.Commands.List
+import MptcpAnalyzer.Commands.Load
 
 -- Member, , Embed 
 import Polysemy (Sem, Members, runM, runFinal, Final)
@@ -249,7 +249,7 @@ main = do
           $ P.embedToFinal . P.runEmbedded lift
           $ P.runState myState
           $ runCache
-          $ runLogAction @String logStringStdout inputLoop
+          $ runLogAction @IO logStringStdout inputLoop
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 -- , P.Embed IO

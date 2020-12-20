@@ -106,8 +106,9 @@ common shared-properties
 executable mptcpanalyzer
     import: shared-properties
     Other-modules:     Tshark.TH, Pcap, MptcpAnalyzer.Cache
-        , Commands.Commands
-        , Commands.Load, Columns, Commands.Utils, Commands.List, Utils, Connection
+        , MptcpAnalyzer.Commands
+        , MptcpAnalyzer.Commands.Load, Columns, MptcpAnalyzer.Commands.Utils
+        , MptcpAnalyzer.Commands.List, Utils, Connection
         -- , Mptcp.Logging,
         , Plots.Stream
     -- for now reference mptcp-pm but later move part to a core
