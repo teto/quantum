@@ -4,27 +4,22 @@ module Commands.Utils
 where
 
 -- import Katip
--- import Control.Monad.State (MonadState)
--- import Control.Monad.Trans (MonadIO)
--- import System.Console.Haskeline.MonadException
 import Utils
 import Polysemy
-import Mptcp.Logging
-import Mptcp.Cache
-import Data.Text
+import MptcpAnalyzer.Cache
+-- import Data.Text
+import Colog.Polysemy (Log)
 
 
 
 import qualified Polysemy.State as P
 
-data RetCode = Exit | Error Text | Continue
+data RetCode = Exit | Error String | Continue
 
 -- TODO remove IO
 -- type DefaultMembers = [Log, Cache, P.State MyState]
-type DefaultMembers = '[ Log, Cache, P.State MyState, Embed IO]
+type DefaultMembers = '[ Log String, Cache, P.State MyState, Embed IO]
 -- TODO because of commands :: HM.Map String (CommandCb m)
 -- all commands need to have the same type
 
 -- type CommandCb m = CommandConstraint m => [String] -> Sem m RetCode
--- type CommandCb = [String] -> Sem DefaultMembers RetCode
--- type CommandCb r = [String] -> Sem r RetCode

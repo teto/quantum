@@ -105,10 +105,11 @@ common shared-properties
 -- and delegate the behavior to a monitor
 executable mptcpanalyzer
     import: shared-properties
-    Other-modules:     Tshark.TH, Pcap, Mptcp.Cache
+    Other-modules:     Tshark.TH, Pcap, MptcpAnalyzer.Cache
         , Commands.Commands
-        , Commands.Load, Columns, Commands.Utils, Commands.List, Utils, Connection, Mptcp.Logging,
-        Plots.Stream
+        , Commands.Load, Columns, Commands.Utils, Commands.List, Utils, Connection
+        -- , Mptcp.Logging,
+        , Plots.Stream
     -- for now reference mptcp-pm but later move part to a core
     -- build-depends: mptcp-pm >= 0.0.3
     -- ghc-options: -prof

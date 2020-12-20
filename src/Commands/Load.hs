@@ -8,19 +8,18 @@ import Pcap
 import Commands.Utils as CMD
 import Options.Applicative
 import Control.Monad.Trans (liftIO)
-import Control.Lens hiding (argument)
+-- import Control.Lens hiding (argument)
 
-import Mptcp.Cache
+import MptcpAnalyzer.Cache
 import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
 import System.Exit (ExitCode(..))
 import Utils
 import Prelude hiding (log)
-import Colog.Polysemy (Log, log, runLogAction)
+import Colog.Polysemy (Log, log)
 -- import Mptcp.Logging (Log, log)
 -- import System.Environment (withProgName)
 import Polysemy (Sem, Members, Embed)
 import Polysemy.State as P
-import Data.Text
 
 
 newtype ArgsLoadPcap = ArgsLoadPcap {
@@ -53,7 +52,7 @@ loadOpts = info (loadPcapParser <**> helper)
 -- handleParseResult
 -- loadPcap :: CMD.CommandCb
 -- loadPcap :: Members [Log, P.State MyState, Cache, Embed IO] m => [String] -> Sem m RetCode
-loadPcap :: Members [Log Text, P.State MyState, Cache, Embed IO] m => ArgsLoadPcap -> Sem m RetCode
+loadPcap :: Members [Log String, P.State MyState, Cache, Embed IO] m => ArgsLoadPcap -> Sem m RetCode
 loadPcap parsedArgs = do
     log "Called loadPcap"
     -- s <- gets
@@ -80,16 +79,16 @@ loadPcap parsedArgs = do
 -- TODO return an Either or Maybe ?
 -- MonadIO m, KatipContext m
   -- EmbedIO
-loadPcapIntoFrame :: Members [Cache, Log Text, Embed IO ] m => TsharkParams -> FilePath -> Sem m (Maybe PcapFrame)
+loadPcapIntoFrame :: Members [Cache, Log String, Embed IO ] m => TsharkParams -> FilePath -> Sem m (Maybe PcapFrame)
 loadPcapIntoFrame params path = do
-    log ("Start loading pcap " <> pack path)
+    log ("Start loading pcap " ++ path)
     x <- getCache cacheId
     case x of
       Right frame -> do
           log "Frame in cache"
           return $ Just frame
       Left err -> do
-          log $ "getCache error: " <> pack err
+          log $ "getCache error: " ++ err
           log "Calling tshark"
           -- TODO need to create a temporary file
           -- mkstemps
@@ -98,9 +97,9 @@ loadPcapIntoFrame params path = do
           (tempPath , exitCode, stdErr) <- liftIO $ withTempFileEx opts "/tmp" "mptcp.csv" (exportToCsv params path)
           if exitCode == ExitSuccess
               then do
-                log $ "exported to file " <> pack tempPath
+                log $ "exported to file " ++ tempPath
                 frame <- liftIO $ loadRows tempPath
-                log $ "Number of rows after loading " <> pack $ show (frameLength frame)
+                log $ "Number of rows after loading " ++ show (frameLength frame)
                 cacheRes <- putCache cacheId tempPath
                 -- use ifThenElse instead
                 if cacheRes then
@@ -110,8 +109,8 @@ loadPcapIntoFrame params path = do
 
                 return $ Just frame
               else do
-                log $ "Error happened: " <> pack $ show exitCode
-                log $ pack stdErr
+                log $ "Error happened: " ++ show exitCode
+                log stdErr
                 log "error happened: exitCode"
                 return Nothing
 
@@ -123,7 +122,7 @@ loadPcapIntoFrame params path = do
 -- TODO should disappear after testing phase
 -- loadCsv :: CMD.CommandCb
 -- loadCsv :: Members [Log, Cache, P.State MyState, Embed IO] m => [String] -> Sem m RetCode
-loadCsv :: Members [Log Text, Cache, P.State MyState, Embed IO] m => ArgsLoadPcap -> Sem m CMD.RetCode
+loadCsv :: Members [Log String, Cache, Embed IO] m => ArgsLoadPcap -> Sem m CMD.RetCode
 loadCsv parsedArgs = do
     -- let parserResult = execParserPure defaultParserPrefs loadOpts args
     -- _ <- case parserResult of
@@ -132,12 +131,12 @@ loadCsv parsedArgs = do
     --   (CompletionInvoked _compl) -> return CMD.Continue
     --   (Success parsedArgs) -> do
 
-    log $ "Loading " <> pack csvFilename
+    log $ "Loading " ++ csvFilename
     -- parsedArgs <- liftIO $ myHandleParseResult parserResult
     frame <- liftIO $ loadRows csvFilename
     -- TODO restore
     -- loadedFile .= Just frame
-    log $ "Number of rows " <> pack $ show (frameLength frame)
+    log $ "Number of rows " ++ show (frameLength frame)
     log "Frame loaded" >> return CMD.Continue
     where
       csvFilename = pcap parsedArgs

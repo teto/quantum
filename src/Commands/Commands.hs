@@ -1,13 +1,16 @@
 module Commands.Commands
 where
-import Polysemy (Sem, Members, runM, runFinal, Final)
+import Polysemy (Sem, Members, runM, runFinal, Final, makeSem, interpret)
+import qualified Polysemy.Embed as P
+import Colog.Polysemy (Log, log, runLogAction)
 
-import Commands.Utils
-import Commands.Load (ParserArgsLoadCsv, loadCsv)
+import Commands.Utils (RetCode)
+import MptcpAnalyzer.Cache
+import qualified Commands.Load as CL (ArgsLoadPcap, loadCsv)
 
 
 data Command m r where
-  LoadCsv :: ArgsLoadPcap -> Command m Retcode
+  LoadCsv :: CL.ArgsLoadPcap -> Command m RetCode
   -- LoadPcap :: ArgsLoadPcap -> Command m ()
   -- PrintHelp :: ParserArgsLoadCsv -> Command m ()
 
@@ -15,7 +18,7 @@ makeSem ''Command
 
 
 -- TODO
-runCommand :: Sem (Command ': r) -> Sem r RetCode
+runCommand :: Members '[Log String, Cache, P.Embed IO] r => Sem (Command ': r) a -> Sem r a
 runCommand = interpret $ \case
-    LoadCsv args -> loadCsv
+    LoadCsv args -> CL.loadCsv args
     -- (LogInfo stringToLog) -> embed $ putStrLn stringToLog)

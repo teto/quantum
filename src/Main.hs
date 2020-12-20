@@ -27,14 +27,14 @@ module Main where
 
 import System.FilePath
 import System.Directory
-import Prelude hiding (concat, init)
+import Prelude hiding (concat, init, log)
 import Options.Applicative
 -- import Colog.Core.IO (logStringStdout)
 import Colog.Polysemy (Log, log, runLogAction)
 -- for monadmask
 import Control.Monad.Catch
 import qualified Data.Map         as HM
-import Commands.Utils (RetCode(..), CommandCb, DefaultMembers)
+import Commands.Utils (RetCode(..), DefaultMembers)
 import qualified Commands.Utils as CMD
 import Commands.List
 import Commands.Load
@@ -48,9 +48,7 @@ import qualified Polysemy.Embed as P
 -- import qualified Polysemy.Output as P
 -- import qualified Polysemy.Trace as P
 
--- import Mptcp.Logging (logInfo, logToIO, Severity(..))
-import Mptcp.Logging
-import Mptcp.Cache
+import MptcpAnalyzer.Cache
 
 -- for noCompletion
 import System.Console.Haskeline
@@ -75,6 +73,7 @@ import Pipes hiding (Proxy)
 --     , MonadCatch
 --     , MonadMask
 --     )
+data Severity = TraceS | DebugS | InfoS | ErrorS deriving (Read, Show, Eq)
 
 data CLIArguments = CLIArguments {
   _input :: Maybe FilePath
@@ -250,11 +249,11 @@ main = do
           $ P.embedToFinal . P.runEmbedded lift
           $ P.runState myState
           $ runCache
-          $ runLogAction @Text logStringStdout inputLoop
+          $ runLogAction @String logStringStdout inputLoop
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 -- , P.Embed IO
-testLoop :: Members '[ Log, P.Embed IO, Final (InputT IO)] r => Sem r ()
+testLoop :: Members '[ Log String, P.Embed IO, Final (InputT IO)] r => Sem r ()
 testLoop = do
   _minput <- P.embedFinal $ getInputLine "prompt>"
   log "test"
@@ -263,19 +262,19 @@ testLoop = do
 -- type CommandList m = HM.Map String (CommandCb m)
 -- commands :: HM.Map String CommandCb
 -- commands :: Members DefaultMembers r => HM.Map String ([String] -> Sem r CMD.RetCode)
-commands :: Members DefaultMembers r => HM.Map String ([String] -> Sem r CMD.RetCode)
-commands = HM.fromList [
-    -- ("load", loadPcap)
-    ("load_csv", loadCsv)
-    -- , ("list_tcp", listTcpConnections)
-    , ("help", printHelp)
-    -- , ("list_mptcp", listMpTcpConnections)
-    ]
+-- commands :: Members DefaultMembers r => HM.Map String ([String] -> Sem r CMD.RetCode)
+-- commands = HM.fromList [
+--     -- ("load", loadPcap)
+--     ("load_csv", loadCsv)
+--     -- , ("list_tcp", listTcpConnections)
+--     , ("help", printHelp)
+--     -- , ("list_mptcp", listMpTcpConnections)
+--     ]
 
 
-printHelp :: P.Members '[Log] r => [String] -> Sem r CMD.RetCode
--- printHelp :: [String] -> 
-printHelp _ = logInfo "hello" >> return CMD.Continue
+-- printHelp :: P.Members '[Log String] r => [String] -> Sem r CMD.RetCode
+-- -- printHelp :: [String] -> 
+-- printHelp _ = logInfo "hello" >> return CMD.Continue
 
 -- getHelp :: String
 -- getHelp =
@@ -289,29 +288,31 @@ printHelp _ = logInfo "hello" >> return CMD.Continue
 -- TODO turn it into a library
 -- [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
 -- , P.Embed IO
-inputLoop :: Members  [Log, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => Sem r ()
+inputLoop :: Members  [Log String, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => Sem r ()
 inputLoop = do
     s <- P.get
     minput <- P.embedFinal $ getInputLine (view prompt s)
     cmdCode <- case fmap Prelude.words minput of
         Nothing -> do
-          logInfo "please enter a valid command, see help"
+          log "please enter a valid command, see help"
           return CMD.Continue
         Just [] -> return $ CMD.Error "Please enter a command"
 
-        Just (commandStr:args) -> do
+        Just (commandStr:_) -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
         -- then call the parser and call Commands.runCommand
           -- let parserResult = execParserPure defaultParserPrefs loadOpts args
 
-          let cmd = HM.lookup commandStr commands
-          case cmd of
-            Nothing -> return $ CMD.Error "Unknown command"
-            Just cb -> cb args
+          -- runCommand loadCsv
+          -- TODO runCommand
+          -- let cmd = HM.lookup commandStr commands
+          -- case cmd of
+          --   Nothing -> return $ CMD.Error "Unknown command"
+          --   Just cb -> cb args
 
     case cmdCode of
         CMD.Exit -> return ()
         CMD.Error msg -> do
-          logInfo $ "Last command failed with message:\n" ++ show msg
+          log $ "Last command failed with message:\n" ++ show msg
           inputLoop
         _behavior -> inputLoop
 

@@ -13,7 +13,6 @@ import Control.Lens hiding (argument)
 -- import Control.Monad.Trans (liftIO)
 -- import Control.Monad.State (get)
 import Utils
-import Mptcp.Logging
 import Polysemy.State as P
 
 -- for TcpConnection
