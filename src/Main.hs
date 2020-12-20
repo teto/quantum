@@ -29,7 +29,7 @@ import System.FilePath
 import System.Directory
 import Prelude hiding (concat, init, log)
 import Options.Applicative
--- import Colog.Core.IO (logStringStdout)
+import Colog.Core.IO (logStringStdout)
 import Colog.Polysemy (Log, log, runLogAction)
 -- for monadmask
 -- import Control.Monad.Catch

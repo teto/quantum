@@ -32,6 +32,7 @@ common shared-properties
       -- diagrams is not ready for 8.10
       -- , diagrams
     -- polysemybased logger
+      , co-log-core
       , co-log-polysemy
       , readable
       , polysemy
