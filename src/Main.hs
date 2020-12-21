@@ -36,8 +36,9 @@ import Colog.Polysemy (Log, log, runLogAction)
 -- import qualified Data.Map         as HM
 import MptcpAnalyzer.Commands.Utils (RetCode(..), DefaultMembers)
 import qualified MptcpAnalyzer.Commands.Utils as CMD
+import MptcpAnalyzer.Commands
 import MptcpAnalyzer.Commands.List
-import MptcpAnalyzer.Commands.Load
+import qualified MptcpAnalyzer.Commands.Load as CL
 
 -- Member, , Embed 
 import Polysemy (Sem, Members, runM, runFinal, Final)
@@ -206,12 +207,24 @@ opts = info (sample <**> helper)
 -- mainRepline = evalRepl (pure ">>> ") cmd Main.options Nothing (Word Main.completer) ini
 
 
+-- data CommandEnum = 
+--   LoadCsv CL.ArgsLoadPcap
+--   | LoadPcap CL.ArgsLoadPcap
 
--- loadCsv :: (Cache m, MonadIO m, KatipContext m) => FilePath -> m PcapFrame
--- loadCsv csvFile = do
---     frame <- liftIO $ loadRows csvFile
---     return frame
+-- data CommandParser  = CommandParser {}
+-- newtype ArgsOptions = ArgsOptions
+--   { optCommand :: CommandEnum
+--   }
 
+-- -- (runCommand loadCsv)
+-- commandParser :: Parser (Command m r)
+-- commandParser = hsubparser (
+--       command "loadCsv" (info (
+--           LoadCsv (CL.loadPcapParser)
+--           )
+--         ( progDesc "Load a CSV file" ))
+--       -- <> command "loadPcap" (info loadPcap ( progDesc "Load a PCAP file" ))
+--   )
 
 -- just for testing, to remove afterwards
 defaultPcap :: FilePath
@@ -288,7 +301,7 @@ testLoop = do
 -- TODO turn it into a library
 -- [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
 -- , P.Embed IO
-inputLoop :: Members  [Log String, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => Sem r ()
+inputLoop :: Members '[Log String, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => Sem r ()
 inputLoop = do
     s <- P.get
     minput <- P.embedFinal $ getInputLine (view prompt s)
@@ -298,9 +311,22 @@ inputLoop = do
           return CMD.Continue
         Just [] -> return $ CMD.Error "Please enter a command"
 
-        Just (commandStr:_) -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
+        -- Just (commandStr:_) -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
+        Just (commandStr:args) -> 
+          case commandStr of
+            "loadCsv" -> do
+              let parserResult = execParserPure defaultParserPrefs CL.loadOpts args
+              case parserResult of
+                -- log $ show failure >>
+                (Failure _failure) -> return $ CMD.Error "could not parse"
+                -- TODO here we should complete autocompletion
+                (CompletionInvoked _compl) -> return CMD.Continue
+                (Success parsedArgs) -> do
+              -- let parserResult = execParserPure defaultParserPrefs CL.loadOpts args
+                    runCommand $ CL.loadCsv parsedArgs
+        --     "loadPcap" ->
+            _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
         -- then call the parser and call Commands.runCommand
-          -- let parserResult = execParserPure defaultParserPrefs loadOpts args
 
           -- runCommand loadCsv
           -- TODO runCommand

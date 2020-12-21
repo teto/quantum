@@ -27,11 +27,19 @@ newtype ArgsLoadPcap = ArgsLoadPcap {
 }
 
 loadPcapParser :: Parser ArgsLoadPcap
-loadPcapParser = ArgsLoadPcap
+loadPcapParser = 
+    ArgsLoadPcap
       -- TODO complete with filepath
       <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
           <> help "Target for the greeting"
       )
+
+-- loadPcapParser :: ArgsLoadPcap
+-- loadPcapParser = ArgsLoadPcap
+--       -- TODO complete with filepath
+--       <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
+--           <> help "Target for the greeting"
+--       )
 
 -- TODO factor out
 loadOpts :: ParserInfo ArgsLoadPcap
@@ -58,13 +66,6 @@ loadPcap parsedArgs = do
     -- s <- gets
     -- liftIO $ withProgName "load" (
     -- TODO fix the name of the program, by "load"
-    -- let parserResult = execParserPure defaultParserPrefs loadOpts args
-    -- case parserResult of
-    --   -- log $ show failure >>
-    --   (Failure _failure) -> return $ CMD.Error "could not parse"
-    --   -- TODO here we should complete autocompletion
-    --   (CompletionInvoked _compl) -> return CMD.Continue
-    --   (Success parsedArgs) -> do
     mFrame <- loadPcapIntoFrame defaultTsharkPrefs (pcap parsedArgs)
     -- fmap onSuccess mFrame
     case mFrame of
@@ -122,7 +123,7 @@ loadPcapIntoFrame params path = do
 -- TODO should disappear after testing phase
 -- loadCsv :: CMD.CommandCb
 -- loadCsv :: Members [Log, Cache, P.State MyState, Embed IO] m => [String] -> Sem m RetCode
-loadCsv :: Members [Log String, Cache, Embed IO] m => ArgsLoadPcap -> Sem m CMD.RetCode
+loadCsv :: Members '[Log String, Cache, Embed IO] m => ArgsLoadPcap -> Sem m CMD.RetCode
 loadCsv parsedArgs = do
     -- let parserResult = execParserPure defaultParserPrefs loadOpts args
     -- _ <- case parserResult of
