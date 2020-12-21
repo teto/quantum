@@ -314,6 +314,15 @@ inputLoop = do
         -- Just (commandStr:_) -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
         Just (commandStr:args) -> 
           case commandStr of
+            "loadPcap" -> do
+              let parserResult = execParserPure defaultParserPrefs CL.loadOpts args
+              case parserResult of
+                -- log $ show failure >>
+                (Failure _failure) -> return $ CMD.Error "could not parse"
+                -- TODO here we should complete autocompletion
+                (CompletionInvoked _compl) -> return CMD.Continue
+                (Success parsedArgs) -> do
+                    runCommand $ CL.loadPcap parsedArgs
             "loadCsv" -> do
               let parserResult = execParserPure defaultParserPrefs CL.loadOpts args
               case parserResult of
@@ -322,18 +331,9 @@ inputLoop = do
                 -- TODO here we should complete autocompletion
                 (CompletionInvoked _compl) -> return CMD.Continue
                 (Success parsedArgs) -> do
-              -- let parserResult = execParserPure defaultParserPrefs CL.loadOpts args
                     runCommand $ CL.loadCsv parsedArgs
-        --     "loadPcap" ->
             _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
-        -- then call the parser and call Commands.runCommand
 
-          -- runCommand loadCsv
-          -- TODO runCommand
-          -- let cmd = HM.lookup commandStr commands
-          -- case cmd of
-          --   Nothing -> return $ CMD.Error "Unknown command"
-          --   Just cb -> cb args
 
     case cmdCode of
         CMD.Exit -> return ()

@@ -120,17 +120,9 @@ loadPcapIntoFrame params path = do
       opts :: TempFileOptions
       opts = TempFileOptions True
 
--- TODO should disappear after testing phase
--- loadCsv :: CMD.CommandCb
 -- loadCsv :: Members [Log, Cache, P.State MyState, Embed IO] m => [String] -> Sem m RetCode
 loadCsv :: Members '[Log String, Cache, Embed IO] m => ArgsLoadPcap -> Sem m CMD.RetCode
 loadCsv parsedArgs = do
-    -- let parserResult = execParserPure defaultParserPrefs loadOpts args
-    -- _ <- case parserResult of
-    --   (Failure _failure) -> return ( CMD.Error "could not load csv")
-    --   -- TODO here we should complete autocompletion
-    --   (CompletionInvoked _compl) -> return CMD.Continue
-    --   (Success parsedArgs) -> do
 
     log $ "Loading " ++ csvFilename
     -- parsedArgs <- liftIO $ myHandleParseResult parserResult

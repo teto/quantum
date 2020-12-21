@@ -97,17 +97,27 @@ instance Frames.ColumnTypeable.Parseable IP where
     Just ip -> return $ Definitely ip
 
 declareColumn "frameNumber" ''Word64
+declareColumn "interfaceName" ''String
 declareColumn "IpSource" ''IP
 declareColumn "IpDest" ''IP
 declareColumn "tcpStream" '' Word32
 declareColumn "mptcpStream" '' Word32
 declareColumn "tcpSrcPort" ''Word16
 declareColumn "tcpDestPort" ''Word16
+declareColumn "tcpFlags" '' String
+declareColumn "tcpOptionKinds" ''String
+declareColumn "tcpSeq" ''Word32
+declareColumn "tcpLen" ''Word16
+declareColumn "tcpAck" ''Word32
 
 type ManColumns = '["frame.number" :-> Word64
+                    , "frame.interface_name" :-> String
+                    -- TODO make it as a timestamp, Word64 for instance
+                    , "frame.time_epoch" :-> String
                     , "_ws.col.ipsrc" :-> IP
                     , "_ws.col.ipdst" :-> IP
                     , "tcp.stream" :-> Word32
+                    , "tcp.flags" :-> String
                     , "mptcp.stream" :-> Word32
                     , "tcp.srcport" :-> Word16
                     , "tcp.dstport" :-> Word16
@@ -115,8 +125,17 @@ type ManColumns = '["frame.number" :-> Word64
 
 -- type ManRowPacket = Record ManColumns
 type ManRowPacket = Record [
-    FrameNumber, IpSource, IpDest
-    , TcpStream, MptcpStream, TcpSrcPort, TcpDestPort
+    FrameNumber
+    , InterfaceName
+    , IpSource, IpDest
+    , TcpStream
+    , TcpSrcPort, TcpDestPort
+    , TcpFlags
+    , TcpOptionKinds
+    , TcpSeq
+    , TcpLen
+    , TcpAck
+    , MptcpStream
     ]
 
 -- type ManMaybe = Rec (Maybe :. ElField) ManColumns
