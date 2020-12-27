@@ -6,6 +6,7 @@ import Frames
 -- import Frames.CSV
 import Pcap
 import MptcpAnalyzer.Commands.Utils as CMD
+import MptcpAnalyzer.Commands.Types
 import Options.Applicative
 import Control.Monad.Trans (liftIO)
 -- import Control.Lens hiding (argument)
@@ -21,17 +22,17 @@ import Colog.Polysemy (Log, log)
 import Polysemy (Sem, Members, Embed)
 import Polysemy.State as P
 
+-- newtype ArgsLoadPcap = ArgsLoadPcap {
+--   pcap :: FilePath
+-- }
 
-newtype ArgsLoadPcap = ArgsLoadPcap {
-  pcap :: FilePath
-}
-
-loadPcapParser :: Parser ArgsLoadPcap
-loadPcapParser = 
+loadPcapParser :: Parser (Command m RetCode)
+loadPcapParser = LoadCsv <$> (
     ArgsLoadPcap
       -- TODO complete with filepath
       <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
           <> help "Target for the greeting"
+      )
       )
 
 -- loadPcapParser :: ArgsLoadPcap
@@ -42,7 +43,7 @@ loadPcapParser =
 --       )
 
 -- TODO factor out
-loadOpts :: ParserInfo ArgsLoadPcap
+loadOpts :: ParserInfo (Command m RetCode)
 loadOpts = info (loadPcapParser <**> helper)
   ( fullDesc
   <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\

@@ -37,13 +37,14 @@ import Colog.Polysemy (Log, log, runLogAction)
 import MptcpAnalyzer.Commands.Utils (RetCode(..), DefaultMembers)
 import qualified MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands
+import MptcpAnalyzer.Commands.Types
 import MptcpAnalyzer.Commands.List
 import qualified MptcpAnalyzer.Commands.Load as CL
 
 -- Member, , Embed 
-import Polysemy (Sem, Members, runM, runFinal, Final)
+import Polysemy (Sem, Members, runFinal, Final)
 import qualified Polysemy as P
-import Polysemy.Reader as P
+-- import Polysemy.Reader as P
 import qualified Polysemy.State as P
 import qualified Polysemy.Embed as P
 -- import qualified Polysemy.Output as P
@@ -217,7 +218,7 @@ opts = info (sample <**> helper)
 --   }
 
 -- -- (runCommand loadCsv)
--- commandParser :: Parser (Command m r)
+-- commandParser :: Parser (Command m CMD.RetCode)
 -- commandParser = hsubparser (
 --       command "loadCsv" (info (
 --           LoadCsv (CL.loadPcapParser)
@@ -297,6 +298,24 @@ testLoop = do
 
 -- liftIO $ putStrLn doPrintHelp >> 
 
+-- -> Sem (Command ': m) CMD.RetCode
+-- Members '[Log String, Cache, P.Embed IO] m =>
+-- genericRunCommand ::  ParserInfo (m RetCode) -> [String] -> m RetCode
+-- Members '[Log String, Cache, P.Embed IO] m =>
+  -- Members '[Log String, Cache, P.Embed IO] m2 =>
+genericRunCommand ::  Members '[Log String, Cache, P.Embed IO] m2 => ParserInfo (Command m RetCode) -> [String] -> Sem m2 RetCode
+genericRunCommand parserInfo args = do
+  let parserResult = execParserPure defaultParserPrefs parserInfo args
+  case parserResult of
+    -- log $ show failure >>
+    (Failure _failure) -> return $ CMD.Error "could not parse"
+    -- TODO here we should complete autocompletion
+    (CompletionInvoked _compl) -> return CMD.Continue
+    (Success parsedArgs) -> 
+      -- Sem (Command ': r) a -> Sem r a
+      runCommand parsedArgs
+      -- runCommand cb 
+
 -- | Main loop of the program, will run commands in turn
 -- TODO turn it into a library
 -- [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
@@ -312,26 +331,33 @@ inputLoop = do
         Just [] -> return $ CMD.Error "Please enter a command"
 
         -- Just (commandStr:_) -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
-        Just (commandStr:args) -> 
+        Just (commandStr:args) ->
           case commandStr of
-            "loadPcap" -> do
-              let parserResult = execParserPure defaultParserPrefs CL.loadOpts args
-              case parserResult of
-                -- log $ show failure >>
-                (Failure _failure) -> return $ CMD.Error "could not parse"
-                -- TODO here we should complete autocompletion
-                (CompletionInvoked _compl) -> return CMD.Continue
-                (Success parsedArgs) -> do
-                    runCommand $ CL.loadPcap parsedArgs
-            "loadCsv" -> do
-              let parserResult = execParserPure defaultParserPrefs CL.loadOpts args
-              case parserResult of
-                -- log $ show failure >>
-                (Failure _failure) -> return $ CMD.Error "could not parse"
-                -- TODO here we should complete autocompletion
-                (CompletionInvoked _compl) -> return CMD.Continue
-                (Success parsedArgs) -> do
-                    runCommand $ CL.loadCsv parsedArgs
+            -- "loadPcap" -> do
+            --   genericRunCommand CL.loadOpts args CL.loadPcap
+              -- let parserResult = execParserPure defaultParserPrefs CL.loadOpts args
+              -- case parserResult of
+              --   -- log $ show failure >>
+              --   (Failure _failure) -> return $ CMD.Error "could not parse"
+              --   -- TODO here we should complete autocompletion
+              --   (CompletionInvoked _compl) -> return CMD.Continue
+              --   (Success parsedArgs) -> do
+              --       runCommand $ CL.loadPcap parsedArgs
+
+            "load-csv" -> do
+              genericRunCommand CL.loadOpts args
+
+            -- "list-tcp" -> do
+            --   genericRunCommand CL.loadOpts args CL.loadPcap
+
+              -- let parserResult = execParserPure defaultParserPrefs CL.loadOpts args
+              -- case parserResult of
+              --   -- log $ show failure >>
+              --   (Failure _failure) -> return $ CMD.Error "could not parse"
+              --   -- TODO here we should complete autocompletion
+              --   (CompletionInvoked _compl) -> return CMD.Continue
+              --   (Success parsedArgs) -> do
+              --       runCommand $ CL.loadCsv parsedArgs
             _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
 
 

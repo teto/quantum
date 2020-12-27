@@ -4,17 +4,18 @@ import Polysemy (Sem, Members, makeSem, interpret)
 import qualified Polysemy.Embed as P
 import Colog.Polysemy (Log)
 
+import MptcpAnalyzer.Commands.Types
 import MptcpAnalyzer.Commands.Utils (RetCode)
 import MptcpAnalyzer.Cache
-import qualified MptcpAnalyzer.Commands.Load as CL (ArgsLoadPcap, loadCsv)
+import qualified MptcpAnalyzer.Commands.Load as CL (loadCsv)
 
 
-data Command m r where
-  LoadCsv :: CL.ArgsLoadPcap -> Command m RetCode
+-- data Command m a where
+--   LoadCsv :: CL.ArgsLoadPcap -> Command m RetCode
   -- LoadPcap :: ArgsLoadPcap -> Command m ()
   -- PrintHelp :: ParserArgsLoadCsv -> Command m ()
 
-makeSem ''Command
+-- makeSem ''Command
 
 
 -- TODO

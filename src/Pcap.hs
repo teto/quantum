@@ -97,15 +97,16 @@ instance Frames.ColumnTypeable.Parseable IP where
     Just ip -> return $ Definitely ip
 
 declareColumn "frameNumber" ''Word64
-declareColumn "interfaceName" ''String
+declareColumn "interfaceName" ''Text
+declareColumn "frameEpoch" ''IP
 declareColumn "IpSource" ''IP
 declareColumn "IpDest" ''IP
 declareColumn "tcpStream" '' Word32
 declareColumn "mptcpStream" '' Word32
 declareColumn "tcpSrcPort" ''Word16
 declareColumn "tcpDestPort" ''Word16
-declareColumn "tcpFlags" '' String
-declareColumn "tcpOptionKinds" ''String
+declareColumn "tcpFlags" ''Text
+declareColumn "tcpOptionKinds" ''Text
 declareColumn "tcpSeq" ''Word32
 declareColumn "tcpLen" ''Word16
 declareColumn "tcpAck" ''Word32
@@ -127,6 +128,7 @@ type ManColumns = '["frame.number" :-> Word64
 type ManRowPacket = Record [
     FrameNumber
     , InterfaceName
+    , FrameEpoch
     , IpSource, IpDest
     , TcpStream
     , TcpSrcPort, TcpDestPort
@@ -135,7 +137,7 @@ type ManRowPacket = Record [
     , TcpSeq
     , TcpLen
     , TcpAck
-    , MptcpStream
+    -- , MptcpStream
     ]
 
 -- type ManMaybe = Rec (Maybe :. ElField) ManColumns
