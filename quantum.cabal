@@ -31,12 +31,11 @@ common shared-properties
       , containers
       -- diagrams is not ready for 8.10
       -- , diagrams
-    -- polysemybased logger
+      -- polysemybased logger
       , co-log-core
       , co-log-polysemy
       , readable
       , polysemy
-      -- , polysemy-plugin
       , bytestring, process
       , ip
       -- , netlink >= 1.1.1.0
