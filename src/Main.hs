@@ -299,19 +299,14 @@ testLoop = do
 
 -- liftIO $ putStrLn doPrintHelp >> 
 
-genericRunCommand ::  Members '[Log String, Cache, P.Embed IO] m2 => ParserInfo (Command m RetCode) -> [String] -> Sem m2 RetCode
+genericRunCommand ::  Members '[Log String, Cache, P.Embed IO] r => ParserInfo (Command (Sem r) RetCode) -> [String] -> Sem r RetCode
 genericRunCommand parserInfo args = do
   let parserResult = execParserPure defaultParserPrefs parserInfo args
   case parserResult of
-    -- log $ show failure >>
     (Failure _failure) -> return $ CMD.Error "could not parse"
-    -- TODO here we should complete autocompletion
     (CompletionInvoked _compl) -> return CMD.Continue
     (Success parsedArgs) -> 
-      -- Sem (Command ': r) a -> Sem r a
-      -- raise :: forall e r a. Sem r a -> Sem (e ': r) a 
-      -- P.send
-      runCommand $ P.send parsedArgs
+      runCommand $ P.send (parsedArgs)
 
 -- | Main loop of the program, will run commands in turn
 -- TODO turn it into a library
