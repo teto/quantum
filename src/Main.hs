@@ -47,6 +47,7 @@ import qualified Polysemy as P
 -- import Polysemy.Reader as P
 import qualified Polysemy.State as P
 import qualified Polysemy.Embed as P
+import qualified Polysemy.Internal as P
 -- import qualified Polysemy.Output as P
 -- import qualified Polysemy.Trace as P
 
@@ -298,11 +299,6 @@ testLoop = do
 
 -- liftIO $ putStrLn doPrintHelp >> 
 
--- -> Sem (Command ': m) CMD.RetCode
--- Members '[Log String, Cache, P.Embed IO] m =>
--- genericRunCommand ::  ParserInfo (m RetCode) -> [String] -> m RetCode
--- Members '[Log String, Cache, P.Embed IO] m =>
-  -- Members '[Log String, Cache, P.Embed IO] m2 =>
 genericRunCommand ::  Members '[Log String, Cache, P.Embed IO] m2 => ParserInfo (Command m RetCode) -> [String] -> Sem m2 RetCode
 genericRunCommand parserInfo args = do
   let parserResult = execParserPure defaultParserPrefs parserInfo args
@@ -313,8 +309,9 @@ genericRunCommand parserInfo args = do
     (CompletionInvoked _compl) -> return CMD.Continue
     (Success parsedArgs) -> 
       -- Sem (Command ': r) a -> Sem r a
-      runCommand parsedArgs
-      -- runCommand cb 
+      -- raise :: forall e r a. Sem r a -> Sem (e ': r) a 
+      -- P.send
+      runCommand $ P.send parsedArgs
 
 -- | Main loop of the program, will run commands in turn
 -- TODO turn it into a library

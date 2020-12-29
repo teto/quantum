@@ -19,7 +19,7 @@ import qualified MptcpAnalyzer.Commands.Load as CL (loadCsv)
 
 
 -- TODO
-runCommand :: Members '[Log String, Cache, P.Embed IO] r => Sem (Command ': r) a -> Sem r a
+runCommand :: Members '[Log String, Cache, P.Embed IO] r => Sem (Command : r) a -> Sem r a
 runCommand = interpret $ \case
     LoadCsv args -> CL.loadCsv args
     -- (LogInfo stringToLog) -> embed $ putStrLn stringToLog)
