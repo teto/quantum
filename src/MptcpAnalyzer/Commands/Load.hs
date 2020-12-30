@@ -28,20 +28,30 @@ import Polysemy.State as P
 --   pcap :: FilePath
 -- }
 
-loadPcapParser :: P.Member Command r => Parser (Sem r RetCode)
-loadPcapParser = CMD.loadCsv <$> (
-    ArgsLoadPcap <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
+-- loadPcapParser :: P.Member Command r => Parser (Sem r RetCode)
+-- loadPcapParser = CMD.loadPcap <$> loadPcapArgs
+-- (
+--     ArgsLoadPcap <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
+--           <> help "Target for the greeting"
+--       ))
+loadPcapArgs :: Parser ArgsLoadPcap
+loadPcapArgs =  ArgsLoadPcap <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
           <> help "Target for the greeting"
-      ))
+      )
 
--- TODO factor out
-loadOpts :: P.Member Command r => ParserInfo (Sem r RetCode)
-loadOpts = info (loadPcapParser <**> helper)
+
+loadCsvOpts :: P.Member Command r => ParserInfo (Sem r RetCode)
+loadCsvOpts = info (CMD.loadCsv <$> loadPcapArgs <**> helper)
   ( fullDesc
   <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
               \performance via the generation of stats & plots"
-  <> header "hello - a test for optparse-applicative"
-  <> footer "You can report issues/contribute at https://github.com/teto/mptcpanalyzer"
+  )
+
+loadPcapOpts :: P.Member Command r => ParserInfo (Sem r RetCode)
+loadPcapOpts = info (CMD.loadPcap <$> loadPcapArgs <**> helper)
+  ( fullDesc
+  <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
+              \performance via the generation of stats & plots"
   )
 
 

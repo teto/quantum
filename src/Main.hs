@@ -324,16 +324,8 @@ inputLoop = do
         -- Just (commandStr:_) -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
         Just (commandStr:args) ->
           case commandStr of
-            -- "loadPcap" -> do
-            --   genericRunCommand CL.loadOpts args CL.loadPcap
-              -- let parserResult = execParserPure defaultParserPrefs CL.loadOpts args
-              -- case parserResult of
-              --   -- log $ show failure >>
-              --   (Failure _failure) -> return $ CMD.Error "could not parse"
-              --   -- TODO here we should complete autocompletion
-              --   (CompletionInvoked _compl) -> return CMD.Continue
-              --   (Success parsedArgs) -> do
-              --       runCommand $ CL.loadPcap parsedArgs
+            "loadPcap" -> do
+              genericRunCommand CL.loadOpts args
 
             "load-csv" -> do
               genericRunCommand CL.loadOpts args
