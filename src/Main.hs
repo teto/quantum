@@ -37,7 +37,7 @@ import Colog.Polysemy (Log, log, runLogAction)
 import MptcpAnalyzer.Commands.Utils (RetCode(..), DefaultMembers)
 import qualified MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands
-import MptcpAnalyzer.Commands.Types
+import MptcpAnalyzer.Commands.Definitions
 import MptcpAnalyzer.Commands.List
 import qualified MptcpAnalyzer.Commands.Load as CL
 
@@ -275,16 +275,16 @@ testLoop = do
   return ()
 
 -- type CommandList m = HM.Map String (CommandCb m)
--- commands :: HM.Map String CommandCb
+commands :: HM.Map String (Sem r)
 -- commands :: Members DefaultMembers r => HM.Map String ([String] -> Sem r CMD.RetCode)
 -- commands :: Members DefaultMembers r => HM.Map String ([String] -> Sem r CMD.RetCode)
--- commands = HM.fromList [
---     -- ("load", loadPcap)
---     ("load_csv", loadCsv)
---     -- , ("list_tcp", listTcpConnections)
---     , ("help", printHelp)
---     -- , ("list_mptcp", listMpTcpConnections)
---     ]
+commands = HM.fromList [
+    -- ("load", loadPcap)
+    ("load_csv", loadCsv)
+    -- , ("list_tcp", listTcpConnections)
+    , ("help", printHelp)
+    -- , ("list_mptcp", listMpTcpConnections)
+    ]
 
 
 -- printHelp :: P.Members '[Log String] r => [String] -> Sem r CMD.RetCode
@@ -325,10 +325,10 @@ inputLoop = do
         Just (commandStr:args) ->
           case commandStr of
             "loadPcap" -> do
-              genericRunCommand CL.loadOpts args
+              genericRunCommand CL.loadPcapOpts args
 
             "load-csv" -> do
-              genericRunCommand CL.loadOpts args
+              genericRunCommand CL.loadCsvOpts args
 
             -- "list-tcp" -> do
             --   genericRunCommand CL.loadOpts args CL.loadPcap

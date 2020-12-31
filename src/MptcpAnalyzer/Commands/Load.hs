@@ -6,7 +6,7 @@ import Frames
 -- import Frames.CSV
 import Pcap
 import MptcpAnalyzer.Commands.Utils as CMD
-import MptcpAnalyzer.Commands.Types as CMD
+import MptcpAnalyzer.Commands.Definitions as CMD
 import Options.Applicative
 import Control.Monad.Trans (liftIO)
 -- import Control.Lens hiding (argument)
@@ -23,10 +23,6 @@ import Polysemy (Sem, Members, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
 -- import qualified Polysemy.Internal as P
-
--- newtype ArgsLoadPcap = ArgsLoadPcap {
---   pcap :: FilePath
--- }
 
 -- loadPcapParser :: P.Member Command r => Parser (Sem r RetCode)
 -- loadPcapParser = CMD.loadPcap <$> loadPcapArgs

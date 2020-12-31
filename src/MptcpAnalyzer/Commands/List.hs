@@ -5,32 +5,26 @@ where
 
 -- import Data.Text
 -- import Net.Tcp
+import Prelude hiding (log)
+import MptcpAnalyzer.Cache
+import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.Utils as CMD
 import Options.Applicative
 import Pcap
 import Frames
 import Control.Lens hiding (argument)
--- import Control.Monad.Trans (liftIO)
--- import Control.Monad.State (get)
 import Utils
+import Polysemy (Member, Members, Sem, Embed)
+-- import qualified Polysemy as P
 import Polysemy.State as P
+import Colog.Polysemy (Log, log)
 
 -- for TcpConnection
 -- import Net.Tcp
 
 
--- Phantom types
-data Mptcp
-data Tcp
-
--- TODO use Word instead
-newtype StreamId a = StreamId Int deriving (Show, Read, Eq, Ord)
 
 -- This 
-data ParserListSubflows = ParserListSubflows {
-  full :: Bool,
-  tcpStreamId :: StreamId Tcp
-}
 
 -- |TODO pass the loaded pcap to have a complete filterWith
 -- listSubflowParser = 
@@ -44,8 +38,9 @@ parserSubflow = ParserListSubflows <$> switch
           -- TODO pass a default
           )
 
-optsListSubflows :: ParserInfo ParserListSubflows
-optsListSubflows = info (parserSubflow <**> helper)
+optsListSubflows :: Member Command r => ParserInfo (Sem r CMD.RetCode)
+optsListSubflows = info (
+   CMD.listTcpConnections <$> parserSubflow <**> helper)
   ( fullDesc
   <> progDesc "List subflows of an MPTCP connection"
   <> header ""
@@ -71,17 +66,16 @@ optsListSubflows = info (parserSubflow <**> helper)
     -- Search for SYN flags
     -- (view tcpstream <$> frame)
 
--- listTcpConnections :: CMD.CommandCb
--- listTcpConnections :: P.Members '[ (P.Embed IO)] r => CMD.CommandCb r
--- listTcpConnections _params = do
---     state <- P.get
---     let loadedPcap = view loadedFile state
---     case loadedPcap of
---       Nothing -> logInfo "please load a pcap first" >> return CMD.Continue
---       Just frame -> do
---         let _tcpstreams = getTcpStreams frame
---         logInfo $ "Number of rows " ++ show (frameLength frame)
---         >> return CMD.Continue
+listTcpConnections :: Members [Log String, P.State MyState, Cache, Embed IO] r => Sem r RetCode
+listTcpConnections _params = do
+    state <- P.get
+    let loadedPcap = view loadedFile state
+    case loadedPcap of
+      Nothing -> log "please load a pcap first" >> return CMD.Continue
+      Just frame -> do
+        let _tcpstreams = getTcpStreams frame
+        log $ "Number of rows " ++ show (frameLength frame)
+        >> return CMD.Continue
 
 
 listTcpConnectionsInFrame :: PcapFrame -> IO ()
