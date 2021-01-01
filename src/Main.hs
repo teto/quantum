@@ -33,7 +33,7 @@ import Colog.Core.IO (logStringStdout)
 import Colog.Polysemy (Log, log, runLogAction)
 -- for monadmask
 -- import Control.Monad.Catch
--- import qualified Data.Map         as HM
+import qualified Data.Map         as HM
 import MptcpAnalyzer.Commands.Utils (RetCode(..), DefaultMembers)
 import qualified MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands
@@ -52,10 +52,10 @@ import qualified Polysemy.Internal as P
 -- import qualified Polysemy.Trace as P
 
 import MptcpAnalyzer.Cache
+import MptcpAnalyzer.Definitions
 
 -- for noCompletion
 import System.Console.Haskeline
-import Utils
 import Control.Lens ( (^.), view, set)
 
 -- Repline is a wrapper (suppposedly more advanced) around haskeline
@@ -275,16 +275,15 @@ testLoop = do
   return ()
 
 -- type CommandList m = HM.Map String (CommandCb m)
-commands :: HM.Map String (Sem r)
--- commands :: Members DefaultMembers r => HM.Map String ([String] -> Sem r CMD.RetCode)
--- commands :: Members DefaultMembers r => HM.Map String ([String] -> Sem r CMD.RetCode)
-commands = HM.fromList [
-    -- ("load", loadPcap)
-    ("load_csv", loadCsv)
-    -- , ("list_tcp", listTcpConnections)
-    , ("help", printHelp)
-    -- , ("list_mptcp", listMpTcpConnections)
-    ]
+-- commands :: Members DefaultMembers r => HM.Map String (Sem r RetCode)
+-- commands :: Members DefaultMembers r => HM.Map String  (Sem r CMD.RetCode)
+-- commands = HM.fromList [
+--     -- ("load", loadPcap)
+--     ("load_csv", loadCsv)
+--     -- , ("list_tcp", listTcpConnections)
+--     , ("help", printHelp)
+--     -- , ("list_mptcp", listMpTcpConnections)
+--     ]
 
 
 -- printHelp :: P.Members '[Log String] r => [String] -> Sem r CMD.RetCode
@@ -299,7 +298,7 @@ commands = HM.fromList [
 
 -- liftIO $ putStrLn doPrintHelp >> 
 
-genericRunCommand ::  Members '[Log String, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
+genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
 genericRunCommand parserInfo args = do
   let parserResult = execParserPure defaultParserPrefs parserInfo args
   case parserResult of

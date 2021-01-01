@@ -4,9 +4,9 @@ module MptcpAnalyzer.Commands.Utils
 where
 
 -- import Katip
-import Utils
 import Polysemy
 import MptcpAnalyzer.Cache
+import MptcpAnalyzer.Definitions
 -- import Data.Text
 import Colog.Polysemy (Log)
 

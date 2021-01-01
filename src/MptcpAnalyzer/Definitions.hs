@@ -1,5 +1,5 @@
 {-# LANGUAGE TemplateHaskell            #-}
-module Utils
+module MptcpAnalyzer.Definitions
 where
 
 import Pcap

@@ -12,9 +12,9 @@ import Control.Monad.Trans (liftIO)
 -- import Control.Lens hiding (argument)
 
 import MptcpAnalyzer.Cache
+import MptcpAnalyzer.Definitions
 import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
 import System.Exit (ExitCode(..))
-import Utils
 import Prelude hiding (log)
 import Colog.Polysemy (Log, log)
 -- import Mptcp.Logging (Log, log)

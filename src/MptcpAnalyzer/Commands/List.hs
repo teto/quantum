@@ -9,11 +9,11 @@ import Prelude hiding (log)
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.Utils as CMD
+import MptcpAnalyzer.Definitions
 import Options.Applicative
 import Pcap
 import Frames
 import Control.Lens hiding (argument)
-import Utils
 import Polysemy (Member, Members, Sem, Embed)
 -- import qualified Polysemy as P
 import Polysemy.State as P
@@ -67,7 +67,7 @@ optsListSubflows = info (
     -- (view tcpstream <$> frame)
 
 listTcpConnections :: Members [Log String, P.State MyState, Cache, Embed IO] r => Sem r RetCode
-listTcpConnections _params = do
+listTcpConnections = do
     state <- P.get
     let loadedPcap = view loadedFile state
     case loadedPcap of

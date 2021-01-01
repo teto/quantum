@@ -110,7 +110,7 @@ executable mptcpanalyzer
         , MptcpAnalyzer.Commands
         , MptcpAnalyzer.Commands.Definitions
         , MptcpAnalyzer.Commands.Load, Columns, MptcpAnalyzer.Commands.Utils
-        , MptcpAnalyzer.Commands.List, Utils, Connection
+        , MptcpAnalyzer.Commands.List, MptcpAnalyzer.Definitions, Connection
         -- , Mptcp.Logging,
         , Plots.Stream
     -- for now reference mptcp-pm but later move part to a core
