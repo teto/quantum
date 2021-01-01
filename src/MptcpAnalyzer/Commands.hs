@@ -10,6 +10,7 @@ import MptcpAnalyzer.Commands.Utils (RetCode(..))
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Definitions
 import qualified MptcpAnalyzer.Commands.Load as CL
+import qualified MptcpAnalyzer.Commands.List as CL
 
 
 -- data Command m a where
@@ -32,4 +33,5 @@ runCommand = interpret $ \case
     LoadCsv args -> CL.loadCsv args
     LoadPcap args -> CL.loadPcap args
     PrintHelp  -> printHelpTemp
+    ListTcpConnections  -> CL.list
     -- (LogInfo stringToLog) -> embed $ putStrLn stringToLog)

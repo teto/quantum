@@ -302,7 +302,9 @@ genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] 
 genericRunCommand parserInfo args = do
   let parserResult = execParserPure defaultParserPrefs parserInfo args
   case parserResult of
-    (Failure _failure) -> return $ CMD.Error "could not parse"
+    (Failure failure) -> do
+        log $ show failure
+        return $ CMD.Error $ "could not parse: " ++ show failure
     (CompletionInvoked _compl) -> return CMD.Continue
     (Success parsedArgs) -> runCommand parsedArgs
 
@@ -323,23 +325,12 @@ inputLoop = do
         -- Just (commandStr:_) -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
         Just (commandStr:args) ->
           case commandStr of
-            "loadPcap" -> do
-              genericRunCommand CL.loadPcapOpts args
+            "loadPcap" -> genericRunCommand CL.loadPcapOpts args
 
-            "load-csv" -> do
-              genericRunCommand CL.loadCsvOpts args
+            "load-csv" -> genericRunCommand CL.loadCsvOpts args
 
-            -- "list-tcp" -> do
-            --   genericRunCommand CL.loadOpts args CL.loadPcap
+            "list-tcp" -> genericRunCommand listTcpOpts args
 
-              -- let parserResult = execParserPure defaultParserPrefs CL.loadOpts args
-              -- case parserResult of
-              --   -- log $ show failure >>
-              --   (Failure _failure) -> return $ CMD.Error "could not parse"
-              --   -- TODO here we should complete autocompletion
-              --   (CompletionInvoked _compl) -> return CMD.Continue
-              --   (Success parsedArgs) -> do
-              --       runCommand $ CL.loadCsv parsedArgs
             _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
 
 

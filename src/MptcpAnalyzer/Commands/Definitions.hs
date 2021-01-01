@@ -18,6 +18,7 @@ data Tcp
 
 -- TODO use Word instead
 newtype StreamId a = StreamId Int deriving (Show, Read, Eq, Ord)
+type StreamIdTcp = StreamId Tcp
 
 data Command m a where
   LoadCsv :: ArgsLoadPcap -> Command m RetCode

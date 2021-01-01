@@ -33,19 +33,26 @@ parserSubflow :: Parser ParserListSubflows
 parserSubflow = ParserListSubflows <$> switch
           ( long "full"
          <> help "Print details for each subflow" )
-      <*> argument auto (
-          help "Show version"
+      <*> argument readStreamId (
+          metavar "STREAM_ID"
+          <> help "Stream Id (tcp.stream)"
           -- TODO pass a default
           )
 
-optsListSubflows :: Member Command r => ParserInfo (Sem r CMD.RetCode)
-optsListSubflows = info (
+-- (String -> Either String a) -> ReadM a
+readStreamId :: ReadM StreamIdTcp
+readStreamId = eitherReader $ \arg -> case reads arg of
+  [(r, "")] -> return $ StreamId r
+  [(parsed, remain)] -> Left $ "cannot parse value `" ++ arg ++ "' remain" ++ show remain ++ " parsed= " ++ show parsed
+  [] -> Left $ "cannot parse value" ++ arg ++ " (empty result)"
+
+listTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
+listTcpOpts = info (
    CMD.listTcpConnections <$> parserSubflow <**> helper)
-  ( fullDesc
-  <> progDesc "List subflows of an MPTCP connection"
-  <> header ""
-  <> footer ""
+  ( progDesc "List subflows of an MPTCP connection"
   )
+  -- <> header ""
+  -- <> footer ""
 
 -- listTcpConnections :: [TcpConnection] -> Text
 -- listTcpConnections conns =
