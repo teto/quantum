@@ -33,5 +33,5 @@ runCommand = interpret $ \case
     LoadCsv args -> CL.loadCsv args
     LoadPcap args -> CL.loadPcap args
     PrintHelp  -> printHelpTemp
-    ListTcpConnections  -> CL.list
+    ListTcpConnections  args -> CL.listTcpConnections args
     -- (LogInfo stringToLog) -> embed $ putStrLn stringToLog)

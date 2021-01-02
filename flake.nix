@@ -1,11 +1,22 @@
 {
-  description = "A very basic flake";
+  description = "Multipath tcp pcap analyzer tool";
 
-  outputs = { self, nixpkgs }: {
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    packages.x86_64-linux.hello = nixpkgs.legacyPackages.x86_64-linux.hello;
+    # temporary until this gets fixed upstream
+    poetry.url = "github:teto/poetry2nix/fix_tag";
 
-    defaultPackage.x86_64-linux = self.packages.x86_64-linux.hello;
-
+    flake-utils.url = "github:numtide/flake-utils";
   };
+
+  outputs = { self, nixpkgs, flake-utils, poetry }:
+    flake-utils.lib.eachDefaultSystem (system: let
+    in rec {
+
+      packages.mptcpanalyzer = nixpkgs.legacyPackages.x86_64-linux.hello;
+
+      defaultPackage = packages.mptcpanalyzer;
+
+    });
 }

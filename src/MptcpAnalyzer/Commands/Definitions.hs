@@ -1,6 +1,7 @@
 module MptcpAnalyzer.Commands.Definitions
 where
 import MptcpAnalyzer.Commands.Utils
+import MptcpAnalyzer.Definitions
 
 import Polysemy (Sem, Members, makeSem, interpret, Effect)
 
@@ -12,13 +13,6 @@ data ParserListSubflows = ParserListSubflows {
   full :: Bool,
   tcpStreamId :: StreamId Tcp
 }
--- Phantom types
-data Mptcp
-data Tcp
-
--- TODO use Word instead
-newtype StreamId a = StreamId Int deriving (Show, Read, Eq, Ord)
-type StreamIdTcp = StreamId Tcp
 
 data Command m a where
   LoadCsv :: ArgsLoadPcap -> Command m RetCode

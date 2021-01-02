@@ -10,14 +10,15 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts, QuasiQuotes #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Pcap(PcapFrame, TsharkParams(..),
-    defaultTsharkPrefs
-    , defaultTsharkOptions
-    , generateCsvCommand
-    , exportToCsv
-    , loadRows
-    , getTcpStreams
-    )
+module Pcap
+-- (PcapFrame, TsharkParams(..),
+--     defaultTsharkPrefs
+--     , defaultTsharkOptions
+--     , generateCsvCommand
+--     , exportToCsv
+--     , loadRows
+--     , getTcpStreams
+--     )
 where
 
 import Frames.InCore (VectorFor)

@@ -119,8 +119,8 @@ loadPcapIntoFrame params path = do
       opts :: TempFileOptions
       opts = TempFileOptions True
 
--- loadCsv :: Members [Log, Cache, P.State MyState, Embed IO] m => [String] -> Sem m RetCode
-loadCsv :: Members '[Log String, Cache, Embed IO] m => ArgsLoadPcap -> Sem m CMD.RetCode
+
+loadCsv :: Members '[Log String, State MyState, Cache, Embed IO] m => ArgsLoadPcap -> Sem m CMD.RetCode
 loadCsv parsedArgs = do
 
     log $ "Loading " ++ csvFilename
@@ -128,6 +128,7 @@ loadCsv parsedArgs = do
     frame <- liftIO $ loadRows csvFilename
     -- TODO restore
     -- loadedFile .= Just frame
+    modify (\s -> s { _loadedFile = Just frame })
     log $ "Number of rows " ++ show (frameLength frame)
     log "Frame loaded" >> return CMD.Continue
     where
