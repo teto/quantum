@@ -70,11 +70,6 @@ listTcpOpts = info (
 -- checkIfLoaded = 
     -- putStrLn "not loaded"
 
-
--- | Tcp connection
--- TcpConnection
-buildConnectionFromTcpStreamId :: PcapFrame -> StreamId Tcp -> Either String Int
-buildConnectionFromTcpStreamId frame (StreamId streamId) =
     -- Search for SYN flags
     -- filterFrame
     -- Producer Income m ()
@@ -84,17 +79,52 @@ buildConnectionFromTcpStreamId frame (StreamId streamId) =
     -- L.genericLength
     -- filterFrame :: RecVec rs => (Record rs -> Bool) -> FrameRec rs -> FrameRec rs
 
-    Right $ filterFrame  (\x -> x ^. tcpStream == streamId) frame
+-- | Tcp connection
+-- TcpConnection
+buildConnectionFromTcpStreamId :: PcapFrame -> StreamId Tcp -> Either String Int
+buildConnectionFromTcpStreamId frame (StreamId streamId) = 
+    Right $ frameLength packets
+    where
+      packets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
+      -- this is as hex
+      -- synFlags = filterFrame (\x -> x ^.  == ) packets 
+      -- syns = np.bitwise_and(df['tcpflags'], TcpFlags.SYN)
+      -- frame >-> P.filter fromStreamId >-> L.genericLength
+      -- where
+      --       fromStreamId = (== streamId) . view tcpStream
 
-    -- frame >-> P.filter fromStreamId >-> L.genericLength
-
-    -- where
-    --       fromStreamId = (== streamId) . view tcpStream
-
+{-| Show a list of all connections
+8 tcp connection(s)
+  tcp.stream 0: 10.0.0.1:33782 -> 10.0.0.2:05201
+  tcp.stream 1: 10.0.0.1:33784 -> 10.0.0.2:05201
+  tcp.stream 2: 10.0.0.1:54595 -> 11.0.0.2:05201
+  tcp.stream 3: 10.0.0.1:57491 -> 11.0.0.2:05201
+  tcp.stream 4: 11.0.0.1:59555 -> 11.0.0.2:05201
+  tcp.stream 5: 11.0.0.1:50077 -> 11.0.0.2:05201
+  tcp.stream 6: 11.0.0.1:35589 -> 10.0.0.2:05201
+  tcp.stream 7: 11.0.0.1:50007 -> 10.0.0.2:05201
+-}
 listTcpConnections :: Members [Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
 listTcpConnections args = do
+    -- TODO this part should be extracted so that
     state <- P.get
     let loadedPcap = view loadedFile state
+    case loadedPcap of
+      Nothing -> log "please load a pcap first" >> return CMD.Continue
+      Just frame -> do
+        let tcpStreams = getTcpStreams frame
+        log $ "Number of rows " ++ show (frameLength frame)
+        log $ "Number of TCP connections " ++ show (length tcpStreams)
+        >> return CMD.Continue
+
+{-| Display statistics for the connection:
+throughput/goodput
+-}
+tcpSummary :: Members [Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
+tcpSummary args = do
+    state <- P.get
+    let loadedPcap = view loadedFile state
+
     case loadedPcap of
       Nothing -> log "please load a pcap first" >> return CMD.Continue
       Just frame -> do
@@ -103,11 +133,11 @@ listTcpConnections args = do
         >> return CMD.Continue
 
 
-listTcpConnectionsInFrame :: PcapFrame -> IO ()
-listTcpConnectionsInFrame frame = do
-  putStrLn "Listing tcp connections"
-  let streamIds = getTcpStreams frame
-  mapM_ print streamIds
+-- listTcpConnectionsInFrame :: PcapFrame -> IO ()
+-- listTcpConnectionsInFrame frame = do
+--   putStrLn "Listing tcp connections"
+--   let streamIds = getTcpStreams frame
+--   mapM_ print streamIds
 
   -- L.fold L.minimum (view age <$> ms)
   -- L.fold

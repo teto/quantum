@@ -52,6 +52,9 @@ import qualified Control.Foldl as L
 import Control.Lens
 -- import qualified Data.Vector as V
 import Data.Word (Word16, Word32, Word64)
+import Net.Tcp
+-- import Net.Tcp.Constants
+import Numeric (readHex)
 
 -- instance Parseable TsharkField where
 --   representableAsType
@@ -97,6 +100,21 @@ instance Frames.ColumnTypeable.Parseable IP where
     Nothing -> return $ Possibly $ ipv4 0 0 0 0
     Just ip -> return $ Definitely ip
 
+
+
+-- instance Frames.ColumnTypeable.Parseable Word64 where
+--   parse = parseIntish
+
+instance Frames.ColumnTypeable.Parseable [TcpFlag] where
+  parse text = case readHex (T.unpack text) of
+    -- TODO generate
+    [(_x, "")] -> return $ Definitely [TcpFlagSyn]
+    _ -> error $ "could not parse " ++ T.unpack text
+
+-- tcpFlags as a list of flags
+
+type TcpFlagList = [TcpFlag]
+
 declareColumn "frameNumber" ''Word64
 declareColumn "interfaceName" ''Text
 declareColumn "frameEpoch" ''IP
@@ -106,7 +124,8 @@ declareColumn "tcpStream" '' Word32
 declareColumn "mptcpStream" '' Word32
 declareColumn "tcpSrcPort" ''Word16
 declareColumn "tcpDestPort" ''Word16
-declareColumn "tcpFlags" ''Text
+-- declareColumn "tcpFlags" ''Text
+declareColumn "tcpFlags" ''TcpFlagList
 declareColumn "tcpOptionKinds" ''Text
 declareColumn "tcpSeq" ''Word32
 declareColumn "tcpLen" ''Word16
@@ -147,6 +166,7 @@ type instance VectorFor Word16 = V.Vector
 type instance VectorFor Word32 = V.Vector
 type instance VectorFor Word64 = V.Vector
 type instance VectorFor IP = V.Vector
+type instance VectorFor TcpFlagList = V.Vector
 
 -- type PcapFrame = Frame Packet
 type PcapFrame = Frame ManRowPacket

@@ -18,6 +18,7 @@ data Command m a where
   LoadCsv :: ArgsLoadPcap -> Command m RetCode
   LoadPcap :: ArgsLoadPcap -> Command m RetCode
   ListTcpConnections :: ParserListSubflows -> Command m RetCode
+  TcpSummary :: ParserListSubflows -> Command m RetCode
   PrintHelp :: Command m RetCode
 
 makeSem ''Command

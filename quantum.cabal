@@ -69,7 +69,7 @@ common shared-properties
        , vinyl
        , vector
        , haskeline >= 0.8.0.0
-       , mptcp-pm >= 0.0.3
+       , mptcp-pm >= 0.0.4
     default-language: Haskell2010
     -- -fno-warn-unused-imports
     -- -fforce-recomp  makes it build twice

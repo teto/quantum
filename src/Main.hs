@@ -38,7 +38,7 @@ import MptcpAnalyzer.Commands.Utils (RetCode(..), DefaultMembers)
 import qualified MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands
 import MptcpAnalyzer.Commands.Definitions
-import MptcpAnalyzer.Commands.List
+import MptcpAnalyzer.Commands.List as CLI
 import qualified MptcpAnalyzer.Commands.Load as CL
 
 -- Member, , Embed 
@@ -329,7 +329,9 @@ inputLoop = do
 
             "load-csv" -> genericRunCommand CL.loadCsvOpts args
 
-            "list-tcp" -> genericRunCommand listTcpOpts args
+            "list-tcp" -> genericRunCommand CLI.listTcpOpts args
+
+            "tcp-summary" -> genericRunCommand CLI.tcpSummary args
 
             _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
 

@@ -8,3 +8,5 @@ cabal run mptcpanalyzer -- --log-level=InfoS
 
 Install zsh
 --zsh-completion-script
+
+# How to develop
