@@ -40,8 +40,8 @@ import MptcpAnalyzer.Commands
 import MptcpAnalyzer.Commands.Definitions
 import MptcpAnalyzer.Commands.List as CLI
 import qualified MptcpAnalyzer.Commands.Load as CL
+import Control.Monad (void)
 
--- Member, , Embed 
 import Polysemy (Sem, Members, runFinal, Final)
 import qualified Polysemy as P
 -- import Polysemy.Reader as P
@@ -65,17 +65,6 @@ import Pcap ()
 import Pipes hiding (Proxy)
 
 
--- newtype MyStack m a = MyStack {
---     unAppT :: StateT MyState m a
--- } deriving (Monad, Applicative, Functor
---     , MonadIO
---     -- , Cache
---     -- , MonadReader MyState m
---     , MonadState MyState
---     , MonadThrow
---     , MonadCatch
---     , MonadMask
---     )
 data Severity = TraceS | DebugS | InfoS | ErrorS deriving (Read, Show, Eq)
 
 data CLIArguments = CLIArguments {
@@ -89,12 +78,6 @@ data CLIArguments = CLIArguments {
 
 loggerName :: String
 loggerName = "main"
-
-
-data Sample = Sample
-  { hello      :: String
-  , quiet      :: Bool
-  , enthusiasm :: Int }
 
 
 -- noCompletion
@@ -255,24 +238,30 @@ main = do
 
   putStrLn "Commands"
   print $ extraCommands options
+
   let haskelineSettings = defaultSettings {
       historyFile = Just $ cacheFolderXdg </> "history"
       }
 
+  -- TODO if there is an exit, exit, should be a fold ?
+  -- mapM_ (runApp myState . words) (extraCommands options)
+
   _ <- runInputT haskelineSettings $
-          runFinal @(InputT IO) 
+          runFinal @(InputT IO)
           $ P.embedToFinal . P.runEmbedded lift
           $ P.runState myState
           $ runCache
           $ runLogAction @IO logStringStdout inputLoop
   putStrLn "Thanks for flying with mptcpanalyzer"
 
--- , P.Embed IO
-testLoop :: Members '[ Log String, P.Embed IO, Final (InputT IO)] r => Sem r ()
-testLoop = do
-  _minput <- P.embedFinal $ getInputLine "prompt>"
-  log "test"
-  return ()
+-- $ P.embed (pure Continue)
+-- runApp :: MyState -> [String] -> IO RetCode
+-- runApp state parsedCmd = 
+--      P.run $ P.runEmbedded lift
+--         $ P.runState state
+--         $ runCache
+--         $ runLogAction @IO logStringStdout
+--         $ runCommandStr parsedCmd
 
 -- type CommandList m = HM.Map String (CommandCb m)
 -- commands :: Members DefaultMembers r => HM.Map String (Sem r RetCode)
@@ -298,6 +287,17 @@ testLoop = do
 
 -- liftIO $ putStrLn doPrintHelp >> 
 
+-- |
+runCommandStr ::  Members '[Log String, Cache, P.State MyState, P.Embed IO] r => [String] -> Sem r RetCode
+runCommandStr [] = return $ CMD.Error "Please enter a command"
+runCommandStr (commandStr:args) = do
+  case commandStr of
+    "loadPcap" -> genericRunCommand CL.loadPcapOpts args
+    "load-csv" -> genericRunCommand CL.loadCsvOpts args
+    "list-tcp" -> genericRunCommand CLI.listTcpOpts args
+    "tcp-summary" -> genericRunCommand CLI.tcpSummaryOpts args
+    _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
+
 genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
 genericRunCommand parserInfo args = do
   let parserResult = execParserPure defaultParserPrefs parserInfo args
@@ -320,24 +320,10 @@ inputLoop = do
         Nothing -> do
           log "please enter a valid command, see help"
           return CMD.Continue
-        Just [] -> return $ CMD.Error "Please enter a command"
-
-        -- Just (commandStr:_) -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
-        Just (commandStr:args) ->
-          case commandStr of
-            "loadPcap" -> genericRunCommand CL.loadPcapOpts args
-
-            "load-csv" -> genericRunCommand CL.loadCsvOpts args
-
-            "list-tcp" -> genericRunCommand CLI.listTcpOpts args
-
-            "tcp-summary" -> genericRunCommand CLI.tcpSummary args
-
-            _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
-
+        Just args -> runCommandStr args
 
     case cmdCode of
-        CMD.Exit -> return ()
+        CMD.Exit -> void (log "Exiting")
         CMD.Error msg -> do
           log $ "Last command failed with message:\n" ++ show msg
           inputLoop
@@ -348,9 +334,3 @@ inputLoop = do
 -- runCommand :: CommandCb -> [String] -> Sem r CMD.RetCode
 -- runCommand callback args = do
 --     callback args
-
-
-data SimpleData = SimpleData {
-      mainStr :: String
-      , optionalHello      :: String
-    }

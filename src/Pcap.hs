@@ -21,6 +21,7 @@ module Pcap
 --     )
 where
 
+import Data.Bits as B
 import Frames.InCore (VectorFor)
 import qualified Data.Vector as V
 -- import Frames.InCore (VectorFor)
@@ -105,8 +106,20 @@ instance Frames.ColumnTypeable.Parseable IP where
 -- instance Frames.ColumnTypeable.Parseable Word64 where
 --   parse = parseIntish
 
+-- TODO these should be generated
+tcpFlagRef :: TcpFlag -> Word32
+tcpFlagRef TcpFlagFin = 1
+tcpFlagRef TcpFlagSyn = 2
+tcpFlagRef TcpFlagAck = 8
+
+numberToTcpFlags :: Int -> [TcpFlag]
+numberToTcpFlags n = filter  (B.(.&.) n) [TcpFlagSyn, TcpFlagAck, TcpFlagFin ]
+
+-- could not parse 0x00000002
+-- strip leading 0x
 instance Frames.ColumnTypeable.Parseable [TcpFlag] where
-  parse text = case readHex (T.unpack text) of
+  -- 
+  parse text = case readHex (T.unpack $ T.drop 2 text) of
     -- TODO generate
     [(_x, "")] -> return $ Definitely [TcpFlagSyn]
     _ -> error $ "could not parse " ++ T.unpack text

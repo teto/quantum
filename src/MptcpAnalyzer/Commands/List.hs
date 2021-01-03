@@ -55,8 +55,12 @@ listTcpOpts = info (
    CMD.listTcpConnections <$> parserSubflow <**> helper)
   ( progDesc "List subflows of an MPTCP connection"
   )
-  -- <> header ""
-  -- <> footer ""
+
+tcpSummaryOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
+tcpSummaryOpts = info (
+   CMD.tcpSummary <$> parserSubflow <**> helper)
+  ( progDesc "Detail a specific TCP connection"
+  )
 
 -- listTcpConnections :: [TcpConnection] -> Text
 -- listTcpConnections conns =
@@ -83,11 +87,11 @@ listTcpOpts = info (
 -- TcpConnection
 buildConnectionFromTcpStreamId :: PcapFrame -> StreamId Tcp -> Either String Int
 buildConnectionFromTcpStreamId frame (StreamId streamId) = 
-    Right $ frameLength packets
+    Right $ frameLength synPackets
     where
-      packets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
-      -- this is as hex
-      -- synFlags = filterFrame (\x -> x ^.  == ) packets 
+      streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
+      -- suppose tcpflags is a list of flags, check if it is in the list
+      synPackets = filterFrame (flip elem streamPackets) streamPackets
       -- syns = np.bitwise_and(df['tcpflags'], TcpFlags.SYN)
       -- frame >-> P.filter fromStreamId >-> L.genericLength
       -- where
@@ -105,7 +109,7 @@ buildConnectionFromTcpStreamId frame (StreamId streamId) =
   tcp.stream 7: 11.0.0.1:50007 -> 10.0.0.2:05201
 -}
 listTcpConnections :: Members [Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
-listTcpConnections args = do
+listTcpConnections _args = do
     -- TODO this part should be extracted so that
     state <- P.get
     let loadedPcap = view loadedFile state
@@ -124,13 +128,15 @@ tcpSummary :: Members [Log String, P.State MyState, Cache, Embed IO] r => Parser
 tcpSummary args = do
     state <- P.get
     let loadedPcap = view loadedFile state
-
     case loadedPcap of
       Nothing -> log "please load a pcap first" >> return CMD.Continue
       Just frame -> do
         let _tcpstreams = getTcpStreams frame
         log $ "Number of rows " ++ show (frameLength frame)
+        log $ "Number of SYN paclets " ++ show tcpCon
         >> return CMD.Continue
+        where
+            tcpCon = buildConnectionFromTcpStreamId frame (tcpStreamId args)
 
 
 -- listTcpConnectionsInFrame :: PcapFrame -> IO ()
