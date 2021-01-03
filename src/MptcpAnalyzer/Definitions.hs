@@ -2,7 +2,7 @@
 module MptcpAnalyzer.Definitions
 where
 
-import Pcap
+import MptcpAnalyzer.Pcap
 -- import Lens.Micro
 import Control.Lens
 import Options.Applicative

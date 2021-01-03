@@ -106,7 +106,10 @@ common shared-properties
 -- and delegate the behavior to a monitor
 executable mptcpanalyzer
     import: shared-properties
-    Other-modules:     Tshark.TH, Pcap, MptcpAnalyzer.Cache
+    Other-modules:
+        Tshark.TH
+        , MptcpAnalyzer.Pcap
+        , MptcpAnalyzer.Cache
         , MptcpAnalyzer.Commands
         , MptcpAnalyzer.Commands.Definitions
         , MptcpAnalyzer.Commands.Load, Columns, MptcpAnalyzer.Commands.Utils
@@ -119,10 +122,12 @@ executable mptcpanalyzer
     main-is: Main.hs
     hs-source-dirs: src/
 
--- Test-Suite test
+Test-Suite test
 --   -- 2 types supported, exitcode is based on ... exit codes ....
---   type:               exitcode-stdio-1.0
---   main-is:            test/Main.hs
---   Other-modules:     Pcap, Columns
---   build-depends:      base >=4.12 && <4.20
---                      , HUnit
+  type:               exitcode-stdio-1.0
+  main-is:            test/Pcap.hs
+  -- Other-modules:     Pcap, Columns
+
+  build-depends:      base >=4.12 && <4.20
+                     , HUnit
+                     , HUnit

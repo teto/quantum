@@ -4,7 +4,7 @@ module MptcpAnalyzer.Commands.Load
 where
 import Frames
 -- import Frames.CSV
-import Pcap
+import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands.Definitions as CMD
 import Options.Applicative

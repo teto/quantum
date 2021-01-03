@@ -12,7 +12,7 @@ import MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Definitions
 import Net.Tcp.Definitions (TcpConnection(..))
 import Options.Applicative
-import Pcap
+import MptcpAnalyzer.Pcap
 import Frames
 import Control.Lens hiding (argument)
 import Polysemy (Member, Members, Sem, Embed)

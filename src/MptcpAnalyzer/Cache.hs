@@ -3,7 +3,7 @@
 module MptcpAnalyzer.Cache
 where
 
-import Pcap
+import MptcpAnalyzer.Pcap
 import Data.List (intercalate)
 import System.FilePath.Posix (takeBaseName)
 

@@ -10,7 +10,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts, QuasiQuotes #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Pcap
+module MptcpAnalyzer.Pcap
 -- (PcapFrame, TsharkParams(..),
 --     defaultTsharkPrefs
 --     , defaultTsharkOptions
@@ -21,7 +21,7 @@ module Pcap
 --     )
 where
 
-import Data.Bits as B
+import Data.Bits ((.&.))
 import Frames.InCore (VectorFor)
 import qualified Data.Vector as V
 -- import Frames.InCore (VectorFor)
@@ -107,13 +107,16 @@ instance Frames.ColumnTypeable.Parseable IP where
 --   parse = parseIntish
 
 -- TODO these should be generated
-tcpFlagRef :: TcpFlag -> Word32
+tcpFlagRef :: TcpFlag -> Int
 tcpFlagRef TcpFlagFin = 1
 tcpFlagRef TcpFlagSyn = 2
 tcpFlagRef TcpFlagAck = 8
 
 numberToTcpFlags :: Int -> [TcpFlag]
-numberToTcpFlags n = filter  (B.(.&.) n) [TcpFlagSyn, TcpFlagAck, TcpFlagFin ]
+numberToTcpFlags n = Prelude.filter  (\x -> combi x /= 0 ) list
+    where
+        combi x = (.&.) n (tcpFlagRef x)
+        list = [TcpFlagSyn, TcpFlagAck, TcpFlagFin ]
 
 -- could not parse 0x00000002
 -- strip leading 0x

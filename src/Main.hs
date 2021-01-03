@@ -61,7 +61,7 @@ import Control.Lens ( (^.), view, set)
 -- Repline is a wrapper (suppposedly more advanced) around haskeline
 -- for now we focus on the simple usecase with repline
 -- import System.Console.Repline
-import Pcap ()
+import MptcpAnalyzer.Pcap ()
 import Pipes hiding (Proxy)
 
 
