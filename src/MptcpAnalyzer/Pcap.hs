@@ -21,7 +21,6 @@ module MptcpAnalyzer.Pcap
 --     )
 where
 
-import Data.Bits ((.&.))
 import Frames.InCore (VectorFor)
 import qualified Data.Vector as V
 -- import Frames.InCore (VectorFor)
@@ -106,25 +105,14 @@ instance Frames.ColumnTypeable.Parseable IP where
 -- instance Frames.ColumnTypeable.Parseable Word64 where
 --   parse = parseIntish
 
--- TODO these should be generated
-tcpFlagRef :: TcpFlag -> Int
-tcpFlagRef TcpFlagFin = 1
-tcpFlagRef TcpFlagSyn = 2
-tcpFlagRef TcpFlagAck = 8
 
-numberToTcpFlags :: Int -> [TcpFlag]
-numberToTcpFlags n = Prelude.filter  (\x -> combi x /= 0 ) list
-    where
-        combi x = (.&.) n (tcpFlagRef x)
-        list = [TcpFlagSyn, TcpFlagAck, TcpFlagFin ]
 
 -- could not parse 0x00000002
 -- strip leading 0x
 instance Frames.ColumnTypeable.Parseable [TcpFlag] where
-  -- 
   parse text = case readHex (T.unpack $ T.drop 2 text) of
     -- TODO generate
-    [(_x, "")] -> return $ Definitely [TcpFlagSyn]
+    [(n, "")] -> return $ Definitely $ numberToTcpFlags n
     _ -> error $ "could not parse " ++ T.unpack text
 
 -- tcpFlags as a list of flags
@@ -134,8 +122,8 @@ type TcpFlagList = [TcpFlag]
 declareColumn "frameNumber" ''Word64
 declareColumn "interfaceName" ''Text
 declareColumn "frameEpoch" ''IP
-declareColumn "IpSource" ''IP
-declareColumn "IpDest" ''IP
+declareColumn "ipSource" ''IP
+declareColumn "ipDest" ''IP
 declareColumn "tcpStream" '' Word32
 declareColumn "mptcpStream" '' Word32
 declareColumn "tcpSrcPort" ''Word16
@@ -146,6 +134,9 @@ declareColumn "tcpOptionKinds" ''Text
 declareColumn "tcpSeq" ''Word32
 declareColumn "tcpLen" ''Word16
 declareColumn "tcpAck" ''Word32
+
+-- TODO need to declare an explicit record type ?
+recDecExplicit
 
 type ManColumns = '["frame.number" :-> Word64
                     , "frame.interface_name" :-> String
@@ -161,7 +152,7 @@ type ManColumns = '["frame.number" :-> Word64
                     ]
 
 -- type ManRowPacket = Record ManColumns
-type ManRowPacket = Record [
+type ManRowPacket = Record '[
     FrameNumber
     , InterfaceName
     , FrameEpoch
@@ -175,6 +166,8 @@ type ManRowPacket = Record [
     , TcpAck
     -- , MptcpStream
     ]
+
+type Packet = ManColumns
 
 -- type ManMaybe = Rec (Maybe :. ElField) ManColumns
 -- TODO goal here is to choose the most performant Data.Vector

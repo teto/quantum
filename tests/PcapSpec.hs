@@ -3,15 +3,15 @@ module PcapSpec where
 -- import           Test.Tasty.HUnit
 import           Test.Hspec
 import           Test.QuickCheck                    hiding (Success)
+import           MptcpAnalyzer.Pcap
 
-import           
 
 
 main :: IO ()
 main = hspec $ do
   describe "absolute" $ do
     it "returns the original number when given a positive input" $
-      absolute 1 `shouldBe` 1
+      numberToTcpFlags 2 `shouldBe` [TcpFlagSyn]
 
 -- spec :: Spec
 -- spec = do

@@ -122,12 +122,13 @@ executable mptcpanalyzer
     main-is: Main.hs
     hs-source-dirs: src/
 
-Test-Suite test
---   -- 2 types supported, exitcode is based on ... exit codes ....
-  type:               exitcode-stdio-1.0
-  main-is:            test/Pcap.hs
-  -- Other-modules:     Pcap, Columns
+-- Test-Suite test
+-- --   -- 2 types supported, exitcode is based on ... exit codes ....
+--   type:               exitcode-stdio-1.0
+--   main-is:            test/Pcap.hs
+--   -- hs-source-dirs:     test
+--   -- Other-modules:     Pcap, Columns
 
-  build-depends:      base >=4.12 && <4.20
-                     , HUnit
-                     , HUnit
+--   build-depends:      base >=4.12 && <4.20
+--                      , HUnit
+--                      , quantum

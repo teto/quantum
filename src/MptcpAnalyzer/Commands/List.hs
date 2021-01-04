@@ -3,14 +3,12 @@
 module MptcpAnalyzer.Commands.List
 where
 
--- import Data.Text
--- import Net.Tcp
 import Prelude hiding (log)
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Definitions
-import Net.Tcp.Definitions (TcpConnection(..))
+import Net.Tcp (TcpConnection(..), TcpFlag(..))
 import Options.Applicative
 import MptcpAnalyzer.Pcap
 import Frames
@@ -83,19 +81,36 @@ tcpSummaryOpts = info (
     -- L.genericLength
     -- filterFrame :: RecVec rs => (Record rs -> Bool) -> FrameRec rs -> FrameRec rs
 
+buildConnectionFromRow :: Record Packet -> TcpConnection
+buildConnectionFromRow r = 
+  TcpConnection {
+    srcIp = r ^. ipSource
+    , dstIp = r ^. ipDest
+    , srcPort = r ^. tcpSrcPort
+    , dstPort = r ^. tcpDstPort
+    , priority = Nothing  -- for now
+    , localId = 0
+    , remoteId = 0
+    , subflowInterface = Nothing
+  }
+
 -- | Tcp connection
 -- TcpConnection
-buildConnectionFromTcpStreamId :: PcapFrame -> StreamId Tcp -> Either String Int
+buildConnectionFromTcpStreamId :: PcapFrame -> StreamId Tcp -> Either String TcpConnection
 buildConnectionFromTcpStreamId frame (StreamId streamId) = 
-    Right $ frameLength synPackets
+    -- Right $ frameLength synPackets
+    if frameLength synPackets < 1 then
+      Left "No packet with any SYN flag for tcpstream " ++ show streamId
+    else
+      buildConnectionFromRow $ head synPackets
     where
       streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
       -- suppose tcpflags is a list of flags, check if it is in the list
-      synPackets = filterFrame (flip elem streamPackets) streamPackets
-      -- syns = np.bitwise_and(df['tcpflags'], TcpFlags.SYN)
-      -- frame >-> P.filter fromStreamId >-> L.genericLength
-      -- where
-      --       fromStreamId = (== streamId) . view tcpStream
+      synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
+        -- where
+          -- syns = np.bitwise_and(df['tcpflags'], TcpFlags.SYN)
+          -- filterSyn flags = elem TcpFlagSyn flags
+        --       fromStreamId = (== streamId) . view tcpStream
 
 {-| Show a list of all connections
 8 tcp connection(s)
