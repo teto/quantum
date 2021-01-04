@@ -121,7 +121,7 @@ type TcpFlagList = [TcpFlag]
 
 declareColumn "frameNumber" ''Word64
 declareColumn "interfaceName" ''Text
-declareColumn "frameEpoch" ''IP
+declareColumn "frameEpoch" ''Text
 declareColumn "ipSource" ''IP
 declareColumn "ipDest" ''IP
 declareColumn "tcpStream" '' Word32
@@ -136,7 +136,23 @@ declareColumn "tcpLen" ''Word16
 declareColumn "tcpAck" ''Word32
 
 -- TODO need to declare an explicit record type ?
-recDecExplicit
+-- recDecExplicit :: [(T.Text, Q Type)] -> Q Type
+-- recDecExplicit [
+--     ("frameNumber", ''Word64)
+--     , ("interfaceName", ''Text)
+--     , ("frameEpoch", ''Text)
+--     , ("ipSource", ''IP)
+--     , ("ipDest", ''IP)
+--     , ("tcpStream", ''Word32)
+--     , ("mptcpStream",''Word32)
+--     , ("tcpSrcPort", ''Word16)
+--     , ("tcpDestPort",''Word16)
+--     , ("tcpFlags", ''TcpFlagList)
+--     , ("tcpOptionKinds", ''Text)
+--     , ("tcpSeq" , ''Word32)
+--     , ("tcpLen" , ''Word16)
+--     , ("tcpAck" , ''Word32)
+--     ]
 
 type ManColumns = '["frame.number" :-> Word64
                     , "frame.interface_name" :-> String

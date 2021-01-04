@@ -81,13 +81,14 @@ tcpSummaryOpts = info (
     -- L.genericLength
     -- filterFrame :: RecVec rs => (Record rs -> Bool) -> FrameRec rs -> FrameRec rs
 
+-- ManRowPacket
 buildConnectionFromRow :: Record Packet -> TcpConnection
-buildConnectionFromRow r = 
+buildConnectionFromRow r =
   TcpConnection {
     srcIp = r ^. ipSource
     , dstIp = r ^. ipDest
     , srcPort = r ^. tcpSrcPort
-    , dstPort = r ^. tcpDstPort
+    , dstPort = r ^. tcpDestPort
     , priority = Nothing  -- for now
     , localId = 0
     , remoteId = 0
@@ -100,12 +101,13 @@ buildConnectionFromTcpStreamId :: PcapFrame -> StreamId Tcp -> Either String Tcp
 buildConnectionFromTcpStreamId frame (StreamId streamId) = 
     -- Right $ frameLength synPackets
     if frameLength synPackets < 1 then
-      Left "No packet with any SYN flag for tcpstream " ++ show streamId
+      Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
     else
-      buildConnectionFromRow $ head synPackets
+      Right $ buildConnectionFromRow $ head (frameRow synPackets)
     where
       streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
       -- suppose tcpflags is a list of flags, check if it is in the list
+      -- of type FrameRec [(Symbol, *)]
       synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
         -- where
           -- syns = np.bitwise_and(df['tcpflags'], TcpFlags.SYN)
