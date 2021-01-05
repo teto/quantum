@@ -2,6 +2,7 @@ module MptcpAnalyzer.Commands.Definitions
 where
 import MptcpAnalyzer.Commands.Utils
 import MptcpAnalyzer.Definitions
+import MptcpAnalyzer.Pcap
 
 import Polysemy (Sem, Members, makeSem, interpret, Effect)
 

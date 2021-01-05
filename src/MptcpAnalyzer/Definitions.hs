@@ -18,12 +18,7 @@ data MyState = MyState {
 
 makeLenses ''MyState
 
--- Phantom types
-data Mptcp
-data Tcp
 
--- TODO use Word instead
-newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord)
 
 defaultParserPrefs :: ParserPrefs
 defaultParserPrefs = defaultPrefs

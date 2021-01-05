@@ -27,6 +27,8 @@ import qualified Data.Vector as V
 import qualified Data.Text as T
 import Tshark.TH
 -- import Net.IP
+-- creates cycle
+-- import MptcpAnalyzer.Definitions
 import System.IO (Handle, hGetContents)
 import System.Process
 import System.Exit
@@ -55,6 +57,14 @@ import Data.Word (Word16, Word32, Word64)
 import Net.Tcp
 -- import Net.Tcp.Constants
 import Numeric (readHex)
+  --
+  --
+-- Phantom types
+data Mptcp
+data Tcp
+
+-- TODO use Word instead
+newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord)
 
 -- instance Parseable TsharkField where
 --   representableAsType
@@ -124,11 +134,11 @@ declareColumn "interfaceName" ''Text
 declareColumn "frameEpoch" ''Text
 declareColumn "ipSource" ''IP
 declareColumn "ipDest" ''IP
-declareColumn "tcpStream" '' Word32
-declareColumn "mptcpStream" '' Word32
+-- TODO use tcpStream instead
+declareColumn "tcpStream" ''Word32
+declareColumn "mptcpStream" ''Word32
 declareColumn "tcpSrcPort" ''Word16
 declareColumn "tcpDestPort" ''Word16
--- declareColumn "tcpFlags" ''Text
 declareColumn "tcpFlags" ''TcpFlagList
 declareColumn "tcpOptionKinds" ''Text
 declareColumn "tcpSeq" ''Word32
@@ -154,36 +164,78 @@ declareColumn "tcpAck" ''Word32
 --     , ("tcpAck" , ''Word32)
 --     ]
 
-type ManColumns = '["frame.number" :-> Word64
-                    , "frame.interface_name" :-> String
-                    -- TODO make it as a timestamp, Word64 for instance
-                    , "frame.time_epoch" :-> String
-                    , "_ws.col.ipsrc" :-> IP
-                    , "_ws.col.ipdst" :-> IP
-                    , "tcp.stream" :-> Word32
-                    , "tcp.flags" :-> String
-                    , "mptcp.stream" :-> Word32
-                    , "tcp.srcport" :-> Word16
-                    , "tcp.dstport" :-> Word16
-                    ]
+-- type ManColumns = '[
+--     "frameNumber" -> Word64
+--     , "interfaceName" -> Text
+--     , "frameEpoch" -> Text
+--     , "ipSource" -> IP
+--     , "ipDest" -> IP
+--     , "tcpStream" -> Word32
+--     , "mptcpStream" -> Word32
+--     , "tcpSrcPort" -> Word16
+--     , "tcpDestPort" -> Word16
+--     , "tcpFlags" -> TcpFlagList
+--     , "tcpOptionKinds" -> Text
+--     , "tcpSeq"  -> Word32
+--     , "tcpLen"  -> Word16
+--     , "tcpAck"  -> Word32
+--     ]
+
+-- type ManColumns = '[
+--   frameNumber
+--     , "frame.interface_name" :-> String
+--     -- TODO make it as a timestamp, Word64 for instance
+--     , "frame.time_epoch" :-> String
+--     , "_ws.col.ipsrc" :-> IP
+--     , "_ws.col.ipdst" :-> IP
+--     , "tcp.stream" :-> Word32
+--     , "tcp.flags" :-> String
+--     , "mptcp.stream" :-> Word32
+--     , "tcp.srcport" :-> Word16
+--     , "tcp.dstport" :-> Word16
+--     , "tcp.flags" :-> TcpFlagList
+--     , "tcp.option_kind" :-> Text
+--     , "tcp.seq" :-> Word32
+--     , "tcp.len" :-> Word16
+--     , "tcp.ack" :-> Word32
+--     ]
+
+type ManColumnsTshark = '[
+      "frame.number" :-> Word64
+      , "frame.interface_name" :-> Text
+      -- TODO make it as a timestamp, Word64 for instance
+      , "frame.time_epoch" :-> Text
+      , "_ws.col.ipsrc" :-> IP
+      , "_ws.col.ipdst" :-> IP
+      , "tcp.stream" :-> Word32
+      , "tcp.flags" :-> Text
+      , "mptcp.stream" :-> Word32
+      , "tcp.srcport" :-> Word16
+      , "tcp.dstport" :-> Word16
+      , "tcp.flags" :-> TcpFlagList
+      , "tcp.option_kind" :-> Text
+      , "tcp.seq" :-> Word32
+      , "tcp.len" :-> Word16
+      , "tcp.ack" :-> Word32
+      ]
 
 -- type ManRowPacket = Record ManColumns
-type ManRowPacket = Record '[
-    FrameNumber
-    , InterfaceName
-    , FrameEpoch
-    , IpSource, IpDest
-    , TcpStream
-    , TcpSrcPort, TcpDestPort
-    , TcpFlags
-    , TcpOptionKinds
-    , TcpSeq
-    , TcpLen
-    , TcpAck
-    -- , MptcpStream
-    ]
+-- type ManRowPacket = Record '[
+--     FrameNumber
+--     , InterfaceName
+--     , FrameEpoch
+--     , IpSource, IpDest
+--     , TcpStream
+--     , TcpSrcPort, TcpDestPort
+--     , TcpFlags
+--     , TcpOptionKinds
+--     , TcpSeq
+--     , TcpLen
+--     , TcpAck
+--     -- , MptcpStream
+--     ]
 
-type Packet = ManColumns
+-- type Packet = ManColumns
 
 -- type ManMaybe = Rec (Maybe :. ElField) ManColumns
 -- TODO goal here is to choose the most performant Data.Vector
@@ -193,8 +245,11 @@ type instance VectorFor Word64 = V.Vector
 type instance VectorFor IP = V.Vector
 type instance VectorFor TcpFlagList = V.Vector
 
+-- row / ManRow
+type Packet = Record ManColumnsTshark
+
 -- type PcapFrame = Frame Packet
-type PcapFrame = Frame ManRowPacket
+type PcapFrame = Frame Packet
 
 
 data TsharkParams = TsharkParams {
@@ -207,10 +262,13 @@ data TsharkParams = TsharkParams {
 defaultParserOptions :: ParserOptions
 defaultParserOptions = ParserOptions Nothing (T.pack [csvDelimiter defaultTsharkPrefs]) NoQuoting
 
--- nub => remove duplicates
+-- -- nub => remove duplicates
+-- or just get the column
 getTcpStreams :: PcapFrame -> [Word32]
 getTcpStreams ps =
-    L.fold L.nub (view tcpStream <$> ps)
+   -- (rgetField @TcpStream)
+    L.fold L.nub (rgetField @TcpStream)
+    -- (view tcpStream <$> ps)
 
 
 -- |Generate the tshark command to export a pcap into a csv

@@ -82,7 +82,7 @@ tcpSummaryOpts = info (
     -- filterFrame :: RecVec rs => (Record rs -> Bool) -> FrameRec rs -> FrameRec rs
 
 -- ManRowPacket
-buildConnectionFromRow :: Record Packet -> TcpConnection
+buildConnectionFromRow :: Packet -> TcpConnection
 buildConnectionFromRow r =
   TcpConnection {
     srcIp = r ^. ipSource
@@ -103,7 +103,7 @@ buildConnectionFromTcpStreamId frame (StreamId streamId) =
     if frameLength synPackets < 1 then
       Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
     else
-      Right $ buildConnectionFromRow $ head (frameRow synPackets)
+      Right $ buildConnectionFromRow $ frameRow synPackets 0
     where
       streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
       -- suppose tcpflags is a list of flags, check if it is in the list
