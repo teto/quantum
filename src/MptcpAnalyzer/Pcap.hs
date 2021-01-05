@@ -123,7 +123,7 @@ instance Frames.ColumnTypeable.Parseable [TcpFlag] where
   parse text = case readHex (T.unpack $ T.drop 2 text) of
     -- TODO generate
     [(n, "")] -> return $ Definitely $ numberToTcpFlags n
-    _ -> error $ "could not parse " ++ T.unpack text
+    _ -> error $ "TcpFlags: could not parse " ++ T.unpack text
 
 -- tcpFlags as a list of flags
 
@@ -164,22 +164,23 @@ declareColumn "tcpAck" ''Word32
 --     , ("tcpAck" , ''Word32)
 --     ]
 
--- type ManColumns = '[
---     "frameNumber" -> Word64
---     , "interfaceName" -> Text
---     , "frameEpoch" -> Text
---     , "ipSource" -> IP
---     , "ipDest" -> IP
---     , "tcpStream" -> Word32
---     , "mptcpStream" -> Word32
---     , "tcpSrcPort" -> Word16
---     , "tcpDestPort" -> Word16
---     , "tcpFlags" -> TcpFlagList
---     , "tcpOptionKinds" -> Text
---     , "tcpSeq"  -> Word32
---     , "tcpLen"  -> Word16
---     , "tcpAck"  -> Word32
---     ]
+type ManColumnsTshark = '[
+    "frameNumber" :-> Word64
+    , "interfaceName" :-> Text
+    , "frameEpoch" :-> Text
+    , "ipSource" :-> IP
+    , "ipDest" :-> IP
+    , "tcpStream" :-> Word32
+    , "tcpSrcPort" :-> Word16
+    , "tcpDestPort" :-> Word16
+    , "tcpFlags" :-> TcpFlagList
+    , "tcpOptionKinds" :-> Text
+    , "tcpSeq"  :-> Word32
+    , "tcpLen"  :-> Word16
+    , "tcpAck"  :-> Word32
+        -- , "mptcpStream" :-> Word32
+
+    ]
 
 -- type ManColumns = '[
 --   frameNumber
@@ -200,24 +201,43 @@ declareColumn "tcpAck" ''Word32
 --     , "tcp.ack" :-> Word32
 --     ]
 
-type ManColumnsTshark = '[
-      "frame.number" :-> Word64
-      , "frame.interface_name" :-> Text
-      -- TODO make it as a timestamp, Word64 for instance
-      , "frame.time_epoch" :-> Text
-      , "_ws.col.ipsrc" :-> IP
-      , "_ws.col.ipdst" :-> IP
-      , "tcp.stream" :-> Word32
-      , "tcp.flags" :-> Text
-      , "mptcp.stream" :-> Word32
-      , "tcp.srcport" :-> Word16
-      , "tcp.dstport" :-> Word16
-      , "tcp.flags" :-> TcpFlagList
-      , "tcp.option_kind" :-> Text
-      , "tcp.seq" :-> Word32
-      , "tcp.len" :-> Word16
-      , "tcp.ack" :-> Word32
-      ]
+-- type ManColumnsTshark = '[
+--       "frame.number" :-> Word64
+--       , "frame.interface_name" :-> Text
+--       -- TODO make it as a timestamp, Word64 for instance
+--       , "frame.time_epoch" :-> Text
+--       , "_ws.col.ipsrc" :-> IP
+--       , "_ws.col.ipdst" :-> IP
+--       , "tcp.stream" :-> Word32
+--       , "tcp.flags" :-> Text
+--       , "mptcp.stream" :-> Word32
+--       , "tcp.srcport" :-> Word16
+--       , "tcp.dstport" :-> Word16
+--       , "tcp.flags" :-> TcpFlagList
+--       , "tcp.option_kind" :-> Text
+--       , "tcp.seq" :-> Word32
+--       , "tcp.len" :-> Word16
+--       , "tcp.ack" :-> Word32
+--       ]
+
+-- type ManColumnsTshark = '[
+--       "frame.number" :-> Word64
+--       , "frame.interface_name" :-> Text
+--       -- TODO make it as a timestamp, Word64 for instance
+--       , "frame.time_epoch" :-> Text
+--       , "_ws.col.ipsrc" :-> IP
+--       , "_ws.col.ipdst" :-> IP
+--       , "tcpStream" :-> Word32
+--       , "tcpflags" :-> Text
+--       , "mptcp.stream" :-> Word32
+--       , "tcp.srcport" :-> Word16
+--       , "tcp.dstport" :-> Word16
+--       , "tcp.flags" :-> TcpFlagList
+--       , "tcp.option_kind" :-> Text
+--       , "tcp.seq" :-> Word32
+--       , "tcp.len" :-> Word16
+--       , "tcp.ack" :-> Word32
+--       ]
 
 -- type ManRowPacket = Record ManColumns
 -- type ManRowPacket = Record '[
@@ -264,11 +284,10 @@ defaultParserOptions = ParserOptions Nothing (T.pack [csvDelimiter defaultTshark
 
 -- -- nub => remove duplicates
 -- or just get the column
+-- L.fold
 getTcpStreams :: PcapFrame -> [Word32]
 getTcpStreams ps =
-   -- (rgetField @TcpStream)
-    L.fold L.nub (rgetField @TcpStream)
-    -- (view tcpStream <$> ps)
+    L.fold L.nub (view tcpStream <$> ps)
 
 
 -- |Generate the tshark command to export a pcap into a csv

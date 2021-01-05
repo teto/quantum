@@ -201,15 +201,13 @@ opts = info (sample <**> helper)
 --   { optCommand :: CommandEnum
 --   }
 
--- -- (runCommand loadCsv)
--- commandParser :: Parser (Command m CMD.RetCode)
+-- commandParser :: Parser (Sem r CMD.RetCode)
 -- commandParser = hsubparser (
---       command "loadCsv" (info (
---           LoadCsv (CL.loadPcapParser)
+--       command "loadCsv" (CL.loadCsvOpts
+--         -- info ( LoadCsv (CL.loadPcapParser)
 --           )
---         ( progDesc "Load a CSV file" ))
---       -- <> command "loadPcap" (info loadPcap ( progDesc "Load a PCAP file" ))
---   )
+--         ( progDesc "Load a CSV file" )
+--       )
 
 -- just for testing, to remove afterwards
 defaultPcap :: FilePath
