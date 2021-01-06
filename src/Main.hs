@@ -201,13 +201,14 @@ opts = info (sample <**> helper)
 --   { optCommand :: CommandEnum
 --   }
 
--- commandParser :: Parser (Sem r CMD.RetCode)
--- commandParser = hsubparser (
---       command "loadCsv" (CL.loadCsvOpts
---         -- info ( LoadCsv (CL.loadPcapParser)
---           )
---         ( progDesc "Load a CSV file" )
---       )
+-- ( progDesc "Load a CSV file" )
+-- TODO use this command parser
+commandParser :: Members '[ Command ] r => Parser (Sem r CMD.RetCode)
+commandParser = subparser (
+    command "loadCsv" CL.loadCsvOpts
+    <> command "load-pcap" CL.loadPcapOpts
+    <> command "tcp-summary" CLI.tcpSummaryOpts
+    )
 
 -- just for testing, to remove afterwards
 defaultPcap :: FilePath
