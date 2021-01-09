@@ -248,11 +248,11 @@ main = do
 -- $ P.embed ( pure 4 :: IO Int)
 -- $ P.runEmbedded liftIO
 
-  _ <- P.runM
-        $ runCache
-        $ P.runState myState
-          $ runLogAction @IO logStringStdout
-        $ genericRunCommandTest ["load-csv"]
+  -- _ <- P.runM
+  --       $ runCache
+  --       $ P.runState myState
+  --         $ runLogAction @IO logStringStdout
+  --       $ genericRunCommandTest ["load-csv"]
 
 
   _ <- runInputT haskelineSettings $
@@ -260,7 +260,7 @@ main = do
           $ P.embedToFinal . P.runEmbedded lift
           $ P.runState myState
           $ runCache
-          $ runLogAction @IO logStringStdout inputLoop
+          $ runLogAction @IO logStringStdout (inputLoop (extraCommands options))
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 -- genericRunCommandTest ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => [String] -> Sem r RetCode
@@ -333,23 +333,30 @@ genericRunCommand parserInfo args = do
 -- TODO turn it into a library
 -- [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
 -- , P.Embed IO
-inputLoop :: Members '[Log String, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => Sem r ()
-inputLoop = do
-    s <- P.get
-    minput <- P.embedFinal $ getInputLine (view prompt s)
-    cmdCode <- case fmap Prelude.words minput of
-        Nothing -> do
-          log "please enter a valid command, see help"
-          return CMD.Continue
-        Just args -> runCommandStr args
+inputLoop :: Members '[Log String, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => [String] -> Sem r ()
+inputLoop initialInputs = do
+  case initialInputs of
+      [] -> do
+          s <- P.get
+          minput <- P.embedFinal $ getInputLine (view prompt s)
+          runIteration minput
+      (xs:rest) -> do
+          runIteration $ Just xs
+          inputLoop rest
+      where
+          runIteration fullCmd = do
+              cmdCode <- case fmap Prelude.words fullCmd of
+                  Nothing -> do
+                    log "please enter a valid command, see help"
+                    return CMD.Continue
+                  Just args -> runCommandStr args
 
-    case cmdCode of
-        CMD.Exit -> void (log "Exiting")
-        CMD.Error msg -> do
-          log $ "Last command failed with message:\n" ++ show msg
-          inputLoop
-        _behavior -> inputLoop
-
+              case cmdCode of
+                  CMD.Exit -> void (log "Exiting")
+                  CMD.Error msg -> do
+                    log $ "Last command failed with message:\n" ++ show msg
+                    inputLoop []
+                  _behavior -> inputLoop []
 
 -- TODO pass the command
 -- runCommand :: CommandCb -> [String] -> Sem r CMD.RetCode
