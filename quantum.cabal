@@ -85,8 +85,8 @@ common shared-properties
         -Wno-unused-imports
         -- -fplugin=Polysemy.Plugin
     default-extensions:
+        -- , OverloadedStrings
         FlexibleContexts
-        , OverloadedStrings
         , DataKinds
         , FlexibleContexts
         , GADTs

@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts           #-}
+-- {-# LANGUAGE FlexibleContexts           #-}
 
 module MptcpAnalyzer.Commands.List
 where
@@ -8,23 +8,22 @@ import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Definitions
-import Net.Tcp (TcpConnection(..), TcpFlag(..))
+import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)
 import Options.Applicative
 import MptcpAnalyzer.Pcap
 import Frames
 import Control.Lens hiding (argument)
 import Polysemy (Member, Members, Sem, Embed)
--- import qualified Polysemy as P
+import qualified Polysemy as P
 import Polysemy.State as P
 import Colog.Polysemy (Log, log)
 
 -- import qualified Pipes.Prelude as P
-import Pipes (Producer, (>->))
-import qualified Pipes.Prelude as P
-import qualified Control.Foldl as L
+-- import Pipes (Producer, (>->))
+-- import qualified Pipes.Prelude as P
+-- import qualified Control.Foldl as L
 
 -- for TcpConnection
--- import Net.Tcp
 
 
 
@@ -98,7 +97,7 @@ buildConnectionFromRow r =
 -- | Tcp connection
 -- TcpConnection
 buildConnectionFromTcpStreamId :: PcapFrame -> StreamId Tcp -> Either String TcpConnection
-buildConnectionFromTcpStreamId frame (StreamId streamId) = 
+buildConnectionFromTcpStreamId frame (StreamId streamId) =
     -- Right $ frameLength synPackets
     if frameLength synPackets < 1 then
       Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
@@ -125,32 +124,39 @@ buildConnectionFromTcpStreamId frame (StreamId streamId) =
   tcp.stream 6: 11.0.0.1:35589 -> 10.0.0.2:05201
   tcp.stream 7: 11.0.0.1:50007 -> 10.0.0.2:05201
 -}
-listTcpConnections :: Members [Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
-listTcpConnections _args = do
+listTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
+listTcpConnectionsCmd _args = do
     -- TODO this part should be extracted so that
     state <- P.get
     let loadedPcap = view loadedFile state
     case loadedPcap of
-      Nothing -> log "please load a pcap first" >> return CMD.Continue
+      Nothing -> do
+        log ( "please load a pcap first" :: String)
+        return CMD.Continue
       Just frame -> do
         let tcpStreams = getTcpStreams frame
-        log $ "Number of rows " ++ show (frameLength frame)
-        log $ "Number of TCP connections " ++ show (length tcpStreams)
-        >> return CMD.Continue
+        -- log $ "Number of rows " ++ show (frameLength frame)
+        P.embed $ putStrLn $ "Number of TCP connections " ++ show (length tcpStreams)
+        -- mapM (putStrLn . showTcpConnection <$> buildConnectionFromTcpStreamId frame ) tcpStreams
+        -- >>
+        return CMD.Continue
 
 {-| Display statistics for the connection:
 throughput/goodput
 -}
-tcpSummary :: Members [Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
+tcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
 tcpSummary args = do
     state <- P.get
     let loadedPcap = view loadedFile state
     case loadedPcap of
-      Nothing -> log "please load a pcap first" >> return CMD.Continue
+      Nothing -> log ("please load a pcap first" :: String) >> return CMD.Continue
       Just frame -> do
         let _tcpstreams = getTcpStreams frame
         log $ "Number of rows " ++ show (frameLength frame)
-        log $ "Number of SYN paclets " ++ show tcpCon
+        case fmap showTcpConnection tcpCon of
+          Left err -> log $ "error happened:" ++ err
+          Right desc -> log desc
+        -- log $ "Number of SYN packets " ++ (fmap  )
         >> return CMD.Continue
         where
             tcpCon = buildConnectionFromTcpStreamId frame (tcpStreamId args)

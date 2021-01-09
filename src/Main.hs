@@ -6,7 +6,6 @@ Portability : Linux
 
 TemplateHaskell for Katip :(
 -}
-{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -33,18 +32,19 @@ import Colog.Core.IO (logStringStdout)
 import Colog.Polysemy (Log, log, runLogAction)
 -- for monadmask
 -- import Control.Monad.Catch
-import qualified Data.Map         as HM
-import MptcpAnalyzer.Commands.Utils (RetCode(..), DefaultMembers)
+-- import qualified Data.Map         as HM
+import MptcpAnalyzer.Commands.Utils (RetCode(..), )
 import qualified MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands
 import MptcpAnalyzer.Commands.Definitions
 import MptcpAnalyzer.Commands.List as CLI
 import qualified MptcpAnalyzer.Commands.Load as CL
-import Control.Monad (void)
+-- import Control.Monad (void)
 
 import Polysemy (Sem, Members, runFinal, Final)
 import qualified Polysemy as P
 -- import Polysemy.Reader as P
+import qualified Polysemy.IO as P
 import qualified Polysemy.State as P
 import qualified Polysemy.Embed as P
 import qualified Polysemy.Internal as P
@@ -56,7 +56,7 @@ import MptcpAnalyzer.Definitions
 
 -- for noCompletion
 import System.Console.Haskeline
-import Control.Lens ( (^.), view, set)
+import Control.Lens ((^.), view)
 
 -- Repline is a wrapper (suppposedly more advanced) around haskeline
 -- for now we focus on the simple usecase with repline
@@ -243,7 +243,17 @@ main = do
       }
 
   -- TODO if there is an exit, exit, should be a fold ?
-  -- mapM_ (runApp myState . words) (extraCommands options)
+  -- mapM_ (runApp myState . words ) (extraCommands options)
+  -- runEmbedded  liftIO
+-- $ P.embed ( pure 4 :: IO Int)
+-- $ P.runEmbedded liftIO
+
+  _ <- P.runM
+        $ runCache
+        $ P.runState myState
+          $ runLogAction @IO logStringStdout
+        $ genericRunCommandTest ["load-csv"]
+
 
   _ <- runInputT haskelineSettings $
           runFinal @(InputT IO)
@@ -253,14 +263,36 @@ main = do
           $ runLogAction @IO logStringStdout inputLoop
   putStrLn "Thanks for flying with mptcpanalyzer"
 
--- $ P.embed (pure Continue)
--- runApp :: MyState -> [String] -> IO RetCode
--- runApp state parsedCmd = 
---      P.run $ P.runEmbedded lift
---         $ P.runState state
+-- genericRunCommandTest ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => [String] -> Sem r RetCode
+-- Cache, 
+genericRunCommandTest ::  Members '[Log String, P.State MyState,Cache, P.Embed IO] r => [String] -> Sem r RetCode
+genericRunCommandTest _args = do
+  P.embed ( pure CMD.Continue:: IO RetCode)
+
+  -- return CMD.Continue
+-- -- $ P.embed (pure Continue)
+-- runApp ::  MyState -> [String] -> IO RetCode
+-- runApp _state parsedCmd = 
+--      return $ P.run
+--         $ P.runEmbedded 
 --         $ runCache
---         $ runLogAction @IO logStringStdout
---         $ runCommandStr parsedCmd
+--         $ genericRunCommandTest parsedCmd
+
+-- $ runCommandStr parsedCmd
+-- $ P.runState state
+-- $ runLogAction @IO logStringStdout
+
+
+-- |
+runCommandStr ::  Members '[Log String, Cache, P.State MyState, P.Embed IO] r => [String] -> Sem r RetCode
+runCommandStr [] = return $ CMD.Error "Please enter a command"
+runCommandStr (commandStr:args) = do
+  case commandStr of
+    "loadPcap" -> genericRunCommand CL.loadPcapOpts args
+    "load-csv" -> genericRunCommand CL.loadCsvOpts args
+    "list-tcp" -> genericRunCommand CLI.listTcpOpts args
+    "tcp-summary" -> genericRunCommand CLI.tcpSummaryOpts args
+    _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
 
 -- type CommandList m = HM.Map String (CommandCb m)
 -- commands :: Members DefaultMembers r => HM.Map String (Sem r RetCode)
@@ -286,16 +318,6 @@ main = do
 
 -- liftIO $ putStrLn doPrintHelp >> 
 
--- |
-runCommandStr ::  Members '[Log String, Cache, P.State MyState, P.Embed IO] r => [String] -> Sem r RetCode
-runCommandStr [] = return $ CMD.Error "Please enter a command"
-runCommandStr (commandStr:args) = do
-  case commandStr of
-    "loadPcap" -> genericRunCommand CL.loadPcapOpts args
-    "load-csv" -> genericRunCommand CL.loadCsvOpts args
-    "list-tcp" -> genericRunCommand CLI.listTcpOpts args
-    "tcp-summary" -> genericRunCommand CLI.tcpSummaryOpts args
-    _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
 
 genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
 genericRunCommand parserInfo args = do

@@ -1,6 +1,6 @@
 module MptcpAnalyzer.Commands
 where
-import Polysemy (Sem, Members, makeSem, interpret)
+import Polysemy (Sem, Members, interpret)
 import qualified Polysemy.Embed as P
 import qualified Polysemy.State as P
 import Colog.Polysemy (Log)
@@ -33,6 +33,6 @@ runCommand = interpret $ \case
     LoadCsv args -> CL.loadCsv args
     LoadPcap args -> CL.loadPcap args
     PrintHelp  -> printHelpTemp
-    ListTcpConnections  args -> CL.listTcpConnections args
+    ListTcpConnections  args -> CL.listTcpConnectionsCmd args
     TcpSummary  args -> CL.tcpSummary args
     -- (LogInfo stringToLog) -> embed $ putStrLn stringToLog)
