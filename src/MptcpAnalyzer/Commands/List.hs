@@ -32,8 +32,8 @@ import Colog.Polysemy (Log, log)
 -- |TODO pass the loaded pcap to have a complete filterWith
 -- listSubflowParser = 
 
-parserSubflow :: Parser ParserListSubflows
-parserSubflow = ParserListSubflows <$> switch
+parserSummary :: Parser ParserSummary
+parserSummary = ParserSummary <$> switch
           ( long "full"
          <> help "Print details for each subflow" )
       <*> argument readStreamId (
@@ -49,13 +49,13 @@ readStreamId = eitherReader $ \arg -> case reads arg of
 
 listTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
 listTcpOpts = info (
-   CMD.listTcpConnections <$> parserSubflow <**> helper)
+   CMD.listTcpConnections <$> ParserListSubflow <*> switch ( long "detailed" <> help "detail connections") <**> helper)
   ( progDesc "List subflows of an MPTCP connection"
   )
 
 tcpSummaryOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
 tcpSummaryOpts = info (
-   CMD.tcpSummary <$> parserSubflow <**> helper)
+   CMD.tcpSummary <$> parserSummary <**> helper)
   ( progDesc "Detail a specific TCP connection"
   )
 

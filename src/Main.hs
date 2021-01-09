@@ -357,8 +357,3 @@ inputLoop initialInputs = do
                     log $ "Last command failed with message:\n" ++ show msg
                     inputLoop []
                   _behavior -> inputLoop []
-
--- TODO pass the command
--- runCommand :: CommandCb -> [String] -> Sem r CMD.RetCode
--- runCommand callback args = do
---     callback args

@@ -32,7 +32,7 @@ import Polysemy.State as P
 --       ))
 loadPcapArgs :: Parser ArgsLoadPcap
 loadPcapArgs =  ArgsLoadPcap <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
-          <> help "Target for the greeting"
+          <> help "Load a Pcap file"
       )
 
 
@@ -60,8 +60,8 @@ loadPcapOpts = info (CMD.loadPcap <$> loadPcapArgs <**> helper)
 -- loadPcap :: CMD.CommandCb
 -- loadPcap :: Members [Log, P.State MyState, Cache, Embed IO] m => [String] -> Sem m RetCode
 loadPcap :: Members [Log String, P.State MyState, Cache, Embed IO] m => ArgsLoadPcap -> Sem m RetCode
-loadPcap parsedArgs = do
-    log "Called loadPcap"
+loadPcap args = do
+    log $ "loading pcap " ++ loadPcap args
     -- s <- gets
     -- liftIO $ withProgName "load" (
     -- TODO fix the name of the program, by "load"
@@ -81,11 +81,11 @@ loadPcap parsedArgs = do
   -- EmbedIO
 loadPcapIntoFrame :: Members [Cache, Log String, Embed IO ] m => TsharkParams -> FilePath -> Sem m (Maybe PcapFrame)
 loadPcapIntoFrame params path = do
-    log ("Start loading pcap " ++ path)
+    log $ "Start loading pcap " ++ path
     x <- getCache cacheId
     case x of
       Right frame -> do
-          log "Frame in cache"
+          log $ show cacheId ++ " in cache"
           return $ Just frame
       Left err -> do
           log $ "getCache error: " ++ err

@@ -13,7 +13,12 @@ data CacheId = CacheId {
   cacheDeps :: [FilePath]
   , cachePrefix :: String
   , cacheSuffix :: String
-}
+} deriving (Show, Eq)
+
+data CacheConfig = CacheConfig {
+  cacheFolder :: [FilePath]
+  , cacheEnabled :: Bool
+} deriving Show
 
 
 getFilenameFromCacheId :: CacheId -> FilePath
@@ -36,18 +41,20 @@ data Cache m a where
 
 makeSem ''Cache
 
-runCache :: Sem (Cache : r) a -> Sem r a
-runCache = interpret $ \case
+-- TODO pass cache config
+runCache :: CacheConfig -> Sem (Cache : r) a -> Sem r a
+runCache config = interpret $ \case
   PutCache cid fp -> doPutCache cid fp
-  GetCache cid -> doGetCache cid
-  IsValid cid -> isCacheValid cid
+  GetCache cid -> doGetCache config cid
+  IsValid cid -> isCacheValid config cid
 
-doGetCache :: CacheId -> Sem r (Either String PcapFrame)
-doGetCache _cacheItemId = return $ Left "getCache not implemented yet"
+doGetCache :: CacheConfig -> CacheId -> Sem r (Either String PcapFrame)
+doGetCache config cid = do
+  return $ Left "getCache not implemented yet"
 
 doPutCache :: CacheId -> FilePath -> Sem r Bool
 doPutCache = undefined
 
-isCacheValid :: CacheId -> Sem r Bool
-isCacheValid  _ = return False
+isCacheValid :: CacheConfig -> CacheId -> Sem r Bool
+isCacheValid config cid = return False
 

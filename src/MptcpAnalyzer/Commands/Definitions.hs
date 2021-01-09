@@ -7,19 +7,24 @@ import MptcpAnalyzer.Pcap
 import Polysemy (Sem, Members, makeSem, interpret, Effect)
 
 newtype ArgsLoadPcap = ArgsLoadPcap {
-  pcap :: FilePath
+  loadPcap :: FilePath
 }
 
-data ParserListSubflows = ParserListSubflows {
-  full :: Bool,
-  tcpStreamId :: StreamId Tcp
+data ParserSummary = ParserSummary {
+  summaryFull :: Bool,
+  summaryTcpStreamId :: StreamId Tcp
+}
+
+newtype ParserListSubflows = ParserListSubflows {
+  listTcpDetailed :: Bool
+  -- tcpStreamId :: StreamId Tcp
 }
 
 data Command m a where
   LoadCsv :: ArgsLoadPcap -> Command m RetCode
   LoadPcap :: ArgsLoadPcap -> Command m RetCode
   ListTcpConnections :: ParserListSubflows -> Command m RetCode
-  TcpSummary :: ParserListSubflows -> Command m RetCode
+  TcpSummary :: ParserSummary -> Command m RetCode
   PrintHelp :: Command m RetCode
 
 makeSem ''Command
