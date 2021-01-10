@@ -20,11 +20,22 @@ newtype ParserListSubflows = ParserListSubflows {
   -- tcpStreamId :: StreamId Tcp
 }
 
+data ArgsPlot = ArgsPlot {
+
+  plotOut :: String
+  -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
+  -- , plotDisplay :: 
+  , plotTitle :: Just String
+  , plotToClipboard :: Just Bool
+}
+
 data Command m a where
   LoadCsv :: ArgsLoadPcap -> Command m RetCode
   LoadPcap :: ArgsLoadPcap -> Command m RetCode
   ListTcpConnections :: ParserListSubflows -> Command m RetCode
+  ListMpTcpConnections :: ParserListSubflows -> Command m RetCode
   TcpSummary :: ParserSummary -> Command m RetCode
   PrintHelp :: Command m RetCode
+  Plot :: Command m RetCode
 
 makeSem ''Command

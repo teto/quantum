@@ -6,6 +6,7 @@ where
 import MptcpAnalyzer.Pcap
 import Data.List (intercalate)
 import System.FilePath.Posix (takeBaseName)
+import Frames
 
 import Polysemy
 
@@ -21,8 +22,8 @@ data CacheConfig = CacheConfig {
 } deriving Show
 
 
-getFilenameFromCacheId :: CacheId -> FilePath
-getFilenameFromCacheId cid =
+filenameFromCacheId :: CacheId -> FilePath
+filenameFromCacheId cid =
     cachePrefix cid ++ intercalate "_" basenames ++ hash ++ cacheSuffix cid
     where
         -- takeBaseName
@@ -42,15 +43,24 @@ data Cache m a where
 makeSem ''Cache
 
 -- TODO pass cache config
-runCache :: CacheConfig -> Sem (Cache : r) a -> Sem r a
-runCache config = interpret $ \case
-  PutCache cid fp -> doPutCache cid fp
-  GetCache cid -> doGetCache config cid
-  IsValid cid -> isCacheValid config cid
+runCache :: Members '[Embed IO] r => CacheConfig -> Sem (Cache : r) a -> Sem r a
+runCache config = do
+  interpret $ \case
+      PutCache cid fp -> doPutCache cid fp
+      GetCache cid -> do
+        return $ Left "not implemented"
+        -- use config to get the final path too
+        -- let csvFilename = filenameFromCacheId cid
+        -- rpcap <- embed $ loadRows csvFilename
+        -- return Right rpcap
+      IsValid cid -> undefined
 
-doGetCache :: CacheConfig -> CacheId -> Sem r (Either String PcapFrame)
-doGetCache config cid = do
-  return $ Left "getCache not implemented yet"
+-- doGetCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> Sem r (Either String PcapFrame)
+-- doGetCache config cid = do
+--   embed $ Right $ loadRows csvFilename
+--   where
+--       csvFilename = filenameFromCacheId cid
+  -- return $ Left "getCache not implemented yet"
 
 doPutCache :: CacheId -> FilePath -> Sem r Bool
 doPutCache = undefined

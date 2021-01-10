@@ -2,6 +2,9 @@ module MptcpAnalyzer.Commands.Plot
 where
 
 
+import Graphics.Vega
+import Graphics.Vega.VegaLite
+
 plotParser :: Parser ArgsPlot
 plotParser = ArgsPlot <$>
         optional ( strOption
@@ -17,3 +20,6 @@ plotParser = ArgsPlot <$>
          <> help "Copy to X clipboard, requires `xsel` to be installed"
          <> metavar "clipboard" ))
 
+
+
+toVegaLite [ bkg, cars, mark Circle [MTooltip TTEncoding], enc [] ]

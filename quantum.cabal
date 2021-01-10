@@ -36,7 +36,8 @@ common shared-properties
       , co-log-polysemy
       , readable
       , polysemy
-      , bytestring, process
+      , bytestring
+      , hvega
       , ip
       -- , netlink >= 1.1.1.0
        , transformers-base
@@ -56,6 +57,7 @@ common shared-properties
        , aeson-extra
        -- , monad-control
        , pipes
+       , process
        -- to help with merging json content
        -- , unordered-containers
        -- to create temp folder/files
@@ -114,6 +116,8 @@ executable mptcpanalyzer
         , MptcpAnalyzer.Commands.Definitions
         , MptcpAnalyzer.Commands.Load, Columns, MptcpAnalyzer.Commands.Utils
         , MptcpAnalyzer.Commands.List, MptcpAnalyzer.Definitions, Connection
+        , MptcpAnalyzer.Commands.ListMpTcp
+        , MptcpAnalyzer.Commands.Plot
         -- , Mptcp.Logging,
         , Plots.Stream
     -- for now reference mptcp-pm but later move part to a core
