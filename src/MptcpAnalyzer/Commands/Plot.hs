@@ -1,9 +1,11 @@
 module MptcpAnalyzer.Commands.Plot
 where
 
-
-import Graphics.Vega
+import Prelude hiding (filter, lookup, repeat)
 import Graphics.Vega.VegaLite
+import qualified Graphics.Vega.VegaLite as VL
+import MptcpAnalyzer.Commands.Definitions
+import Options.Applicative
 
 plotParser :: Parser ArgsPlot
 plotParser = ArgsPlot <$>

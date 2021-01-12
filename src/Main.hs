@@ -248,13 +248,6 @@ main = do
 -- $ P.embed ( pure 4 :: IO Int)
 -- $ P.runEmbedded liftIO
 
-  -- _ <- P.runM
-  --       $ runCache
-  --       $ P.runState myState
-  --         $ runLogAction @IO logStringStdout
-  --       $ genericRunCommandTest ["load-csv"]
-
-
   _ <- runInputT haskelineSettings $
           runFinal @(InputT IO)
           $ P.embedToFinal . P.runEmbedded lift

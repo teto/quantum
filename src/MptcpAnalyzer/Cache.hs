@@ -7,7 +7,7 @@ import MptcpAnalyzer.Pcap
 import Data.List (intercalate)
 import System.FilePath.Posix (takeBaseName)
 import Frames
-
+import System.Directory
 import Polysemy
 
 data CacheId = CacheId {
@@ -17,7 +17,7 @@ data CacheId = CacheId {
 } deriving (Show, Eq)
 
 data CacheConfig = CacheConfig {
-  cacheFolder :: [FilePath]
+  cacheFolder :: FilePath
   , cacheEnabled :: Bool
 } deriving Show
 
@@ -36,7 +36,7 @@ filenameFromCacheId cid =
 -- TODO this should be an effect
 data Cache m a where
     -- should maybe be a filepath
-    PutCache :: CacheId -> FilePath -> Cache m Bool
+    PutCache :: CacheId -> PcapFrame -> Cache m Bool
     GetCache :: CacheId -> Cache m (Either String PcapFrame)
     IsValid :: CacheId -> Cache m Bool
 
@@ -46,25 +46,33 @@ makeSem ''Cache
 runCache :: Members '[Embed IO] r => CacheConfig -> Sem (Cache : r) a -> Sem r a
 runCache config = do
   interpret $ \case
-      PutCache cid fp -> doPutCache cid fp
-      GetCache cid -> do
-        return $ Left "not implemented"
+      PutCache cid fp -> doPutCache config cid frame
+      GetCache cid -> doGetCache config cid
+        -- return $ Left "not implemented"
         -- use config to get the final path too
         -- let csvFilename = filenameFromCacheId cid
         -- rpcap <- embed $ loadRows csvFilename
         -- return Right rpcap
-      IsValid cid -> undefined
+      IsValid cid -> isCacheValid config cid
 
--- doGetCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> Sem r (Either String PcapFrame)
--- doGetCache config cid = do
---   embed $ Right $ loadRows csvFilename
---   where
---       csvFilename = filenameFromCacheId cid
+doGetCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> Sem r (Either String PcapFrame)
+doGetCache config cid = do
+  res <- embed $ loadRows csvFilename
+  return $ Right res
+  where
+      csvFilename = cacheFolder config ++ "/" ++ filenameFromCacheId cid
   -- return $ Left "getCache not implemented yet"
 
-doPutCache :: CacheId -> FilePath -> Sem r Bool
-doPutCache = undefined
+-- PcapFrame
+doPutCache :: CacheConfig -> CacheId -> PcapFrame -> Sem r Bool
+doPutCache config cid frame = do
+  -- writeFile
+  writeCSV
+  -- pipeToCsv
 
-isCacheValid :: CacheConfig -> CacheId -> Sem r Bool
-isCacheValid config cid = return False
-
+-- TODO  log ?
+isCacheValid :: Members '[Embed IO] r => CacheConfig -> CacheId -> Sem r Bool
+isCacheValid config cid =
+  embed $ doesFileExist filename
+  where
+    filename = cacheFolder config ++ "/" ++ filenameFromCacheId cid

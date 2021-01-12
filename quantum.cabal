@@ -116,7 +116,7 @@ executable mptcpanalyzer
         , MptcpAnalyzer.Commands.Definitions
         , MptcpAnalyzer.Commands.Load, Columns, MptcpAnalyzer.Commands.Utils
         , MptcpAnalyzer.Commands.List, MptcpAnalyzer.Definitions, Connection
-        , MptcpAnalyzer.Commands.ListMpTcp
+        , MptcpAnalyzer.Commands.ListMptcp
         , MptcpAnalyzer.Commands.Plot
         -- , Mptcp.Logging,
         , Plots.Stream
