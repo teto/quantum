@@ -61,20 +61,22 @@ loadPcapOpts = info (CMD.loadPcap <$> loadPcapArgs <**> helper)
 -- loadPcap :: Members [Log, P.State MyState, Cache, Embed IO] m => [String] -> Sem m RetCode
 loadPcap :: Members [Log String, P.State MyState, Cache, Embed IO] m => ArgsLoadPcap -> Sem m RetCode
 loadPcap args = do
-    log $ "loading pcap " ++ loadPcap args
+    log $ "loading pcap " ++ pcapFilename
     -- s <- gets
     -- liftIO $ withProgName "load" (
     -- TODO fix the name of the program, by "load"
-    mFrame <- loadPcapIntoFrame defaultTsharkPrefs (pcap parsedArgs)
+    mFrame <- loadPcapIntoFrame defaultTsharkPrefs pcapFilename
     -- fmap onSuccess mFrame
     case mFrame of
       Nothing -> return CMD.Continue
       Just _frame -> do
         -- prompt .= pcap parsedArgs ++ "> "
-        modify (\s -> s { _prompt = pcap parsedArgs ++ "> ",
+        modify (\s -> s { _prompt = pcapFilename ++ "> ",
               _loadedFile = mFrame
             })
         log "Frame loaded" >> return CMD.Continue
+    where
+      pcapFilename = loadPcapPath args
 
 -- TODO return an Either or Maybe ?
 -- MonadIO m, KatipContext m
@@ -100,13 +102,12 @@ loadPcapIntoFrame params path = do
                 log $ "exported to file " ++ tempPath
                 frame <- liftIO $ loadRows tempPath
                 log $ "Number of rows after loading " ++ show (frameLength frame)
-                cacheRes <- putCache cacheId tempPath
+                cacheRes <- putCache cacheId frame
                 -- use ifThenElse instead
                 if cacheRes then
                   log "Saved into cache"
                 else
                   pure ()
-
                 return $ Just frame
               else do
                 log $ "Error happened: " ++ show exitCode
@@ -132,5 +133,5 @@ loadCsv parsedArgs = do
     log $ "Number of rows " ++ show (frameLength frame)
     log "Frame loaded" >> return CMD.Continue
     where
-      csvFilename = pcap parsedArgs
+      csvFilename = loadPcapPath parsedArgs
 

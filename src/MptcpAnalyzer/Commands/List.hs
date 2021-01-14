@@ -49,9 +49,11 @@ readStreamId = eitherReader $ \arg -> case reads arg of
 
 listTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
 listTcpOpts = info (
-   CMD.listTcpConnections <$> ParserListSubflow <*> switch ( long "detailed" <> help "detail connections") <**> helper)
+   CMD.listTcpConnections <$> parserList <**> helper)
   ( progDesc "List subflows of an MPTCP connection"
   )
+  where
+    parserList = ParserListSubflows <$> switch ( long "detailed" <> help "detail connections")
 
 tcpSummaryOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
 tcpSummaryOpts = info (
@@ -144,7 +146,7 @@ listTcpConnectionsCmd _args = do
 {-| Display statistics for the connection:
 throughput/goodput
 -}
-tcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
+tcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserSummary -> Sem r RetCode
 tcpSummary args = do
     state <- P.get
     let loadedPcap = view loadedFile state
@@ -159,7 +161,7 @@ tcpSummary args = do
         -- log $ "Number of SYN packets " ++ (fmap  )
         >> return CMD.Continue
         where
-            tcpCon = buildConnectionFromTcpStreamId frame (tcpStreamId args)
+            tcpCon = buildConnectionFromTcpStreamId frame (summaryTcpStreamId args)
 
 
 -- listTcpConnectionsInFrame :: PcapFrame -> IO ()

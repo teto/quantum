@@ -228,7 +228,7 @@ main = do
       False -> createDirectory cacheFolderXdg
 
   let myState = MyState {
-    _cacheFolder = cacheFolderXdg,
+    _stateCacheFolder = cacheFolderXdg,
     _loadedFile = Nothing,
     _prompt = promptSuffix
   }
@@ -241,18 +241,24 @@ main = do
   let haskelineSettings = defaultSettings {
       historyFile = Just $ cacheFolderXdg </> "history"
       }
+  let
+    cacheConfig :: CacheConfig
+    cacheConfig = CacheConfig {
+      cacheFolder = cacheFolderXdg
+      , cacheEnabled = True
+    }
 
   -- TODO if there is an exit, exit, should be a fold ?
   -- mapM_ (runApp myState . words ) (extraCommands options)
   -- runEmbedded  liftIO
--- $ P.embed ( pure 4 :: IO Int)
--- $ P.runEmbedded liftIO
+--  $ P.embed ( pure 4 :: IO Int)
+--  $ P.runEmbedded liftIO
 
   _ <- runInputT haskelineSettings $
           runFinal @(InputT IO)
           $ P.embedToFinal . P.runEmbedded lift
           $ P.runState myState
-          $ runCache
+          $ runCache cacheConfig
           $ runLogAction @IO logStringStdout (inputLoop (extraCommands options))
   putStrLn "Thanks for flying with mptcpanalyzer"
 

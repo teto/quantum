@@ -1,13 +1,13 @@
 module MptcpAnalyzer.Commands.Definitions
 where
 import MptcpAnalyzer.Commands.Utils
-import MptcpAnalyzer.Definitions
+import MptcpAnalyzer.Definitions ()
 import MptcpAnalyzer.Pcap
 
 import Polysemy (Sem, Members, makeSem, interpret, Effect)
 
 newtype ArgsLoadPcap = ArgsLoadPcap {
-  loadPcap :: FilePath
+  loadPcapPath :: FilePath
 }
 
 data ParserSummary = ParserSummary {
@@ -25,8 +25,8 @@ data ArgsPlot = ArgsPlot {
   plotOut :: String
   -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
   -- , plotDisplay :: 
-  , plotTitle :: Just String
-  , plotToClipboard :: Just Bool
+  , plotTitle :: Maybe String
+  , plotToClipboard :: Maybe Bool
 }
 
 data Command m a where

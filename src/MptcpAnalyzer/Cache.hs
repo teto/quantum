@@ -22,7 +22,8 @@ data CacheConfig = CacheConfig {
   , cacheEnabled :: Bool
 } deriving Show
 
-type CachePlaceHolder = Int
+-- type CachePlaceHolder = Int
+type CachePlaceHolder = PcapFrame
 
 filenameFromCacheId :: CacheId -> FilePath
 filenameFromCacheId cid =
@@ -62,8 +63,9 @@ runCache config = do
 
 doGetCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> Sem r (Either String CachePlaceHolder)
 doGetCache config cid = do
-  -- res <- embed $ loadRows csvFilename
-  return $ Right 4
+  res <- embed $ loadRows csvFilename
+  return $ Right res
+  -- return $ Right 4
   where
       csvFilename = getFullPath config cid
 
@@ -74,7 +76,7 @@ doPutCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> CachePlaceHolde
 doPutCache config cid frame = do
   -- writeFile
   -- writeCSV :: (ColumnHeaders ts, Foldable f, RecordToList ts, RecMapMethod ShowCSV ElField ts) => FilePath -> f (Record ts) -> IO ()
-  -- embed $ writeCSV csvFilename frame
+  embed $ writeCSV csvFilename frame >> return True
   return True
   -- pipeToCsv
   where

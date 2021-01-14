@@ -38,6 +38,7 @@ import System.Exit
 -- import Control.Lens.TH
 import Frames.TH
 import Frames
+import Frames.ShowCSV
 import Frames.CSV (QuotingMode(..), ParserOptions(..))
 import Frames.ColumnTypeable (Parseable(..), parseIntish, Parsed(..))
 -- for Record
@@ -128,6 +129,19 @@ instance Frames.ColumnTypeable.Parseable [TcpFlag] where
 -- tcpFlags as a list of flags
 
 type TcpFlagList = [TcpFlag]
+
+instance ShowCSV [TcpFlag] where
+  -- showCSV :: a -> Text
+  -- default showCSV :: Show a => a -> Text
+  -- showCSV = T.pack . show
+  showCSV flagList = T.concat texts
+    where
+      texts = map (T.pack . show .fromEnum) flagList
+
+instance ShowCSV IP where
+instance ShowCSV Word16 where
+instance ShowCSV Word32 where
+instance ShowCSV Word64 where
 
 declareColumn "frameNumber" ''Word64
 declareColumn "interfaceName" ''Text
