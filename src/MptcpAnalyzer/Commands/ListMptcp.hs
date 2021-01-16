@@ -17,6 +17,15 @@ import Polysemy.State as P
 import Colog.Polysemy (Log, log)
 
 
+listMpTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
+listMpTcpOpts = info (
+   CMD.listMpTcpConnections <$> parserList <**> helper)
+  ( progDesc "List MPTCP connections"
+  )
+  where
+    parserList = ParserListSubflows <$> switch ( long "detailed" <> help "detail connections")
+
+
 listMpTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
 listMpTcpConnectionsCmd _args = do
     -- TODO this part should be extracted so that

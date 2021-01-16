@@ -11,6 +11,8 @@ import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Definitions
 import qualified MptcpAnalyzer.Commands.Load as CL
 import qualified MptcpAnalyzer.Commands.List as CL
+import qualified MptcpAnalyzer.Commands.ListMptcp as CL
+import qualified MptcpAnalyzer.Commands.Plot as PL
 
 
 -- data Command m a where
@@ -34,5 +36,7 @@ runCommand = interpret $ \case
     LoadPcap args -> CL.loadPcap args
     PrintHelp  -> printHelpTemp
     ListTcpConnections  args -> CL.listTcpConnectionsCmd args
+    ListMpTcpConnections  args -> CL.listMpTcpConnectionsCmd args
     TcpSummary  args -> CL.tcpSummary args
+    Plot args -> PL.cmdPlot args
     -- (LogInfo stringToLog) -> embed $ putStrLn stringToLog)

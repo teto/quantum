@@ -10,6 +10,7 @@ import Frames
 import Frames.CSV
 import System.Directory
 import Polysemy
+import Control.Exception as CE
 
 data CacheId = CacheId {
   cacheDeps :: [FilePath]
@@ -63,8 +64,14 @@ runCache config = do
 
 doGetCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> Sem r (Either String CachePlaceHolder)
 doGetCache config cid = do
-  res <- embed $ loadRows csvFilename
-  return $ Right res
+  -- res <- embed $ loadRows csvFilename
+  res <- embed $ CE.try @IOException $  loadRows csvFilename
+  case res of
+    Left _excpt -> return $ Left "Exception"
+    Right x -> return (Right x)
+
+  -- return res
+  -- return $ Right res
   -- return $ Right 4
   where
       csvFilename = getFullPath config cid
@@ -73,12 +80,10 @@ doGetCache config cid = do
 
 -- PcapFrame
 doPutCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> CachePlaceHolder -> Sem r Bool
-doPutCache config cid frame = do
+doPutCache config cid frame =
   -- writeFile
   -- writeCSV :: (ColumnHeaders ts, Foldable f, RecordToList ts, RecMapMethod ShowCSV ElField ts) => FilePath -> f (Record ts) -> IO ()
   embed $ writeCSV csvFilename frame >> return True
-  return True
-  -- pipeToCsv
   where
       csvFilename = getFullPath config cid
 

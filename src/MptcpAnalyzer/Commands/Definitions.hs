@@ -36,6 +36,6 @@ data Command m a where
   ListMpTcpConnections :: ParserListSubflows -> Command m RetCode
   TcpSummary :: ParserSummary -> Command m RetCode
   PrintHelp :: Command m RetCode
-  Plot :: Command m RetCode
+  Plot :: ArgsPlot -> Command m RetCode
 
 makeSem ''Command

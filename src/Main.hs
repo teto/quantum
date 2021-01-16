@@ -288,8 +288,10 @@ runCommandStr [] = return $ CMD.Error "Please enter a command"
 runCommandStr (commandStr:args) = do
   case commandStr of
     "loadPcap" -> genericRunCommand CL.loadPcapOpts args
+    "load-pcap" -> genericRunCommand CL.loadPcapOpts args
     "load-csv" -> genericRunCommand CL.loadCsvOpts args
     "list-tcp" -> genericRunCommand CLI.listTcpOpts args
+    "list-mptcp" -> genericRunCommand CLI.listTcpOpts args
     "tcp-summary" -> genericRunCommand CLI.tcpSummaryOpts args
     _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
 

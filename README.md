@@ -1,10 +1,12 @@
 https://hackage.haskell.org/package/Frames
 
 
-Vynil proposes extensible records
 
-cabal run mptcpanalyzer -- --log-level=InfoS
-
+```
+cabal configure --enable-profiling
+cabal run mptcpanalyzer "load-pcap examples/client_2_filtered.pcapng"  -- +RTS
+-xc
+```
 
 Install zsh
 --zsh-completion-script
