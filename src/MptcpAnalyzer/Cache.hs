@@ -69,14 +69,9 @@ doGetCache config cid = do
   case res of
     Left _excpt -> return $ Left "Exception"
     Right x -> return (Right x)
-
-  -- return res
-  -- return $ Right res
-  -- return $ Right 4
   where
       csvFilename = getFullPath config cid
 
-  -- return $ Left "getCache not implemented yet"
 
 -- PcapFrame
 doPutCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> CachePlaceHolder -> Sem r Bool

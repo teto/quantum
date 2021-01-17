@@ -26,6 +26,7 @@ import qualified Data.Vector as V
 -- import Frames.InCore (VectorFor)
 import qualified Data.Text as T
 import Tshark.TH
+import Tshark.TH2
 -- import Net.IP
 -- creates cycle
 -- import MptcpAnalyzer.Definitions
@@ -67,15 +68,7 @@ data Tcp
 -- TODO use Word instead
 newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord)
 
--- instance Parseable TsharkField where
---   representableAsType
--- parse :: MonadPlus m => Text -> m (Parsed a) 
-    -- parse text = return $ Definitely
-
 -- tableTypes is a Template Haskell function, which means that it is executed at compile time. It generates a data type for our CSV, so we have everything under control with our types.
--- tableTypes "Packet" "data/server_2_filtered.pcapng.csv"
--- type PcapFrame = Frame Packet
--- tableTypes "Packet" "data/test-simple.csv"
 
 
 -- on veut la generer
@@ -143,58 +136,59 @@ instance ShowCSV Word16 where
 instance ShowCSV Word32 where
 instance ShowCSV Word64 where
 
-declareColumn "frameNumber" ''Word64
-declareColumn "interfaceName" ''Text
-declareColumn "frameEpoch" ''Text
-declareColumn "ipSource" ''IP
-declareColumn "ipDest" ''IP
--- TODO use tcpStream instead
-declareColumn "tcpStream" ''Word32
-declareColumn "mptcpStream" ''Word32
-declareColumn "tcpSrcPort" ''Word16
-declareColumn "tcpDestPort" ''Word16
-declareColumn "tcpFlags" ''TcpFlagList
-declareColumn "tcpOptionKinds" ''Text
-declareColumn "tcpSeq" ''Word32
-declareColumn "tcpLen" ''Word16
-declareColumn "tcpAck" ''Word32
+-- declareColumn "frameNumber" ''Word64
+-- declareColumn "interfaceName" ''Text
+-- declareColumn "frameEpoch" ''Text
+-- declareColumn "ipSource" ''IP
+-- declareColumn "ipDest" ''IP
+-- -- TODO use tcpStream instead
+-- declareColumn "tcpStream" ''Word32
+-- declareColumn "mptcpStream" ''Word32
+-- declareColumn "tcpSrcPort" ''Word16
+-- declareColumn "tcpDestPort" ''Word16
+-- declareColumn "tcpFlags" ''TcpFlagList
+-- declareColumn "tcpOptionKinds" ''Text
+-- declareColumn "tcpSeq" ''Word32
+-- declareColumn "tcpLen" ''Word16
+-- declareColumn "tcpAck" ''Word32
 
--- TODO need to declare an explicit record type ?
--- recDecExplicit :: [(T.Text, Q Type)] -> Q Type
--- recDecExplicit [
---     ("frameNumber", ''Word64)
---     , ("interfaceName", ''Text)
---     , ("frameEpoch", ''Text)
---     , ("ipSource", ''IP)
---     , ("ipDest", ''IP)
---     , ("tcpStream", ''Word32)
---     , ("mptcpStream",''Word32)
---     , ("tcpSrcPort", ''Word16)
---     , ("tcpDestPort",''Word16)
---     , ("tcpFlags", ''TcpFlagList)
---     , ("tcpOptionKinds", ''Text)
---     , ("tcpSeq" , ''Word32)
---     , ("tcpLen" , ''Word16)
---     , ("tcpAck" , ''Word32)
+--map (\(colName, fullField) -> (colName, colType fullField)) fields
+-- myRow :: [String] -> RowGen a
+-- myRow = fields RowGen [] "" "|" "ManColumnsTshark" []
+
+-- tableTypesExplicitFull myRow
+
+--   rowGen { rowTypeName = "Packet"
+--         , separator = "|"
+--         -- TODO I could generate it as well
+--         -- , columnNames
+--     })
+
+-- myRow = RowGen [t|myColumnUniverse baseFields|] "" "|" "ManColumnsTshark" (Proxy  [Int, Int])
+
+myColumnUniverse "MptcpColumnUniverse" baseFields
+-- TODO
+tableTypesExplicitFull [|myRow baseFields|]
+
+-- myRowGen "ManColumnsTshark" baseFields
+
+-- ManColumnsTshark :: [(Symbol, *)]
+-- type ManColumnsTshark = '[
+--     "frameNumber" :-> Word64
+--     , "interfaceName" :-> Text
+--     , "frameEpoch" :-> Text
+--     , "ipSource" :-> IP
+--     , "ipDest" :-> IP
+--     , "tcpStream" :-> Word32
+--     , "tcpSrcPort" :-> Word16
+--     , "tcpDestPort" :-> Word16
+--     , "tcpFlags" :-> TcpFlagList
+--     , "tcpOptionKinds" :-> Text
+--     , "tcpSeq"  :-> Word32
+--     , "tcpLen"  :-> Word16
+--     , "tcpAck"  :-> Word32
+--         -- , "mptcpStream" :-> Word32
 --     ]
-
-type ManColumnsTshark = '[
-    "frameNumber" :-> Word64
-    , "interfaceName" :-> Text
-    , "frameEpoch" :-> Text
-    , "ipSource" :-> IP
-    , "ipDest" :-> IP
-    , "tcpStream" :-> Word32
-    , "tcpSrcPort" :-> Word16
-    , "tcpDestPort" :-> Word16
-    , "tcpFlags" :-> TcpFlagList
-    , "tcpOptionKinds" :-> Text
-    , "tcpSeq"  :-> Word32
-    , "tcpLen"  :-> Word16
-    , "tcpAck"  :-> Word32
-        -- , "mptcpStream" :-> Word32
-
-    ]
 
 -- type ManColumns = '[
 --   frameNumber
@@ -234,41 +228,6 @@ type ManColumnsTshark = '[
 --       , "tcp.ack" :-> Word32
 --       ]
 
--- type ManColumnsTshark = '[
---       "frame.number" :-> Word64
---       , "frame.interface_name" :-> Text
---       -- TODO make it as a timestamp, Word64 for instance
---       , "frame.time_epoch" :-> Text
---       , "_ws.col.ipsrc" :-> IP
---       , "_ws.col.ipdst" :-> IP
---       , "tcpStream" :-> Word32
---       , "tcpflags" :-> Text
---       , "mptcp.stream" :-> Word32
---       , "tcp.srcport" :-> Word16
---       , "tcp.dstport" :-> Word16
---       , "tcp.flags" :-> TcpFlagList
---       , "tcp.option_kind" :-> Text
---       , "tcp.seq" :-> Word32
---       , "tcp.len" :-> Word16
---       , "tcp.ack" :-> Word32
---       ]
-
--- type ManRowPacket = Record ManColumns
--- type ManRowPacket = Record '[
---     FrameNumber
---     , InterfaceName
---     , FrameEpoch
---     , IpSource, IpDest
---     , TcpStream
---     , TcpSrcPort, TcpDestPort
---     , TcpFlags
---     , TcpOptionKinds
---     , TcpSeq
---     , TcpLen
---     , TcpAck
---     -- , MptcpStream
---     ]
-
 -- type Packet = ManColumns
 
 -- type ManMaybe = Rec (Maybe :. ElField) ManColumns
@@ -280,10 +239,10 @@ type instance VectorFor IP = V.Vector
 type instance VectorFor TcpFlagList = V.Vector
 
 -- row / ManRow
-type Packet = Record ManColumnsTshark
+-- type Packet = Record ManColumnsTshark
 
 -- type PcapFrame = Frame Packet
-type PcapFrame = Frame Packet
+type PcapFrame = Frame ManColumnsTshark
 
 
 data TsharkParams = TsharkParams {

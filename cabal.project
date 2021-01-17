@@ -2,6 +2,14 @@ source-repository-package
   type: git
   location: https://github.com/Ongy/netlink-hs
 
+profiling: True
+
+-- Frames for colDecExplicit
+packages:
+  ../mptcppm/
+  ./*.cabal
+  ../Frames
+
 -- this conflicts with the one in packages (yet another cabal bug...)
 -- source-repository-package
 --   type: git
@@ -41,7 +49,3 @@ source-repository-package
 --     type: git
 --     location: https://github.com/TravisWhitaker/diagrams-core
 --     tag: a9456cf1c6cd3aff2c4dbf095df6dec6e51fa21c
-packages:
-  ../mptcppm/
-  ./*.cabal
--- - ../Frames

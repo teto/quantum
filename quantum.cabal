@@ -110,6 +110,7 @@ executable mptcpanalyzer
     import: shared-properties
     Other-modules:
         Tshark.TH
+        , Tshark.TH2
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache
         , MptcpAnalyzer.Commands
