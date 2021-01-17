@@ -89,8 +89,15 @@ baseFields = [
 --     ]
 
 -- "user id" :-> Int
--- getTypes :: [(String, TsharkFieldDesc)] -> [Q Type]
--- getTypes = map (\(_, x) -> colType x)
+getTypes :: [(T.Text, TsharkFieldDesc)] -> [Q Type]
+getTypes = map (\(_, x) -> colType x)
+
+getHeaders :: [(T.Text, TsharkFieldDesc)] -> [(T.Text, Q Type)]
+getHeaders = map (\(name, x) -> (name, colType x))
+
+headersFromFields :: [(T.Text, TsharkFieldDesc)] -> Q [(T.Text, Q Type)]
+headersFromFields fields = do
+  pure (getHeaders fields)
 
 -- Q Type ?
 -- colType
@@ -111,6 +118,7 @@ mkColDecs colNm colTy = do
   case mColNm of
     Just n -> pure (ConT n, []) -- Column's type was already defined
     Nothing -> colDec (T.pack tablePrefix) rowTypeName colNm colTy
+
 
 -- | Generate a column type.
 -- recDecExplicit :: [(T.Text, Q Type)] -> Q Type
