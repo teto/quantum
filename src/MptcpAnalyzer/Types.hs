@@ -1,6 +1,21 @@
-module Mpt
+{-# LANGUAGE FlexibleInstances                      #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+module MptcpAnalyzer.Types
+where
 
 
+import Net.IP
+import Frames.TH
+import Frames
+import Frames.ShowCSV
+import Frames.CSV (QuotingMode(..), ParserOptions(..))
+import Frames.ColumnTypeable (Parseable(..), parseIntish, Parsed(..))
+import Data.Word (Word16, Word32, Word64)
+import qualified Data.Text as T
+import Net.Tcp ( TcpFlag(..), numberToTcpFlags)
+import Frames.InCore (VectorFor)
+import qualified Data.Vector as V
+import Numeric (readHex)
 
 instance Frames.ColumnTypeable.Parseable Word16 where
   parse = parseIntish
@@ -46,3 +61,11 @@ instance ShowCSV IP where
 instance ShowCSV Word16 where
 instance ShowCSV Word32 where
 instance ShowCSV Word64 where
+
+-- type ManMaybe = Rec (Maybe :. ElField) ManColumns
+-- TODO goal here is to choose the most performant Data.Vector
+type instance VectorFor Word16 = V.Vector
+type instance VectorFor Word32 = V.Vector
+type instance VectorFor Word64 = V.Vector
+type instance VectorFor IP = V.Vector
+type instance VectorFor TcpFlagList = V.Vector

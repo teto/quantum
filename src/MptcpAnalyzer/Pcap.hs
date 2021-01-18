@@ -189,13 +189,6 @@ tableTypesExplicitFull [] myRow
 
 -- type Packet = ManColumns
 
--- type ManMaybe = Rec (Maybe :. ElField) ManColumns
--- TODO goal here is to choose the most performant Data.Vector
-type instance VectorFor Word16 = V.Vector
-type instance VectorFor Word32 = V.Vector
-type instance VectorFor Word64 = V.Vector
-type instance VectorFor IP = V.Vector
-type instance VectorFor TcpFlagList = V.Vector
 
 -- row / ManRow
 -- type Packet = Record ManColumnsTshark
