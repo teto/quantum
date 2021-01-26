@@ -12,3 +12,18 @@ Install zsh
 --zsh-completion-script
 
 # How to develop
+
+
+## Debug splices
+
+`-ddump-splices -ddump-to-file -dth-dec-file`
+
+# How to use ?
+
+Integration with wireshark is not there yet, csv file has to be regenerated
+manually. I use [vd](visidata).
+
+
+
+https://www.wireshark.org/docs/dfref/m/mptcp.html
+visidata: https://www.visidata.org/

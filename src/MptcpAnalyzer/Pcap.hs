@@ -21,10 +21,12 @@ module MptcpAnalyzer.Pcap
 --     )
 where
 
+
+import Data.Monoid (First(..))
 import Frames.InCore (VectorFor)
 import qualified Data.Vector as V
--- import Frames.InCore (VectorFor)
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import Tshark.TH
 import Tshark.TH2
 -- import Net.IP
@@ -40,7 +42,7 @@ import System.Exit
 import Frames.TH
 import Frames
 import Frames.ShowCSV
-import Frames.CSV (QuotingMode(..), ParserOptions(..))
+import Frames.CSV (produceTextLines, pipeTableEitherOpt, readFileLatin1Ln, readTableMaybeOpt, QuotingMode(..), ParserOptions(..))
 import Frames.ColumnTypeable (Parseable(..), parseIntish, Parsed(..))
 -- for Record
 -- import Frames.Rec (Record(..))
@@ -54,13 +56,18 @@ import qualified Control.Foldl as L
 -- import Lens.Micro
 -- import Lens.Micro.Extras
 import Control.Lens
--- import qualified Data.Vector as V
 import Data.Word (Word16, Word32, Word64)
 import Net.Tcp
 -- import Net.Tcp.Constants
 import Numeric (readHex)
-  --
-  --
+import Net.Tcp ( TcpFlag(..), numberToTcpFlags)
+import MptcpAnalyzer.Types
+import qualified Pipes.Prelude as P
+import Pipes (cat, Producer, (>->))
+import Data.Vinyl (Rec(..), ElField(..), rapply, xrec, rmapX)
+import Data.Vinyl.Functor (Compose(..), (:.))
+import Data.Vinyl.Class.Method
+
 -- Phantom types
 data Mptcp
 data Tcp
@@ -93,108 +100,94 @@ newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord)
 
 
 
--- declareColumn "frameNumber" ''Word64
--- declareColumn "interfaceName" ''Text
--- declareColumn "frameEpoch" ''Text
--- declareColumn "ipSource" ''IP
--- declareColumn "ipDest" ''IP
--- -- TODO use tcpStream instead
--- declareColumn "tcpStream" ''Word32
--- declareColumn "mptcpStream" ''Word32
--- declareColumn "tcpSrcPort" ''Word16
--- declareColumn "tcpDestPort" ''Word16
--- declareColumn "tcpFlags" ''TcpFlagList
--- declareColumn "tcpOptionKinds" ''Text
--- declareColumn "tcpSeq" ''Word32
--- declareColumn "tcpLen" ''Word16
--- declareColumn "tcpAck" ''Word32
-
---map (\(colName, fullField) -> (colName, colType fullField)) fields
--- myRow :: [String] -> RowGen a
--- myRow = fields RowGen [] "" "|" "ManColumnsTshark" []
+declareColumn "frameNumber" ''Word64
+declareColumn "interfaceName" ''Text
+declareColumn "frameEpoch" ''Text
+declareColumn "ipSource" ''IP
+declareColumn "ipDest" ''IP
+-- TODO use tcpStream instead
+declareColumn "tcpStream" ''Word32
+declareColumn "mptcpStream" ''Word32
+declareColumn "tcpSrcPort" ''Word16
+declareColumn "tcpDestPort" ''Word16
+declareColumn "tcpFlags" ''TcpFlagList
+declareColumn "tcpOptionKinds" ''Text
+declareColumn "tcpSeq" ''Word32
+declareColumn "tcpLen" ''Word16
+declareColumn "tcpAck" ''Word32
 
 -- tableTypesExplicitFull myRow
-
 --   rowGen { rowTypeName = "Packet"
 --         , separator = "|"
 --         -- TODO I could generate it as well
 --         -- , columnNames
 --     })
 
-
--- Proxy .
-
 -- headersFromFields
 -- headersFromFields baseFields
 -- $(headersFromFields baseFields)
-tableTypesExplicitFull [] myRow
+-- tableTypesExplicitFull [] myRow
+-- tableTypesExplicitFull myHeaders myRow
 
 -- myRowGen "ManColumnsTshark" baseFields
+-- type OptionList = [Int]
 
 -- ManColumnsTshark :: [(Symbol, *)]
--- type ManColumnsTshark = '[
---     "frameNumber" :-> Word64
---     , "interfaceName" :-> Text
---     , "frameEpoch" :-> Text
---     , "ipSource" :-> IP
---     , "ipDest" :-> IP
---     , "tcpStream" :-> Word32
---     , "tcpSrcPort" :-> Word16
---     , "tcpDestPort" :-> Word16
---     , "tcpFlags" :-> TcpFlagList
---     , "tcpOptionKinds" :-> Text
---     , "tcpSeq"  :-> Word32
---     , "tcpLen"  :-> Word16
---     , "tcpAck"  :-> Word32
---         -- , "mptcpStream" :-> Word32
---     ]
+type ManColumnsTshark = '[
+    "packetId" :-> Word64
+    , "interfaceName" :-> Text
+    , "relTime" :-> Text
+    , "absTime" :-> Text
+    , "ipSource" :-> IP
+    , "ipDest" :-> IP
+    , "ipSrcHost" :-> Text
+    , "ipDstHost" :-> Text
+    , "tcpStream" :-> Word32
+    , "tcpSrcPort" :-> Word16
+    , "tcpDestPort" :-> Word16
+    , "rwnd" :-> Word32
+    , "tcpFlags" :-> TcpFlagList
+    , "tcpOptionKinds" :-> Text
+    , "tcpSeq"  :-> Word32
+    , "tcpLen"  :-> Word16
+    , "tcpAck"  :-> Word32
 
--- type ManColumns = '[
---   frameNumber
---     , "frame.interface_name" :-> String
---     -- TODO make it as a timestamp, Word64 for instance
---     , "frame.time_epoch" :-> String
---     , "_ws.col.ipsrc" :-> IP
---     , "_ws.col.ipdst" :-> IP
---     , "tcp.stream" :-> Word32
---     , "tcp.flags" :-> String
---     , "mptcp.stream" :-> Word32
---     , "tcp.srcport" :-> Word16
---     , "tcp.dstport" :-> Word16
---     , "tcp.flags" :-> TcpFlagList
---     , "tcp.option_kind" :-> Text
---     , "tcp.seq" :-> Word32
---     , "tcp.len" :-> Word16
---     , "tcp.ack" :-> Word32
---     ]
+    -- -- timetsamp Val
+    -- , "tsVal"  :-> Maybe Word32
+    -- -- timestamp echo-reply
+    -- , "tsEcr"  :-> Maybe Word32
 
--- type ManColumnsTshark = '[
---       "frame.number" :-> Word64
---       , "frame.interface_name" :-> Text
---       -- TODO make it as a timestamp, Word64 for instance
---       , "frame.time_epoch" :-> Text
---       , "_ws.col.ipsrc" :-> IP
---       , "_ws.col.ipdst" :-> IP
---       , "tcp.stream" :-> Word32
---       , "tcp.flags" :-> Text
---       , "mptcp.stream" :-> Word32
---       , "tcp.srcport" :-> Word16
---       , "tcp.dstport" :-> Word16
---       , "tcp.flags" :-> TcpFlagList
---       , "tcp.option_kind" :-> Text
---       , "tcp.seq" :-> Word32
---       , "tcp.len" :-> Word16
---       , "tcp.ack" :-> Word32
---       ]
+    , "expectedToken"  :-> Maybe Word32
+    , "mptcpStream" :-> Maybe Word32
+    -- , "mptcpSendKey" :-> Word64
+    -- , "mptcpRecvKey" :-> Word64
 
--- type Packet = ManColumns
+    , "mptcpRecvToken" :-> Maybe Word32
+    -- , "mptcpdataFin" :-> Bool
+    -- mptcp version for now is 0 or 1
+    -- , "mptcpVersion" :-> Int
+    -- TODO check
+    -- , "tcpOptionSubtypes" :-> OptionList
+    -- , "mptcpRawDsn" :-> Word64
+    -- , "mptcpRawDack" :-> Word64
+    -- , "mptcpSSN" :-> Word64
+    -- , "mptcpDssLen" :-> Word32
+    -- , "mptcpAddrId" :-> Maybe Int
+    -- , "mptcpRawDsn" :-> Word64
+    -- relative or abs
+    -- , "mptcpDack" :-> Word64
+    -- , "mptcpDsn" :-> Word64
+    -- , "mptcpRelatedMappings" :-> OptionList
+    -- , "mptcpReinjectionOf" :-> Maybe OptionList
+    -- , "mptcpReinjectedIn" :-> Maybe OptionList
+    ]
 
 
 -- row / ManRow
--- type Packet = Record ManColumnsTshark
+type Packet = Record ManColumnsTshark
 
--- type PcapFrame = Frame Packet
-type PcapFrame = Frame ManColumnsTshark
+type PcapFrame = Frame Packet
+-- type PcapFrame = Frame ManColumnsTshark
 
 
 data TsharkParams = TsharkParams {
@@ -291,8 +284,80 @@ exportToCsv params pcapPath path fd = do
 
 loadRows :: FilePath -> IO PcapFrame
 loadRows path = inCoreAoS (
-  readTableOpt defaultParserOptions path
+  -- readTableOpt defaultParserOptions path
+  -- holesFilled path
+  -- loadRowsEither path
+  eitherProcessed path
   )
+
+-- maybeRows :: MonadSafe m => Producer (Rec (Maybe :. ElField) (RecordColumns Row)) m ()
+-- maybeRows = readTableMaybe "test/data/prestigePartial.csv"
+loadMaybeRows :: MonadSafe m => FilePath -> Producer (Rec (Maybe :. ElField) (RecordColumns Packet)) m ()
+loadMaybeRows path = 
+  -- inCoreAoS (
+  readTableMaybeOpt defaultParserOptions path
+  -- )
+
+-- | Produce the lines of a latin1 (or ISO8859 Part 1) encoded file as
+-- ’T.Text’ values.
+-- readFileLatin1Ln :: P.MonadSafe m => FilePath -> P.Producer [T.Text] m ()
+-- readFileLatin1Ln fp = pipeLines (try . fmap T.decodeLatin1 . B8.hGetLine) fp
+--                       >-> P.map (tokenizeRow defaultParser)
+
+type ManEither = Rec (Either T.Text :. ElField) (RecordColumns Packet)
+
+-- -> P.Pipe T.Text (Rec (Either T.Text :. ElField) rs) m ()
+  -- T.readFile path
+  -- readFileLatin1Ln
+  -- produceTokens
+
+-- pipteTable will tokenize on its own
+loadRowsEither :: MonadSafe m => FilePath -> Producer ManEither m ()
+loadRowsEither path =  produceTextLines path >-> pipeTableEitherOpt defaultParserOptions
+
+-- loadRowsEitherFiltered :: MonadSafe m => FilePath -> Producer ManEither m ()
+-- >-> P.map (tokenizeRow defaultParser)
+
+eitherProcessed :: MonadSafe m => FilePath -> Producer Packet m ()
+eitherProcessed path = loadRowsEither path  >-> P.map fromEither
+  where
+        -- holeFiller :: Rec (Either Text :. ElField) (RecordColumns Packet) -> Maybe Packet
+        -- holeFiller = recMaybe . rmapX @(First :. ElField) getFirst
+        --            -- . rapply (rmapX @(First :. ElField) (flip mappend) def)
+        --            . rmapX @_ @(First :. ElField) First
+        --Rec (ElfField) (RecordColumns Packet)
+
+        fromEither :: Rec (Either Text :. ElField) (RecordColumns Packet) -> Packet
+        fromEither x = case recEither x of
+          Left _txt -> error ( "eitherProcessed failure : " ++ T.unpack _txt ++ "toto")
+          Right pkt -> pkt
+
+-- | Undistribute 'Maybe' from a 'Rec' 'Maybe'. This is just a
+-- specific usage of 'rtraverse', but it is quite common.
+recEither :: Rec (Either Text :. ElField) cs -> Either Text (Record cs)
+recEither = rtraverse getCompose
+
+-- | Undistribute 'Maybe' from a 'Rec' 'Maybe'. This is just a
+-- specific usage of 'rtraverse', but it is quite common.
+-- recMaybe :: Rec (Maybe :. ElField) cs -> Maybe (Record cs)
+-- recMaybe = rtraverse getCompose
+
+-- readFileLatin1Ln :: P.MonadSafe m => FilePath -> P.Producer [T.Text] m ()
+-- readFileLatin1Ln fp = pipeLines (try . fmap T.decodeLatin1 . B8.hGetLine) fp
+--                       >-> P.map (tokenizeRow defaultParser)
+
+-- | Fill in missing columns with a default 'Row' value synthesized
+-- from 'Default' instances.
+holesFilled :: MonadSafe m => FilePath -> Producer Packet m ()
+holesFilled path = readTableMaybeOpt defaultParserOptions  path  >-> P.map (fromJust . holeFiller)
+  where holeFiller :: Rec (Maybe :. ElField) (RecordColumns Packet) -> Maybe Packet
+        holeFiller = recMaybe . rmapX @(First :. ElField) getFirst
+                   -- . rapply (rmapX @(First :. ElField) (flip mappend) def)
+                   . rmapX @_ @(First :. ElField) First
+        fromJust = maybe (error "Frames holesFilled failure") id
+
+-- showFilledHoles :: IO ()
+-- showFilledHoles = runSafeT (pipePreview holesFilled 10 cat)
 
 -- http://acowley.github.io/Frames/#orgf328b25
 -- movieStream :: MonadSafe m => Producer User m ()

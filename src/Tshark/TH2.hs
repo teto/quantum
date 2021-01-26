@@ -6,6 +6,7 @@ import Frames.TH
 import Frames.CSV
 import Data.Text hiding (map)
 import Data.Proxy (Proxy(..))
+import MptcpAnalyzer.Types
 
 -- myColumnUniverse :: FieldDescriptions -> Q Type
 -- myColumnUniverse fields = do
@@ -14,11 +15,14 @@ import Data.Proxy (Proxy(..))
 -- mkColSynDec (myColumnUniverse baseFields) (mkName "toto")
 -- type MyType = $(myColumnUniverse baseFields)
   --
-myColumnUniverse "MptcpColumnUniverse" baseFields
+-- myColumnUniverse "MptcpColumnUniverse" baseFields
 -- TODO
 --
+-- type  MptcpColumnUniverse = [Int]
+type MptcpColumnUniverse = [Bool, Int, Double]
 
-myRow :: RowGen MptcpColumnUniverse
+
+myRow :: RowGen [Bool, Int, Double]
 myRow = (RowGen {
     columnNames = map (unpack . fst) baseFields
     , tablePrefix = ""
@@ -27,3 +31,14 @@ myRow = (RowGen {
     , columnUniverse = Proxy
     , lineReader =  produceTokens ""
     })
+
+-- getHeaders :: [(T.Text, TsharkFieldDesc)] -> [(T.Text, Q Type)]
+-- getHeaders = map (\(name, x) -> (name, colType x))
+
+-- headersFromFields :: [(T.Text, TsharkFieldDesc)] -> Q [(T.Text, Q Type)]
+myHeaders :: [(Text, Q Type)]
+myHeaders = getHeaders baseFields
+-- myHeaders = headersFromFields baseFields
+-- headersFromFields :: [(T.Text, TsharkFieldDesc)] -> Q [(T.Text, Q Type)]
+-- headersFromFields fields = do
+--   pure (getHeaders fields)
