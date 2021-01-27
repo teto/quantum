@@ -15,6 +15,8 @@ import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
 import Colog.Polysemy (Log, log)
+import Data.Word (Word16, Word32, Word64)
+import qualified Control.Foldl as L
 
 
 listMpTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
@@ -25,6 +27,13 @@ listMpTcpOpts = info (
   where
     parserList = ParserListSubflows <$> switch ( long "detailed" <> help "detail connections")
 
+-- keepMptcpPackets :: PcapFrame -> PcapFrame
+-- keepMptcpPackets frame = do
+--     let mptcpStreams = getTcpStreams frame
+
+getMpTcpStreams :: PcapFrame -> [Word32]
+getMpTcpStreams ps =
+    L.fold L.nub (view mptcpStream <$> ps)
 
 listMpTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
 listMpTcpConnectionsCmd _args = do
