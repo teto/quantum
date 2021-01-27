@@ -99,6 +99,7 @@ newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord)
 
 
 
+type MbMptcpStream = Maybe Word32
 
 declareColumn "frameNumber" ''Word64
 declareColumn "interfaceName" ''Text
@@ -107,7 +108,7 @@ declareColumn "ipSource" ''IP
 declareColumn "ipDest" ''IP
 -- TODO use tcpStream instead
 declareColumn "tcpStream" ''Word32
-declareColumn "mptcpStream" ''Word32
+declareColumn "mptcpStream" ''MbMptcpStream
 declareColumn "tcpSrcPort" ''Word16
 declareColumn "tcpDestPort" ''Word16
 declareColumn "tcpFlags" ''TcpFlagList

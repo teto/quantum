@@ -38,6 +38,7 @@ import qualified MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands
 import MptcpAnalyzer.Commands.Definitions
 import MptcpAnalyzer.Commands.List as CLI
+import MptcpAnalyzer.Commands.ListMptcp as CLI
 import qualified MptcpAnalyzer.Commands.Load as CL
 -- import Control.Monad (void)
 
@@ -291,7 +292,7 @@ runCommandStr (commandStr:args) = do
     "load-pcap" -> genericRunCommand CL.loadPcapOpts args
     "load-csv" -> genericRunCommand CL.loadCsvOpts args
     "list-tcp" -> genericRunCommand CLI.listTcpOpts args
-    "list-mptcp" -> genericRunCommand CLI.listTcpOpts args
+    "list-mptcp" -> genericRunCommand CLI.listMpTcpOpts args
     "tcp-summary" -> genericRunCommand CLI.tcpSummaryOpts args
     _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
 

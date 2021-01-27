@@ -31,7 +31,7 @@ listMpTcpOpts = info (
 -- keepMptcpPackets frame = do
 --     let mptcpStreams = getTcpStreams frame
 
-getMpTcpStreams :: PcapFrame -> [Word32]
+getMpTcpStreams :: PcapFrame -> [Maybe Word32]
 getMpTcpStreams ps =
     L.fold L.nub (view mptcpStream <$> ps)
 
@@ -45,9 +45,9 @@ listMpTcpConnectionsCmd _args = do
         log ( "please load a pcap first" :: String)
         return CMD.Continue
       Just frame -> do
-        let tcpStreams = getTcpStreams frame
+        let tcpStreams = getMpTcpStreams frame
         -- log $ "Number of rows " ++ show (frameLength frame)
-        P.embed $ putStrLn $ "Number of TCP connections " ++ show (length tcpStreams)
+        P.embed $ putStrLn $ "Number of MPTCP connections " ++ show (length tcpStreams)
         -- mapM (putStrLn . showTcpConnection <$> buildConnectionFromTcpStreamId frame ) tcpStreams
         -- >>
         return CMD.Continue

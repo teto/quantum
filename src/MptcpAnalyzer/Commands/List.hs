@@ -17,6 +17,7 @@ import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
 import Colog.Polysemy (Log, log)
+import Data.Either (fromRight)
 
 -- import qualified Pipes.Prelude as P
 -- import Pipes (Producer, (>->))
@@ -53,7 +54,7 @@ listTcpOpts = info (
   ( progDesc "List subflows of an MPTCP connection"
   )
   where
-    parserList = ParserListSubflows <$> switch ( long "detailed" <> help "detail connections")
+    parserList = ParserListSubflows <$> switch (long "detailed" <> help "detail connections")
 
 tcpSummaryOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
 tcpSummaryOpts = info (
@@ -127,7 +128,7 @@ buildConnectionFromTcpStreamId frame (StreamId streamId) =
   tcp.stream 7: 11.0.0.1:50007 -> 10.0.0.2:05201
 -}
 listTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
-listTcpConnectionsCmd _args = do
+listTcpConnectionsCmd args = do
     -- TODO this part should be extracted so that
     state <- P.get
     let loadedPcap = view loadedFile state
@@ -137,11 +138,15 @@ listTcpConnectionsCmd _args = do
         return CMD.Continue
       Just frame -> do
         let tcpStreams = getTcpStreams frame
+        let streamIdList = if listTcpDetailed args then [] else map StreamId tcpStreams
         -- log $ "Number of rows " ++ show (frameLength frame)
         P.embed $ putStrLn $ "Number of TCP connections " ++ show (length tcpStreams)
-        -- mapM (putStrLn . showTcpConnection <$> buildConnectionFromTcpStreamId frame ) tcpStreams
-        -- >>
+        _ <- P.embed $ mapM (putStrLn . describeCon . buildConnectionFromTcpStreamId frame ) streamIdList
         return CMD.Continue
+    where
+      describeCon = \case
+        Left msg -> msg
+        Right con -> showTcpConnection con
 
 {-| Display statistics for the connection:
 throughput/goodput
