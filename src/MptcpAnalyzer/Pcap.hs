@@ -159,8 +159,8 @@ type ManColumnsTshark = '[
 
     , "expectedToken"  :-> Maybe Word32
     , "mptcpStream" :-> Maybe Word32
-    -- , "mptcpSendKey" :-> Word64
-    -- , "mptcpRecvKey" :-> Word64
+    , "mptcpSendKey" :-> Maybe Word64
+    , "mptcpRecvKey" :-> Maybe Word64
 
     , "mptcpRecvToken" :-> Maybe Word32
     -- , "mptcpdataFin" :-> Bool

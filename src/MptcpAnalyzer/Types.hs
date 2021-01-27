@@ -74,6 +74,9 @@ instance Frames.ColumnTypeable.Parseable (Maybe Word16) where
 instance Frames.ColumnTypeable.Parseable (Maybe Word32) where
   parse _ = return $ Possibly Nothing
 
+instance Frames.ColumnTypeable.Parseable (Maybe Word64) where
+  parse _ = return $ Possibly Nothing
+
 -- TODO parse based on ,
 instance Frames.ColumnTypeable.Parseable (Maybe OptionList) where
   parse _ = return $ Definitely Nothing
