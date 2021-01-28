@@ -111,6 +111,7 @@ executable mptcpanalyzer
     Other-modules:
         Tshark.TH
         , Tshark.TH2
+        , Net.Mptcp.Types
         , MptcpAnalyzer.Types
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache

@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE PackageImports #-}
 module MptcpAnalyzer.Commands.ListMptcp
 where
 
@@ -7,6 +9,7 @@ import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Definitions
 import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)
+import Net.Mptcp.Types (MptcpConnection(..))
 import Options.Applicative
 import MptcpAnalyzer.Pcap
 import Frames
@@ -17,6 +20,7 @@ import Polysemy.State as P
 import Colog.Polysemy (Log, log)
 import Data.Word (Word16, Word32, Word64)
 import qualified Control.Foldl as L
+import qualified Data.Set as Set
 
 
 listMpTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
@@ -34,6 +38,32 @@ listMpTcpOpts = info (
 getMpTcpStreams :: PcapFrame -> [Maybe Word32]
 getMpTcpStreams ps =
     L.fold L.nub (view mptcpStream <$> ps)
+
+buildMptcpConnectionFromStreamId :: PcapFrame -> Either String MptcpConnection
+buildMptcpConnectionFromStreamId frame = do
+  return $ MptcpConnection {
+    mptcpServerKey = 0
+    , mptcpClientKey = 0
+    , mptcpServerToken = 0
+    , mptcpClientToken = 0
+
+    , subflows = Set.empty
+    , localIds = Set.empty
+    , remoteIds = Set.empty
+  }
+
+-- buildMptcpConnectionFromRow :: Packet -> TcpConnection
+-- buildMptcpConnectionFromRow r =
+  -- MptcpConnection {
+    -- srcIp = r ^. ipSource
+    -- , dstIp = r ^. ipDest
+    -- , srcPort = r ^. tcpSrcPort
+    -- , dstPort = r ^. tcpDestPort
+    -- , priority = Nothing  -- for now
+    -- , localId = 0
+    -- , remoteId = 0
+    -- , subflowInterface = Nothing
+  -- }
 
 listMpTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
 listMpTcpConnectionsCmd _args = do
