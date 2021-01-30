@@ -179,9 +179,9 @@ type ManColumnsTshark = '[
     -- , "mptcpAddrId" :-> Maybe Int
     -- , "mptcpRawDsn" :-> Word64
     -- relative or abs
-    -- , "mptcpDack" :-> Word64
-    -- , "mptcpDsn" :-> Word64
-    -- , "mptcpRelatedMappings" :-> OptionList
+    , "mptcpDack" :-> Maybe Word64
+    , "mptcpDsn" :-> Maybe Word64
+    -- , "mptcpRelatedMappings" :-> Maybe OptionList
     -- , "mptcpReinjectionOf" :-> Maybe OptionList
     -- , "mptcpReinjectedIn" :-> Maybe OptionList
     ]

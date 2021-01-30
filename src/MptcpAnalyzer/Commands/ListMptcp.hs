@@ -70,6 +70,7 @@ buildMptcpConnectionFromStreamId frame (StreamId streamId) = do
         , mptcpClientKey = 0
         , mptcpServerToken = 0
         , mptcpClientToken = 0
+        , mptcpNegotiatedVersion = 0
 
         , subflows = Set.empty
         , localIds = Set.empty

@@ -22,6 +22,7 @@ data MptcpConnection = MptcpConnection {
   , mptcpClientKey :: Word64
   , mptcpServerToken :: Word32
   , mptcpClientToken :: Word32
+  , mptcpNegotiatedVersion :: Word8
 
   -- master subflow
   -- use SubflowWithMetrics instead ?!
