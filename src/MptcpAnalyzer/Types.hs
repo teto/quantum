@@ -18,12 +18,15 @@ import Frames.CSV (QuotingMode(..), ParserOptions(..))
 import Frames.ColumnTypeable (Parseable(..), parseIntish, Parsed(..))
 import Data.Word (Word16, Word32, Word64)
 import qualified Data.Text as T
+import qualified Text.Read as T
 import Net.Tcp ( TcpFlag(..), numberToTcpFlags)
 import Frames.InCore (VectorFor)
 import qualified Data.Vector as V
 import Numeric (readHex)
 import Language.Haskell.TH
 -- import GHC.TypeLits
+import qualified Data.Text.Lazy.Builder as B
+import Data.Typeable (Typeable)
 
 -- An en passant Default class
 class Default a where
@@ -65,21 +68,39 @@ baseFields = [
     -- ("tcpack", TsharkFieldDesc "tcp.ack" [t|Word32|] (Just "Acknowledgement") False)
     ]
 
-instance Frames.ColumnTypeable.Parseable (Maybe Int) where
-  parse _ = return $ Possibly Nothing
+-- instance Frames.ColumnTypeable.Parseable (Maybe Int) where
+--   parse _ = return $ Possibly Nothing
 
-instance Frames.ColumnTypeable.Parseable (Maybe Word16) where
-  parse _ = return $ Possibly Nothing
+-- instance Frames.ColumnTypeable.Parseable (Maybe Word16) where
+--   parse _ = return $ Possibly Nothing
 
-instance Frames.ColumnTypeable.Parseable (Maybe Word32) where
-  parse _ = return $ Possibly Nothing
+-- instance Frames.ColumnTypeable.Parseable (Maybe Word32) where
+--   parse _ = return $ Possibly Nothing
 
-instance Frames.ColumnTypeable.Parseable (Maybe Word64) where
-  parse _ = return $ Possibly Nothing
+-- parseIntish t =
+--   Definitely <$> fromText (fromMaybe t (T.stripSuffix (T.pack ".0") t))
+
+-- customWordParser :: Read a => T.Text -> Parsed (Maybe a)
+-- customWordParser txt = case T.null txt of
+--     True -> Definitely Nothing
+--     False -> Definitely $ Just w64
+--     where
+--         w64 = read (T.unpack txt) :: a
+
+
+-- Used to parse tokens
+-- Typeable a, 
+instance (Read a, Typeable a, Frames.ColumnTypeable.Parseable a) => Frames.ColumnTypeable.Parseable (Maybe a) where
+  parse txt = case T.null txt of
+    True -> return $ Definitely Nothing
+    False -> return $ Definitely $ Just w64
+    where
+        w64 = read (T.unpack txt) :: a
+
 
 -- TODO parse based on ,
-instance Frames.ColumnTypeable.Parseable (Maybe OptionList) where
-  parse _ = return $ Definitely Nothing
+-- instance Frames.ColumnTypeable.Parseable (Maybe OptionList) where
+--   parse _ = return $ Definitely Nothing
 
 instance Frames.ColumnTypeable.Parseable Word16 where
   parse = parseIntish

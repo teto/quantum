@@ -78,6 +78,7 @@ listMpTcpConnectionsCmd _args = do
         let tcpStreams = getMpTcpStreams frame
         -- log $ "Number of rows " ++ show (frameLength frame)
         P.embed $ putStrLn $ "Number of MPTCP connections " ++ show (length tcpStreams)
+        P.embed $ putStrLn $ show tcpStreams
         -- mapM (putStrLn . showTcpConnection <$> buildConnectionFromTcpStreamId frame ) tcpStreams
         -- >>
         return CMD.Continue
