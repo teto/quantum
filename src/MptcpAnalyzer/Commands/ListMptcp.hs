@@ -63,7 +63,7 @@ buildMptcpConnectionFromStreamId frame (StreamId streamId) = do
       synPacket = frameRow synPackets 0
       synAckPacket = frameRow synAckPackets 0
 
-      -- clientMptcpVersion = synPacket ^. mptcpVersion
+      clientMptcpVersion = synPacket ^. mptcpVersion
 
       buildCon = MptcpConnection {
         mptcpServerKey = 0

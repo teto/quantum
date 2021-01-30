@@ -56,7 +56,7 @@ import qualified Control.Foldl as L
 -- import Lens.Micro
 -- import Lens.Micro.Extras
 import Control.Lens
-import Data.Word (Word16, Word32, Word64)
+import Data.Word (Word8, Word16, Word32, Word64)
 import Net.Tcp
 -- import Net.Tcp.Constants
 import Numeric (readHex)
@@ -100,6 +100,7 @@ newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord)
 
 
 type MbMptcpStream = Maybe Word32
+type MbVersion = Maybe Int
 
 declareColumn "frameNumber" ''Word64
 declareColumn "interfaceName" ''Text
@@ -108,7 +109,6 @@ declareColumn "ipSource" ''IP
 declareColumn "ipDest" ''IP
 -- TODO use tcpStream instead
 declareColumn "tcpStream" ''Word32
-declareColumn "mptcpStream" ''MbMptcpStream
 declareColumn "tcpSrcPort" ''Word16
 declareColumn "tcpDestPort" ''Word16
 declareColumn "tcpFlags" ''TcpFlagList
@@ -116,6 +116,8 @@ declareColumn "tcpOptionKinds" ''Text
 declareColumn "tcpSeq" ''Word32
 declareColumn "tcpLen" ''Word16
 declareColumn "tcpAck" ''Word32
+declareColumn "mptcpStream" ''MbMptcpStream
+declareColumn "mptcpVersion" ''MbVersion
 
 -- tableTypesExplicitFull myRow
 --   rowGen { rowTypeName = "Packet"
@@ -164,9 +166,10 @@ type ManColumnsTshark = '[
     , "mptcpRecvKey" :-> Maybe Word64
 
     , "mptcpRecvToken" :-> Maybe Word32
-    -- , "mptcpdataFin" :-> Bool
+    , "mptcpdataFin" :-> Maybe Bool
     -- mptcp version for now is 0 or 1
-    -- , "mptcpVersion" :-> Int
+    -- maybe use a word9 instead
+    , "mptcpVersion" :-> Maybe Int
     -- TODO check
     -- , "tcpOptionSubtypes" :-> OptionList
     -- , "mptcpRawDsn" :-> Word64
