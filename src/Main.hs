@@ -264,7 +264,6 @@ main = do
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 -- genericRunCommandTest ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => [String] -> Sem r RetCode
--- Cache, 
 genericRunCommandTest ::  Members '[Log String, P.State MyState,Cache, P.Embed IO] r => [String] -> Sem r RetCode
 genericRunCommandTest _args = do
   P.embed ( pure CMD.Continue:: IO RetCode)
@@ -342,20 +341,21 @@ inputLoop initialInputs = do
           s <- P.get
           minput <- P.embedFinal $ getInputLine (view prompt s)
           runIteration minput
+          inputLoop []
       (xs:rest) -> do
           runIteration $ Just xs
           inputLoop rest
       where
-          runIteration fullCmd = do
-              cmdCode <- case fmap Prelude.words fullCmd of
-                  Nothing -> do
-                    log "please enter a valid command, see help"
-                    return CMD.Continue
-                  Just args -> runCommandStr args
+        -- runIteration :: Maybe [String]
+        runIteration fullCmd = do
+            cmdCode <- case fmap Prelude.words fullCmd of
+                Nothing -> do
+                  log "please enter a valid command, see help"
+                  return CMD.Continue
+                Just args -> runCommandStr args
 
-              case cmdCode of
-                  CMD.Exit -> void (log "Exiting")
-                  CMD.Error msg -> do
-                    log $ "Last command failed with message:\n" ++ show msg
-                    inputLoop []
-                  _behavior -> inputLoop []
+            case cmdCode of
+                CMD.Exit -> void (log "Exiting")
+                CMD.Error msg -> do
+                  log $ "Last command failed with message:\n" ++ show msg
+                _behavior -> pure ()

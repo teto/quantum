@@ -68,14 +68,6 @@ baseFields = [
     -- ("tcpack", TsharkFieldDesc "tcp.ack" [t|Word32|] (Just "Acknowledgement") False)
     ]
 
--- instance Frames.ColumnTypeable.Parseable (Maybe Int) where
---   parse _ = return $ Possibly Nothing
-
--- instance Frames.ColumnTypeable.Parseable (Maybe Word16) where
---   parse _ = return $ Possibly Nothing
-
--- instance Frames.ColumnTypeable.Parseable (Maybe Word32) where
---   parse _ = return $ Possibly Nothing
 
 -- parseIntish t =
 --   Definitely <$> fromText (fromMaybe t (T.stripSuffix (T.pack ".0") t))
@@ -89,7 +81,6 @@ baseFields = [
 
 
 -- Used to parse tokens
--- Typeable a, 
 instance (Read a, Typeable a, Frames.ColumnTypeable.Parseable a) => Frames.ColumnTypeable.Parseable (Maybe a) where
   parse txt = case T.null txt of
     True -> return $ Definitely Nothing

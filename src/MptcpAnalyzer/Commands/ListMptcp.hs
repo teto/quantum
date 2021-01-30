@@ -21,7 +21,8 @@ import Colog.Polysemy (Log, log)
 import Data.Word (Word16, Word32, Word64)
 import qualified Control.Foldl as L
 import qualified Data.Set as Set
-
+import qualified Pipes.Prelude as PP
+import Data.Maybe (catMaybes)
 
 listMpTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
 listMpTcpOpts = info (
@@ -35,22 +36,45 @@ listMpTcpOpts = info (
 -- keepMptcpPackets frame = do
 --     let mptcpStreams = getTcpStreams frame
 
-getMpTcpStreams :: PcapFrame -> [Maybe Word32]
+-- TODO return MptcpStreamId instead
+getMpTcpStreams :: PcapFrame -> [Word32]
 getMpTcpStreams ps =
-    L.fold L.nub (view mptcpStream <$> ps)
+    catMaybes $
+    L.fold L.nub $ (view mptcpStream <$> ps)
 
-buildMptcpConnectionFromStreamId :: PcapFrame -> Either String MptcpConnection
-buildMptcpConnectionFromStreamId frame = do
-  return $ MptcpConnection {
-    mptcpServerKey = 0
-    , mptcpClientKey = 0
-    , mptcpServerToken = 0
-    , mptcpClientToken = 0
+buildMptcpConnectionFromStreamId :: PcapFrame -> StreamId Mptcp -> Either String MptcpConnection
+buildMptcpConnectionFromStreamId frame (StreamId streamId) = do
+    -- Right $ frameLength synPackets
+    if frameLength streamPackets < 1 then
+      Left $ "No packet with mptcp.stream == " ++ show streamId
+    else if frameLength synAckPackets < 1 then
+      Left $ "No syn/ack packet found for stream" ++ show streamId
+    else 
+      Right $ buildCon
+      --  $ frameRow synPackets 0
+    where
+      streamPackets = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
+      -- suppose tcpflags is a list of flags, check if it is in the list
+      -- of type FrameRec [(Symbol, *)]
+      -- Looking for synack packets
+      synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
+      synAckPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags) && TcpFlagAck `elem` (x ^. tcpFlags)) streamPackets
 
-    , subflows = Set.empty
-    , localIds = Set.empty
-    , remoteIds = Set.empty
-  }
+      synPacket = frameRow synPackets 0
+      synAckPacket = frameRow synAckPackets 0
+
+      -- clientMptcpVersion = synPacket ^. mptcpVersion
+
+      buildCon = MptcpConnection {
+        mptcpServerKey = 0
+        , mptcpClientKey = 0
+        , mptcpServerToken = 0
+        , mptcpClientToken = 0
+
+        , subflows = Set.empty
+        , localIds = Set.empty
+        , remoteIds = Set.empty
+      }
 
 -- buildMptcpConnectionFromRow :: Packet -> TcpConnection
 -- buildMptcpConnectionFromRow r =

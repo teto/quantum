@@ -154,9 +154,9 @@ type ManColumnsTshark = '[
     , "tcpAck"  :-> Word32
 
     -- -- timetsamp Val
-    -- , "tsVal"  :-> Maybe Word32
+    , "tsVal"  :-> Maybe Word32
     -- -- timestamp echo-reply
-    -- , "tsEcr"  :-> Maybe Word32
+    , "tsEcr"  :-> Maybe Word32
 
     , "expectedToken"  :-> Maybe Word32
     , "mptcpStream" :-> Maybe Word32
@@ -188,6 +188,10 @@ type ManColumnsTshark = '[
 type Packet = Record ManColumnsTshark
 
 type PcapFrame = Frame Packet
+
+-- shadow type to know if it was filtered or not
+-- Make it a record ?
+type ConFrame a = PcapFrame
 -- type PcapFrame = Frame ManColumnsTshark
 
 
