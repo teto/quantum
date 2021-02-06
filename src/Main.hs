@@ -104,8 +104,8 @@ loggerName = "main"
 -- -- CompletionResult
 -- generateCompleter (OptP opt) = noCompletion
 
-sample :: Parser CLIArguments
-sample = CLIArguments
+startupParser :: Parser CLIArguments
+startupParser = CLIArguments
       <$> optional ( strOption
           ( long "load"
           <> short 'l'
@@ -138,22 +138,13 @@ sample = CLIArguments
 
 
 opts :: ParserInfo CLIArguments
-opts = info (sample <**> helper)
+opts = info (startupParser <**> helper)
   ( fullDesc
   <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
               \performance via the generation of stats & plots"
   <> header "hello - a test for optparse-applicative"
   <> footer "You can report issues/contribute at https://github.com/teto/mptcpanalyzer"
   )
-
-
--- info (sample <**> helper)
--- ( fullDesc
--- <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
---             \performance via the generation of stats & plots"
--- <> header "hello - a test for optparse-applicative"
--- <> footer "You can report issues/contribute at https://github.com/teto/mptcpanalyzer"
--- )
 
 
 -- https://github.com/sdiehl/repline/issues/32
@@ -307,17 +298,22 @@ runCommandStr (commandStr:args) = do
 -- Parser a
 -- Mod CommandFields a ->
 mainParser :: P.Member Command r => Parser (Sem r RetCode)
-mainParser =
-
-  -- each command takes 
-  subparser
+  -- each command takes
+mainParser = subparser
     ( command "load-pcap" CL.loadPcapOpts
     <> command "load-csv" CL.loadCsvOpts
     <> command "tcp-summary" CLI.tcpSummaryOpts
-  -- <> command "commit" (info commitOptions ( progDesc "Record changes to the repository" ))
     )
     -- "loadPcap" -> genericRunCommand CL.loadPcapOpts args
     -- "load-pcap" -> genericRunCommand CL.loadPcapOpts args
+mainParserInfo :: P.Member Command r => ParserInfo (Sem (Command : r) RetCode)
+mainParserInfo = info (mainParser <**> helper)
+  ( fullDesc
+  <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
+              \performance via the generation of stats & plots"
+  <> header "hello - a test for optparse-applicative"
+  <> footer "You can report issues/contribute at https://github.com/teto/mptcpanalyzer"
+  )
 
 -- type CommandList m = HM.Map String (CommandCb m)
 -- commands :: Members DefaultMembers r => HM.Map String (Sem r RetCode)
@@ -355,15 +351,16 @@ genericRunCommand parserInfo args = do
     (Success parsedArgs) -> runCommand parsedArgs
 
 
-runIteration ::
+-- TODO use genericRunCommand
+runIteration :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r => Maybe String -> Sem r CMD.RetCode
 runIteration fullCmd = do
     cmdCode <- case fmap Prelude.words fullCmd of
         Nothing -> do
-          -- log "please enter a valid command, see help"
+          log "please enter a valid command, see help"
           return CMD.Continue
         Just args -> do
           -- TODO parse
-          let parserResult = execParserPure defaultParserPrefs parserInfo args
+          let parserResult = execParserPure defaultParserPrefs mainParser args
           case parserResult of
             (Failure failure) -> do
                 log $ show failure
@@ -382,16 +379,19 @@ runIteration fullCmd = do
 -- TODO turn it into a library
 -- [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
 -- , P.Embed IO
-inputLoop :: Members '[Log String, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => [String] -> Sem r ()
-inputLoop initialInputs = do
-  case initialInputs of
-      [] -> do
-          s <- P.get
-          minput <- P.embedFinal $ getInputLine (view prompt s)
-          runIteration minput
-          inputLoop []
-      (xs:rest) -> do
-          runIteration $ Just xs
-          inputLoop rest
-      where
+inputLoop :: Members '[Log String, Command, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => [String] -> Sem r ()
+inputLoop [] = do
+    s <- P.get
+    minput <- P.embedFinal $ getInputLine (view prompt s)
+    runIteration minput >>= \case
+      CMD.Exit -> log "Exiting" >> pure ()
+      _ -> inputLoop []
+
+inputLoop (xs:rest) =
+  runIteration (Just xs) >>= \case
+    CMD.Exit -> void (log "Exiting")
+    _ -> do
+      -- log $ "Last command failed with message:\n" ++ show msg
+      inputLoop rest
+  where
         -- runIteration :: Maybe [String]
