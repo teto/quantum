@@ -146,6 +146,16 @@ opts = info (sample <**> helper)
   <> footer "You can report issues/contribute at https://github.com/teto/mptcpanalyzer"
   )
 
+
+-- info (sample <**> helper)
+-- ( fullDesc
+-- <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
+--             \performance via the generation of stats & plots"
+-- <> header "hello - a test for optparse-applicative"
+-- <> footer "You can report issues/contribute at https://github.com/teto/mptcpanalyzer"
+-- )
+
+
 -- https://github.com/sdiehl/repline/issues/32
 -- data Parser a
 --   = NilP (Maybe a)
@@ -202,14 +212,14 @@ opts = info (sample <**> helper)
 --   { optCommand :: CommandEnum
 --   }
 
--- ( progDesc "Load a CSV file" )
--- TODO use this command parser
-commandParser :: Members '[ Command ] r => Parser (Sem r CMD.RetCode)
-commandParser = subparser (
-    command "loadCsv" CL.loadCsvOpts
-    <> command "load-pcap" CL.loadPcapOpts
-    <> command "tcp-summary" CLI.tcpSummaryOpts
-    )
+-- -- ( progDesc "Load a CSV file" )
+-- -- TODO use this command parser
+-- commandParser :: Members '[ Command ] r => Parser (Sem r CMD.RetCode)
+-- commandParser = subparser (
+--     command "loadCsv" CL.loadCsvOpts
+--     <> command "load-pcap" CL.loadPcapOpts
+--     <> command "tcp-summary" CLI.tcpSummaryOpts
+--     )
 
 -- just for testing, to remove afterwards
 defaultPcap :: FilePath
@@ -277,10 +287,6 @@ genericRunCommandTest _args = do
 --         $ runCache
 --         $ genericRunCommandTest parsedCmd
 
--- $ runCommandStr parsedCmd
--- $ P.runState state
--- $ runLogAction @IO logStringStdout
-
 
 -- |
 runCommandStr ::  Members '[Log String, Cache, P.State MyState, P.Embed IO] r => [String] -> Sem r RetCode
@@ -294,6 +300,24 @@ runCommandStr (commandStr:args) = do
     "list-mptcp" -> genericRunCommand CLI.listMpTcpOpts args
     "tcp-summary" -> genericRunCommand CLI.tcpSummaryOpts args
     _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
+
+
+-- mainParser :: ParserInfo 
+-- (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
+-- Parser a
+-- Mod CommandFields a ->
+mainParser :: P.Member Command r => Parser (Sem r RetCode)
+mainParser =
+
+  -- each command takes 
+  subparser
+    ( command "load-pcap" CL.loadPcapOpts
+    <> command "load-csv" CL.loadCsvOpts
+    <> command "tcp-summary" CLI.tcpSummaryOpts
+  -- <> command "commit" (info commitOptions ( progDesc "Record changes to the repository" ))
+    )
+    -- "loadPcap" -> genericRunCommand CL.loadPcapOpts args
+    -- "load-pcap" -> genericRunCommand CL.loadPcapOpts args
 
 -- type CommandList m = HM.Map String (CommandCb m)
 -- commands :: Members DefaultMembers r => HM.Map String (Sem r RetCode)
@@ -330,6 +354,30 @@ genericRunCommand parserInfo args = do
     (CompletionInvoked _compl) -> return CMD.Continue
     (Success parsedArgs) -> runCommand parsedArgs
 
+
+runIteration ::
+runIteration fullCmd = do
+    cmdCode <- case fmap Prelude.words fullCmd of
+        Nothing -> do
+          -- log "please enter a valid command, see help"
+          return CMD.Continue
+        Just args -> do
+          -- TODO parse
+          let parserResult = execParserPure defaultParserPrefs parserInfo args
+          case parserResult of
+            (Failure failure) -> do
+                log $ show failure
+                return $ CMD.Error $ "could not parse: " ++ show failure
+            (CompletionInvoked _compl) -> return CMD.Continue
+            (Success parsedArgs) -> runCommand parsedArgs
+          runCommandStr args
+
+    case cmdCode of
+        CMD.Exit -> void (log "Exiting")
+        CMD.Error msg -> do
+          log $ "Last command failed with message:\n" ++ show msg
+        _behavior -> pure ()
+
 -- | Main loop of the program, will run commands in turn
 -- TODO turn it into a library
 -- [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
@@ -347,15 +395,3 @@ inputLoop initialInputs = do
           inputLoop rest
       where
         -- runIteration :: Maybe [String]
-        runIteration fullCmd = do
-            cmdCode <- case fmap Prelude.words fullCmd of
-                Nothing -> do
-                  log "please enter a valid command, see help"
-                  return CMD.Continue
-                Just args -> runCommandStr args
-
-            case cmdCode of
-                CMD.Exit -> void (log "Exiting")
-                CMD.Error msg -> do
-                  log $ "Last command failed with message:\n" ++ show msg
-                _behavior -> pure ()

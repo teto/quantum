@@ -9,7 +9,7 @@ import Data.Word (Word8, Word16, Word32, Word64)
 import Net.IP
 import Net.Tcp
 
-type MptcpSendKey = Word64
+-- type MptcpSendKey = Word64
 
 -- For now... for convenience only
 type MptcpSubflow = TcpConnection

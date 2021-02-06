@@ -18,11 +18,11 @@ import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
 import Colog.Polysemy (Log, log)
-import Data.Word (Word16, Word32, Word64)
+import Data.Word (Word8, Word16, Word32, Word64)
 import qualified Control.Foldl as L
 import qualified Data.Set as Set
 import qualified Pipes.Prelude as PP
-import Data.Maybe (catMaybes)
+import Data.Maybe (fromJust, catMaybes)
 
 listMpTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
 listMpTcpOpts = info (
@@ -42,6 +42,12 @@ getMpTcpStreams ps =
     catMaybes $
     L.fold L.nub $ (view mptcpStream <$> ps)
 
+filterMptcpConnection :: PcapFrame -> StreamId Mptcp -> PcapFrameF MptcpConnection
+filterMptcpConnection frame (StreamId streamId) =
+  streamPackets
+  where
+    streamPackets = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
+
 buildMptcpConnectionFromStreamId :: PcapFrame -> StreamId Mptcp -> Either String MptcpConnection
 buildMptcpConnectionFromStreamId frame (StreamId streamId) = do
     -- Right $ frameLength synPackets
@@ -50,7 +56,20 @@ buildMptcpConnectionFromStreamId frame (StreamId streamId) = do
     else if frameLength synAckPackets < 1 then
       Left $ "No syn/ack packet found for stream" ++ show streamId
     else 
-      Right $ buildCon
+        -- TODO now add a check on abstime
+        -- if ds.loc[server_id, "abstime"] < ds.loc[client_id, "abstime"]:
+        --     log.error("Clocks are not synchronized correctly")
+      Right $ MptcpConnection {
+        mptcpServerKey = fromJust $ synAckPacket ^. mptcpSendKey
+        , mptcpClientKey = fromJust $ synPacket ^. mptcpSendKey
+        , mptcpServerToken = 0 -- fromJust $ synAckPacket ^. mptcpToken
+        , mptcpClientToken = 0 -- fromJust $ synPacket ^. mptcpToken
+        , mptcpNegotiatedVersion = fromIntegral $ fromJust clientMptcpVersion :: Word8
+
+        , subflows = Set.empty
+        , localIds = Set.empty
+        , remoteIds = Set.empty
+      }
       --  $ frameRow synPackets 0
     where
       streamPackets = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
@@ -62,20 +81,23 @@ buildMptcpConnectionFromStreamId frame (StreamId streamId) = do
 
       synPacket = frameRow synPackets 0
       synAckPacket = frameRow synAckPackets 0
+      masterTcpstreamId = synPacket ^. tcpStream
+      -- buildConnectionFromTcpStreamId frame masterTcpstreamId
+
 
       clientMptcpVersion = synPacket ^. mptcpVersion
 
-      buildCon = MptcpConnection {
-        mptcpServerKey = 0
-        , mptcpClientKey = 0
-        , mptcpServerToken = 0
-        , mptcpClientToken = 0
-        , mptcpNegotiatedVersion = 0
+      -- buildCon = MptcpConnection {
+      --   mptcpServerKey = 0
+      --   , mptcpClientKey = 0
+      --   , mptcpServerToken = 0
+      --   , mptcpClientToken = 0
+      --   , mptcpNegotiatedVersion = 0
 
-        , subflows = Set.empty
-        , localIds = Set.empty
-        , remoteIds = Set.empty
-      }
+      --   , subflows = Set.empty
+      --   , localIds = Set.empty
+      --   , remoteIds = Set.empty
+      -- }
 
 -- buildMptcpConnectionFromRow :: Packet -> TcpConnection
 -- buildMptcpConnectionFromRow r =

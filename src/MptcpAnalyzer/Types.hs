@@ -42,6 +42,11 @@ data TsharkFieldDesc = TsharkFieldDesc {
         , hash :: Bool
     }
 
+type MbMptcpStream = Maybe Word32
+type MbMptcpSendKey = Maybe Word64
+type MbMptcpVersion = Maybe Int
+type MbMptcpExpectedToken = Maybe Word32
+
 type OptionList = T.Text
 
     -- deriving (Read, Generic)
@@ -97,6 +102,7 @@ instance Frames.ColumnTypeable.Parseable Word16 where
   parse = parseIntish
 instance Frames.ColumnTypeable.Parseable Word32 where
   parse = parseIntish
+
 instance Frames.ColumnTypeable.Parseable Word64 where
   parse = parseIntish
 
@@ -161,11 +167,11 @@ type instance VectorFor (Maybe OptionList) = V.Vector
 -- instance Default (ElField MyString) where def = Field ""
 -- instance Default (ElField MyBool) where def = Field False
 
-instance (Applicative f, Default a) => Default (f a) where def = pure def
-instance Default (f (g a)) => Default (Compose f g a) where def = Compose def
+-- instance (Applicative f, Default a) => Default (f a) where def = pure def
+-- instance Default (f (g a)) => Default (Compose f g a) where def = Compose def
 
-instance RecPointed Default f ts => Default (Rec f ts) where
-  def = rpointMethod @Default def
+-- instance RecPointed Default f ts => Default (Rec f ts) where
+--   def = rpointMethod @Default def
 
 getHeaders :: [(T.Text, TsharkFieldDesc)] -> [(T.Text, Q Type)]
 getHeaders = map (\(name, x) -> (name, colType x))

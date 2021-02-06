@@ -98,9 +98,8 @@ newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord)
 
 
 
-
-type MbMptcpStream = Maybe Word32
-type MbVersion = Maybe Int
+type MbMptcpDsn = Maybe Word64
+type MbMptcpDack = Maybe Word64
 
 declareColumn "frameNumber" ''Word64
 declareColumn "interfaceName" ''Text
@@ -117,7 +116,11 @@ declareColumn "tcpSeq" ''Word32
 declareColumn "tcpLen" ''Word16
 declareColumn "tcpAck" ''Word32
 declareColumn "mptcpStream" ''MbMptcpStream
-declareColumn "mptcpVersion" ''MbVersion
+declareColumn "mptcpVersion" ''MbMptcpVersion
+declareColumn "mptcpSendKey" ''MbMptcpSendKey
+declareColumn "mptcpToken" ''MbMptcpExpectedToken
+declareColumn "mptcpDsn" ''MbMptcpDsn
+declareColumn "mptcpDack" ''MbMptcpDack
 
 -- tableTypesExplicitFull myRow
 --   rowGen { rowTypeName = "Packet"
@@ -160,12 +163,12 @@ type ManColumnsTshark = '[
     -- -- timestamp echo-reply
     , "tsEcr"  :-> Maybe Word32
 
-    , "expectedToken"  :-> Maybe Word32
+    , "mtcpExpectedToken"  :-> MbMptcpExpectedToken
     , "mptcpStream" :-> Maybe Word32
     , "mptcpSendKey" :-> Maybe Word64
     , "mptcpRecvKey" :-> Maybe Word64
 
-    , "mptcpRecvToken" :-> Maybe Word32
+    , "mptcpRecvToken" :-> MbMptcpExpectedToken
     , "mptcpdataFin" :-> Maybe Bool
     -- mptcp version for now is 0 or 1
     -- maybe use a word9 instead
@@ -191,6 +194,10 @@ type ManColumnsTshark = '[
 type Packet = Record ManColumnsTshark
 
 type PcapFrame = Frame Packet
+
+-- data 
+-- shadow param
+type PcapFrameF a = Frame Packet
 
 -- shadow type to know if it was filtered or not
 -- Make it a record ?
