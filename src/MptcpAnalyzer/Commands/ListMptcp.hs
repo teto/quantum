@@ -24,13 +24,21 @@ import qualified Data.Set as Set
 import qualified Pipes.Prelude as PP
 import Data.Maybe (fromJust, catMaybes)
 
-listMpTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
+listMpTcpOpts :: ParserInfo CommandArgs
 listMpTcpOpts = info (
-   CMD.listMpTcpConnections <$> parserList <**> helper)
+    parserList <**> helper)
   ( progDesc "List MPTCP connections"
   )
   where
-    parserList = ParserListSubflows <$> switch ( long "detailed" <> help "detail connections")
+    parserList = ArgsListSubflows <$> switch ( long "detailed" <> help "detail connections")
+
+-- listMpTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
+-- listMpTcpOpts = info (
+--    CMD.listMpTcpConnections <$> parserList <**> helper)
+--   ( progDesc "List MPTCP connections"
+--   )
+--   where
+--     parserList = ParserListSubflows <$> switch ( long "detailed" <> help "detail connections")
 
 -- keepMptcpPackets :: PcapFrame -> PcapFrame
 -- keepMptcpPackets frame = do
@@ -112,7 +120,7 @@ buildMptcpConnectionFromStreamId frame (StreamId streamId) = do
     -- , subflowInterface = Nothing
   -- }
 
-listMpTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
+listMpTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
 listMpTcpConnectionsCmd _args = do
     -- TODO this part should be extracted so that
     state <- P.get

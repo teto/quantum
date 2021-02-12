@@ -20,7 +20,7 @@ import Colog.Polysemy (Log, log)
 -- import Mptcp.Logging (Log, log)
 -- import System.Environment (withProgName)
 import Polysemy (Sem, Members, Embed)
-import qualified Polysemy as P
+-- import qualified Polysemy as P
 import Polysemy.State as P
 -- import qualified Polysemy.Internal as P
 
@@ -30,25 +30,37 @@ import Polysemy.State as P
 --     ArgsLoadPcap <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
 --           <> help "Target for the greeting"
 --       ))
-loadPcapArgs :: Parser ArgsLoadPcap
+loadPcapArgs :: Parser CommandArgs
 loadPcapArgs =  ArgsLoadPcap <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
           <> help "Load a Pcap file"
       )
 
+loadCsvArgs :: Parser CommandArgs
+loadCsvArgs =  ArgsLoadCsv <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
+          <> help "Load a Pcap file"
+      )
 
-loadCsvOpts :: P.Member Command r => ParserInfo (Sem r RetCode)
-loadCsvOpts = info (CMD.loadCsv <$> loadPcapArgs <**> helper)
+loadCsvOpts :: ParserInfo CommandArgs
+loadCsvOpts = info (loadCsvArgs <**> helper)
   ( fullDesc
   <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
               \performance via the generation of stats & plots"
   )
 
-loadPcapOpts :: P.Member Command r => ParserInfo (Sem r RetCode)
-loadPcapOpts = info (CMD.loadPcap <$> loadPcapArgs <**> helper)
-  ( fullDesc
-  <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
-              \performance via the generation of stats & plots"
-  )
+-- loadCsvOpts :: P.Member Command r => ParserInfo (Sem r RetCode)
+-- loadCsvOpts = info (CMD.loadCsv <$> loadPcapArgs <**> helper)
+--   ( fullDesc
+--   <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
+--               \performance via the generation of stats & plots"
+--   )
+
+-- loadPcapOpts :: P.Member Command r => ParserInfo (Sem r RetCode)
+-- -- loadPcapOpts :: Members [Log String, P.State MyState, Cache, Embed IO] m => ParserInfo (Sem m RetCode)
+-- loadPcapOpts = info (CMD.loadPcap <$> loadPcapArgs <**> helper)
+--   ( fullDesc
+--   <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
+--               \performance via the generation of stats & plots"
+--   )
 
 
 -- myHandleParseResult :: ParserResult a -> m CMD.RetCode
@@ -59,7 +71,7 @@ loadPcapOpts = info (CMD.loadPcap <$> loadPcapArgs <**> helper)
 -- handleParseResult
 -- loadPcap :: CMD.CommandCb
 -- loadPcap :: Members [Log, P.State MyState, Cache, Embed IO] m => [String] -> Sem m RetCode
-loadPcap :: Members [Log String, P.State MyState, Cache, Embed IO] m => ArgsLoadPcap -> Sem m RetCode
+loadPcap :: Members [Log String, P.State MyState, Cache, Embed IO] m => CommandArgs -> Sem m RetCode
 loadPcap args = do
     log $ "loading pcap " ++ pcapFilename
     -- s <- gets
@@ -121,7 +133,7 @@ loadPcapIntoFrame params path = do
       opts = TempFileOptions True
 
 
-loadCsv :: Members '[Log String, State MyState, Cache, Embed IO] m => ArgsLoadPcap -> Sem m CMD.RetCode
+loadCsv :: Members '[Log String, State MyState, Cache, Embed IO] m => CommandArgs -> Sem m CMD.RetCode
 loadCsv parsedArgs = do
 
     log $ "Loading " ++ csvFilename

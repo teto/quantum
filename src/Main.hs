@@ -205,7 +205,7 @@ opts = info (startupParser <**> helper)
 
 -- -- ( progDesc "Load a CSV file" )
 -- -- TODO use this command parser
--- commandParser :: Members '[ Command ] r => Parser (Sem r CMD.RetCode)
+-- commandParser :: Parser CommandArgs
 -- commandParser = subparser (
 --     command "loadCsv" CL.loadCsvOpts
 --     <> command "load-pcap" CL.loadPcapOpts
@@ -279,34 +279,38 @@ genericRunCommandTest _args = do
 --         $ genericRunCommandTest parsedCmd
 
 
--- |
-runCommandStr ::  Members '[Log String, Cache, P.State MyState, P.Embed IO] r => [String] -> Sem r RetCode
-runCommandStr [] = return $ CMD.Error "Please enter a command"
-runCommandStr (commandStr:args) = do
-  case commandStr of
-    "loadPcap" -> genericRunCommand CL.loadPcapOpts args
-    "load-pcap" -> genericRunCommand CL.loadPcapOpts args
-    "load-csv" -> genericRunCommand CL.loadCsvOpts args
-    "list-tcp" -> genericRunCommand CLI.listTcpOpts args
-    "list-mptcp" -> genericRunCommand CLI.listMpTcpOpts args
-    "tcp-summary" -> genericRunCommand CLI.tcpSummaryOpts args
-    _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
+-- -- |
+-- runCommandStr ::  Members '[Log String, Cache, P.State MyState, P.Embed IO] r => [String] -> Sem r RetCode
+-- runCommandStr [] = return $ CMD.Error "Please enter a command"
+-- runCommandStr (commandStr:args) = do
+--   case commandStr of
+--     "loadPcap" -> genericRunCommand CL.loadPcapOpts args
+--     "load-pcap" -> genericRunCommand CL.loadPcapOpts args
+--     "load-csv" -> genericRunCommand CL.loadCsvOpts args
+--     "list-tcp" -> genericRunCommand CLI.listTcpOpts args
+--     "list-mptcp" -> genericRunCommand CLI.listMpTcpOpts args
+--     "tcp-summary" -> genericRunCommand CLI.tcpSummaryOpts args
+--     _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
 
 
 -- mainParser :: ParserInfo 
 -- (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
 -- Parser a
 -- Mod CommandFields a ->
-mainParser :: P.Member Command r => Parser (Sem r RetCode)
+-- mainParser :: P.Member Command r => Parser (Sem r RetCode)
+mainParser :: Parser CommandArgs
   -- each command takes
-mainParser = subparser
-    ( command "load-pcap" CL.loadPcapOpts
-    <> command "load-csv" CL.loadCsvOpts
+mainParser = subparser (
+    -- ( command "load-pcap" CL.loadPcapOpts
+    command "load-csv" CL.loadCsvOpts
     <> command "tcp-summary" CLI.tcpSummaryOpts
     )
     -- "loadPcap" -> genericRunCommand CL.loadPcapOpts args
     -- "load-pcap" -> genericRunCommand CL.loadPcapOpts args
-mainParserInfo :: P.Member Command r => ParserInfo (Sem (Command : r) RetCode)
+
+
+-- mainParserInfo :: P.Member Command r => ParserInfo (Sem r RetCode)
+mainParserInfo :: ParserInfo CommandArgs
 mainParserInfo = info (mainParser <**> helper)
   ( fullDesc
   <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
@@ -314,6 +318,7 @@ mainParserInfo = info (mainParser <**> helper)
   <> header "hello - a test for optparse-applicative"
   <> footer "You can report issues/contribute at https://github.com/teto/mptcpanalyzer"
   )
+
 
 -- type CommandList m = HM.Map String (CommandCb m)
 -- commands :: Members DefaultMembers r => HM.Map String (Sem r RetCode)
@@ -339,16 +344,19 @@ mainParserInfo = info (mainParser <**> helper)
 
 -- liftIO $ putStrLn doPrintHelp >> 
 
+-- runCommand :: CommandArgs -> CMD.RetCode
+runCommand :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
+runCommand args@ArgsLoadCsv{} = CL.loadCsv args
 
-genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
-genericRunCommand parserInfo args = do
-  let parserResult = execParserPure defaultParserPrefs parserInfo args
-  case parserResult of
-    (Failure failure) -> do
-        log $ show failure
-        return $ CMD.Error $ "could not parse: " ++ show failure
-    (CompletionInvoked _compl) -> return CMD.Continue
-    (Success parsedArgs) -> runCommand parsedArgs
+-- genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
+-- genericRunCommand parserInfo args = do
+--   let parserResult = execParserPure defaultParserPrefs parserInfo args
+--   case parserResult of
+--     (Failure failure) -> do
+--         log $ show failure
+--         return $ CMD.Error $ "could not parse: " ++ show failure
+--     (CompletionInvoked _compl) -> return CMD.Continue
+--     (Success parsedArgs) -> runCommand parsedArgs
 
 
 -- TODO use genericRunCommand
@@ -360,26 +368,26 @@ runIteration fullCmd = do
           return CMD.Continue
         Just args -> do
           -- TODO parse
-          let parserResult = execParserPure defaultParserPrefs mainParser args
+          let parserResult = execParserPure defaultParserPrefs mainParserInfo args
           case parserResult of
             (Failure failure) -> do
                 log $ show failure
                 return $ CMD.Error $ "could not parse: " ++ show failure
             (CompletionInvoked _compl) -> return CMD.Continue
             (Success parsedArgs) -> runCommand parsedArgs
-          runCommandStr args
 
     case cmdCode of
-        CMD.Exit -> void (log "Exiting")
+        CMD.Exit -> log "Exiting" >> return CMD.Exit
         CMD.Error msg -> do
           log $ "Last command failed with message:\n" ++ show msg
-        _behavior -> pure ()
+          return $ CMD.Error msg
+        behavior -> return behavior
 
 -- | Main loop of the program, will run commands in turn
 -- TODO turn it into a library
 -- [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
 -- , P.Embed IO
-inputLoop :: Members '[Log String, Command, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => [String] -> Sem r ()
+inputLoop :: Members '[Log String, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => [String] -> Sem r ()
 inputLoop [] = do
     s <- P.get
     minput <- P.embedFinal $ getInputLine (view prompt s)

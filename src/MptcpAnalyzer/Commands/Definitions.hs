@@ -1,19 +1,35 @@
 module MptcpAnalyzer.Commands.Definitions
 where
-import MptcpAnalyzer.Commands.Utils
+import MptcpAnalyzer.Commands.Utils ()
 import MptcpAnalyzer.Definitions ()
 import MptcpAnalyzer.Pcap
 
-import Polysemy (Sem, Members, makeSem, interpret, Effect)
+-- import Polysemy (Sem, Members, makeSem, interpret, Effect)
 
-newtype ArgsLoadPcap = ArgsLoadPcap {
-  loadPcapPath :: FilePath
-}
+data CommandArgs = ArgsLoadCsv {
+      _loadCsvPath :: FilePath
+    }
+    | ArgsLoadPcap {
+        loadPcapPath :: FilePath
+    }
+    | ArgsListSubflows {
+      _listTcpDetailed :: Bool
+    }
+    | ArgsParserSummary {
+      summaryFull :: Bool,
+      summaryTcpStreamId :: StreamId Tcp
+    }
 
-data ParserSummary = ParserSummary {
-  summaryFull :: Bool,
-  summaryTcpStreamId :: StreamId Tcp
-}
+
+
+-- newtype ArgsLoadPcap = ArgsLoadPcap {
+--   loadPcapPath :: FilePath
+-- }
+
+-- data ParserSummary = ParserSummary {
+--   summaryFull :: Bool,
+--   summaryTcpStreamId :: StreamId Tcp
+-- }
 
 newtype ParserListSubflows = ParserListSubflows {
   listTcpDetailed :: Bool
@@ -24,18 +40,18 @@ data ArgsPlot = ArgsPlot {
 
   plotOut :: String
   -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
-  -- , plotDisplay :: 
+  -- , plotDisplay ::
   , plotTitle :: Maybe String
   , plotToClipboard :: Maybe Bool
 }
 
-data Command m a where
-  LoadCsv :: ArgsLoadPcap -> Command m RetCode
-  LoadPcap :: ArgsLoadPcap -> Command m RetCode
-  ListTcpConnections :: ParserListSubflows -> Command m RetCode
-  ListMpTcpConnections :: ParserListSubflows -> Command m RetCode
-  TcpSummary :: ParserSummary -> Command m RetCode
-  PrintHelp :: Command m RetCode
-  Plot :: ArgsPlot -> Command m RetCode
+-- data Command m a where
+--   LoadCsv :: ArgsLoadPcap -> Command m RetCode
+--   LoadPcap :: ArgsLoadPcap -> Command m RetCode
+--   ListTcpConnections :: ParserListSubflows -> Command m RetCode
+--   ListMpTcpConnections :: ParserListSubflows -> Command m RetCode
+--   TcpSummary :: ParserSummary -> Command m RetCode
+--   PrintHelp :: Command m RetCode
+--   Plot :: ArgsPlot -> Command m RetCode
 
-makeSem ''Command
+-- makeSem ''Command

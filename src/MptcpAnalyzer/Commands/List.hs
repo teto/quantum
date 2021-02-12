@@ -33,8 +33,8 @@ import Data.Either (fromRight)
 -- |TODO pass the loaded pcap to have a complete filterWith
 -- listSubflowParser = 
 
-parserSummary :: Parser ParserSummary
-parserSummary = ParserSummary <$> switch
+parserSummary :: Parser CommandArgs
+parserSummary = ArgsParserSummary <$> switch
           ( long "full"
          <> help "Print details for each subflow" )
       <*> argument readStreamId (
@@ -48,17 +48,23 @@ readStreamId = eitherReader $ \arg -> case reads arg of
   [(r, "")] -> return $ StreamId r
   _ -> Left $ "cannot parse value `" ++ arg ++ "`"
 
-listTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
-listTcpOpts = info (
-   CMD.listTcpConnections <$> parserList <**> helper)
-  ( progDesc "List subflows of an MPTCP connection"
-  )
-  where
-    parserList = ParserListSubflows <$> switch (long "detailed" <> help "detail connections")
+-- listTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
+-- listTcpOpts = info (
+--    CMD.listTcpConnections <$> parserList <**> helper)
+--   ( progDesc "List subflows of an MPTCP connection"
+--   )
+--   where
+--     parserList = ParserListSubflows <$> switch (long "detailed" <> help "detail connections")
 
-tcpSummaryOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
+-- tcpSummaryOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
+-- tcpSummaryOpts = info (
+--    CMD.tcpSummary <$> parserSummary <**> helper)
+--   ( progDesc "Detail a specific TCP connection"
+--   )
+
+tcpSummaryOpts :: ParserInfo CommandArgs
 tcpSummaryOpts = info (
-   CMD.tcpSummary <$> parserSummary <**> helper)
+   parserSummary <**> helper)
   ( progDesc "Detail a specific TCP connection"
   )
 
@@ -151,7 +157,7 @@ listTcpConnectionsCmd args = do
 {-| Display statistics for the connection:
 throughput/goodput
 -}
-tcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserSummary -> Sem r RetCode
+tcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
 tcpSummary args = do
     state <- P.get
     let loadedPcap = view loadedFile state
@@ -168,6 +174,22 @@ tcpSummary args = do
         where
             tcpCon = buildConnectionFromTcpStreamId frame (summaryTcpStreamId args)
 
+-- tcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserSummary -> Sem r RetCode
+-- tcpSummary args = do
+--     state <- P.get
+--     let loadedPcap = view loadedFile state
+--     case loadedPcap of
+--       Nothing -> log ("please load a pcap first" :: String) >> return CMD.Continue
+--       Just frame -> do
+--         let _tcpstreams = getTcpStreams frame
+--         log $ "Number of rows " ++ show (frameLength frame)
+--         case fmap showTcpConnection tcpCon of
+--           Left err -> log $ "error happened:" ++ err
+--           Right desc -> log desc
+--         -- log $ "Number of SYN packets " ++ (fmap  )
+--         >> return CMD.Continue
+--         where
+--             tcpCon = buildConnectionFromTcpStreamId frame (summaryTcpStreamId args)
 
 -- listTcpConnectionsInFrame :: PcapFrame -> IO ()
 -- listTcpConnectionsInFrame frame = do
