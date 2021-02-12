@@ -133,7 +133,8 @@ buildConnectionFromTcpStreamId frame (StreamId streamId) =
   tcp.stream 6: 11.0.0.1:35589 -> 10.0.0.2:05201
   tcp.stream 7: 11.0.0.1:50007 -> 10.0.0.2:05201
 -}
-listTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
+-- listTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
+listTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
 listTcpConnectionsCmd args = do
     -- TODO this part should be extracted so that
     state <- P.get
@@ -144,7 +145,7 @@ listTcpConnectionsCmd args = do
         return CMD.Continue
       Just frame -> do
         let tcpStreams = getTcpStreams frame
-        let streamIdList = if listTcpDetailed args then [] else map StreamId tcpStreams
+        let streamIdList = if _listTcpDetailed args then [] else map StreamId tcpStreams
         -- log $ "Number of rows " ++ show (frameLength frame)
         P.embed $ putStrLn $ "Number of TCP connections " ++ show (length tcpStreams)
         _ <- P.embed $ mapM (putStrLn . describeCon . buildConnectionFromTcpStreamId frame ) streamIdList

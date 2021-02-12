@@ -14,7 +14,7 @@ let
   #   # hs.cairo
   #   hs.diagrams
   # ]);
-  my_pkg = (import ./. { inherit compiler; } );
+  # my_pkg = (import ./. { inherit compiler; } );
 in
     pkgs.mkShell {
     name = "quantum";

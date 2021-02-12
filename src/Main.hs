@@ -347,6 +347,7 @@ mainParserInfo = info (mainParser <**> helper)
 -- runCommand :: CommandArgs -> CMD.RetCode
 runCommand :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
 runCommand args@ArgsLoadCsv{} = CL.loadCsv args
+runCommand args@ArgsParserSummary{} = CLI.tcpSummary args
 
 -- genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
 -- genericRunCommand parserInfo args = do

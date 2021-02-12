@@ -22,6 +22,7 @@ data CommandArgs = ArgsLoadCsv {
 
 
 
+
 -- newtype ArgsLoadPcap = ArgsLoadPcap {
 --   loadPcapPath :: FilePath
 -- }
@@ -31,10 +32,10 @@ data CommandArgs = ArgsLoadCsv {
 --   summaryTcpStreamId :: StreamId Tcp
 -- }
 
-newtype ParserListSubflows = ParserListSubflows {
-  listTcpDetailed :: Bool
-  -- tcpStreamId :: StreamId Tcp
-}
+-- newtype ParserListSubflows = ParserListSubflows {
+--   listTcpDetailed :: Bool
+--   -- tcpStreamId :: StreamId Tcp
+-- }
 
 data ArgsPlot = ArgsPlot {
 
