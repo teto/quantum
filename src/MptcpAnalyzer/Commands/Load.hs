@@ -134,7 +134,7 @@ loadPcapIntoFrame params path = do
 
 
 loadCsv :: Members '[Log String, State MyState, Cache, Embed IO] m => CommandArgs -> Sem m CMD.RetCode
-loadCsv parsedArgs = do
+loadCsv (ArgsLoadCsv csvFilename)  = do
 
     log $ "Loading " ++ csvFilename
     -- parsedArgs <- liftIO $ myHandleParseResult parserResult
@@ -144,6 +144,7 @@ loadCsv parsedArgs = do
     modify (\s -> s { _loadedFile = Just frame })
     log $ "Number of rows " ++ show (frameLength frame)
     log "Frame loaded" >> return CMD.Continue
-    where
-      csvFilename = loadPcapPath parsedArgs
+    -- where
+    --   csvFilename = loadCsvPath parsedArgs
 
+loadCsv _ = error "unsupported "

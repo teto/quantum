@@ -148,60 +148,9 @@ opts = info (startupParser <**> helper)
 
 
 -- https://github.com/sdiehl/repline/issues/32
--- data Parser a
---   = NilP (Maybe a)
---   | OptP (Option a)
---   | forall x . MultP (Parser (x -> a)) (Parser x)
---   | AltP (Parser a) (Parser a)
---   | forall x . BindP (Parser x) (x -> Parser a)
-
--- TODO change
--- type Repl a = HaskelineT IO a
-
--- ini :: Repl ()
--- ini = liftIO $ putStrLn "Welcome!"
-
--- -- Commands
--- mainHelp :: [String] -> Repl ()
--- mainHelp args = liftIO $ print $ "Help: " ++ show args
-
--- say :: [String] -> Repl ()
--- say args = do
---   _ <- liftIO $ system $ "cowsay" ++ " " ++ (unwords args)
---   return ()
-
--- options :: [(String, [String] -> Repl ())]
--- options = [
---     ("help", mainHelp)  -- :help
---   , ("say", say)    -- :say
---   , ("load", cmdLoadPcap)    -- :say
---   ]
--- repl :: IO ()
--- repl = evalRepl (pure ">>> ") cmd options Nothing (Word completer) ini
--- Evaluation : handle each line user inputs
-
--- cmd :: String -> Repl ()
--- cmd input = liftIO $ print input
-
--- -- Tab Completion: return a completion for partial words entered
--- completer :: Monad m => WordCompleter m
--- completer n = do
---   let names = ["load", "listConnections", "listMptcpConnections"]
---   return $ filter (isPrefixOf n) names
-
--- data CompleterStyle m , I can use a Custom one
--- mainRepline :: IO ()
--- mainRepline = evalRepl (pure ">>> ") cmd Main.options Nothing (Word Main.completer) ini
-
-
 -- data CommandEnum = 
 --   LoadCsv CL.ArgsLoadPcap
 --   | LoadPcap CL.ArgsLoadPcap
-
--- data CommandParser  = CommandParser {}
--- newtype ArgsOptions = ArgsOptions
---   { optCommand :: CommandEnum
---   }
 
 -- -- ( progDesc "Load a CSV file" )
 -- -- TODO use this command parser
@@ -250,12 +199,6 @@ main = do
       , cacheEnabled = True
     }
 
-  -- TODO if there is an exit, exit, should be a fold ?
-  -- mapM_ (runApp myState . words ) (extraCommands options)
-  -- runEmbedded  liftIO
---  $ P.embed ( pure 4 :: IO Int)
---  $ P.runEmbedded liftIO
-
   _ <- runInputT haskelineSettings $
           runFinal @(InputT IO)
           $ P.embedToFinal . P.runEmbedded lift
@@ -263,20 +206,6 @@ main = do
           $ runCache cacheConfig
           $ runLogAction @IO logStringStdout (inputLoop (extraCommands options))
   putStrLn "Thanks for flying with mptcpanalyzer"
-
--- genericRunCommandTest ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => [String] -> Sem r RetCode
-genericRunCommandTest ::  Members '[Log String, P.State MyState,Cache, P.Embed IO] r => [String] -> Sem r RetCode
-genericRunCommandTest _args = do
-  P.embed ( pure CMD.Continue:: IO RetCode)
-
-  -- return CMD.Continue
--- -- $ P.embed (pure Continue)
--- runApp ::  MyState -> [String] -> IO RetCode
--- runApp _state parsedCmd = 
---      return $ P.run
---         $ P.runEmbedded 
---         $ runCache
---         $ genericRunCommandTest parsedCmd
 
 
 -- -- |
@@ -293,13 +222,8 @@ genericRunCommandTest _args = do
 --     _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
 
 
--- mainParser :: ParserInfo 
--- (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
--- Parser a
--- Mod CommandFields a ->
 -- mainParser :: P.Member Command r => Parser (Sem r RetCode)
 mainParser :: Parser CommandArgs
-  -- each command takes
 mainParser = subparser (
     -- ( command "load-pcap" CL.loadPcapOpts
     command "load-csv" CL.loadCsvOpts
@@ -346,8 +270,10 @@ mainParserInfo = info (mainParser <**> helper)
 
 -- runCommand :: CommandArgs -> CMD.RetCode
 runCommand :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
+runCommand args@ArgsLoadPcap{} = CL.loadPcap args
 runCommand args@ArgsLoadCsv{} = CL.loadCsv args
 runCommand args@ArgsParserSummary{} = CLI.tcpSummary args
+runCommand args@ArgsListSubflows{} = CLI.listTcpConnectionsCmd args
 
 -- genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
 -- genericRunCommand parserInfo args = do
@@ -389,18 +315,21 @@ runIteration fullCmd = do
 -- [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
 -- , P.Embed IO
 inputLoop :: Members '[Log String, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => [String] -> Sem r ()
-inputLoop [] = do
-    s <- P.get
-    minput <- P.embedFinal $ getInputLine (view prompt s)
-    runIteration minput >>= \case
-      CMD.Exit -> log "Exiting" >> pure ()
-      _ -> inputLoop []
-
-inputLoop (xs:rest) =
-  runIteration (Just xs) >>= \case
-    CMD.Exit -> void (log "Exiting")
-    _ -> do
-      -- log $ "Last command failed with message:\n" ++ show msg
-      inputLoop rest
+-- inputLoop (xs:rest) = pure ()
+inputLoop args =
+  go args
   where
-        -- runIteration :: Maybe [String]
+    go :: Members '[Log String, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => [String] -> Sem r ()
+    go (xs:rest) = runIteration (Just xs) >>= \case
+        CMD.Exit -> log "Exiting"
+        _ -> do
+          log $ "Last command failed with message:\n"
+          inputLoop rest
+    go [] = do
+      s <- P.get
+      minput <- P.embedFinal $ getInputLine (view prompt s)
+      runIteration minput >>= \case
+        CMD.Exit -> log "Exiting"
+        -- _ -> pure ()
+        _ -> inputLoop ["toto"]
+
