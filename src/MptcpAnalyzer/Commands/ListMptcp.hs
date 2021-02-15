@@ -9,7 +9,7 @@ import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Definitions
 import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)
-import Net.Mptcp.Types (MptcpConnection(..))
+import Net.Mptcp.Types (MptcpConnection(..), showMptcpConnection)
 import Options.Applicative
 import MptcpAnalyzer.Pcap
 import Frames
@@ -23,6 +23,7 @@ import qualified Control.Foldl as L
 import qualified Data.Set as Set
 import qualified Pipes.Prelude as PP
 import Data.Maybe (fromJust, catMaybes)
+import Data.Either (fromRight)
 
 listMpTcpOpts :: ParserInfo CommandArgs
 listMpTcpOpts = info (
@@ -138,10 +139,10 @@ listMpTcpConnectionsCmd _args = do
         log ( "please load a pcap first" :: String)
         return CMD.Continue
       Just frame -> do
-        let tcpStreams = getMpTcpStreams frame
+        let mptcpStreams = getMpTcpStreams frame
         -- log $ "Number of rows " ++ show (frameLength frame)
-        P.embed $ putStrLn $ "Number of MPTCP connections " ++ show (length tcpStreams)
-        P.embed $ putStrLn $ show tcpStreams
-        -- mapM (putStrLn . showTcpConnection <$> buildConnectionFromTcpStreamId frame ) tcpStreams
+        P.embed $ putStrLn $ "Number of MPTCP connections " ++ show (length mptcpStreams)
+        P.embed $ putStrLn $ show mptcpStreams
+        mapM (putStrLn . showMptcpConnection . fromRight . (buildMptcpConnectionFromStreamId frame) ) mptcpStreams
         -- >>
         return CMD.Continue

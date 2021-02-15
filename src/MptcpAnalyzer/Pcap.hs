@@ -68,12 +68,6 @@ import Data.Vinyl (Rec(..), ElField(..), rapply, xrec, rmapX)
 import Data.Vinyl.Functor (Compose(..), (:.))
 import Data.Vinyl.Class.Method
 
--- Phantom types
-data Mptcp
-data Tcp
-
--- TODO use Word instead
-newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord)
 
 -- tableTypes is a Template Haskell function, which means that it is executed at compile time. It generates a data type for our CSV, so we have everything under control with our types.
 

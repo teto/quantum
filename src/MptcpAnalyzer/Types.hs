@@ -29,8 +29,8 @@ import qualified Data.Text.Lazy.Builder as B
 import Data.Typeable (Typeable)
 
 -- An en passant Default class
-class Default a where
-  def :: a
+-- class Default a where
+--   def :: a
 
 data TsharkFieldDesc = TsharkFieldDesc {
         fullname :: T.Text
@@ -42,7 +42,15 @@ data TsharkFieldDesc = TsharkFieldDesc {
         , hash :: Bool
     }
 
-type MbMptcpStream = Maybe Word32
+-- Phantom types
+data Mptcp
+data Tcp
+
+-- TODO use Word instead
+newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord)
+
+-- type MbMptcpStream = Maybe Word32
+type MbMptcpStream = Maybe (StreamId Mptcp)
 type MbMptcpSendKey = Maybe Word64
 type MbMptcpVersion = Maybe Int
 type MbMptcpExpectedToken = Maybe Word32
