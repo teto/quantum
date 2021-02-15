@@ -27,12 +27,6 @@ import Data.Either (fromRight)
 -- for TcpConnection
 
 
-
--- This 
-
--- |TODO pass the loaded pcap to have a complete filterWith
--- listSubflowParser = 
-
 parserSummary :: Parser CommandArgs
 parserSummary = ArgsParserSummary <$> switch
           ( long "full"
@@ -43,18 +37,20 @@ parserSummary = ArgsParserSummary <$> switch
           -- TODO pass a default
           )
 
+-- |Can load stream ids from CSV files
 readStreamId :: ReadM (StreamId Tcp)
 readStreamId = eitherReader $ \arg -> case reads arg of
   [(r, "")] -> return $ StreamId r
   _ -> Left $ "cannot parse value `" ++ arg ++ "`"
 
--- listTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
--- listTcpOpts = info (
---    CMD.listTcpConnections <$> parserList <**> helper)
---   ( progDesc "List subflows of an MPTCP connection"
---   )
---   where
---     parserList = ParserListSubflows <$> switch (long "detailed" <> help "detail connections")
+
+listTcpOpts ::  ParserInfo CommandArgs
+listTcpOpts = info (
+   ArgsListTcpConnections <$> parserList <**> helper)
+  ( progDesc "List subflows of an MPTCP connection"
+  )
+  where
+    parserList = switch (long "detailed" <> help "detail connections")
 
 -- tcpSummaryOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
 -- tcpSummaryOpts = info (

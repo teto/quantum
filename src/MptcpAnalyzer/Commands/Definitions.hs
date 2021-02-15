@@ -12,8 +12,14 @@ data CommandArgs = ArgsLoadCsv {
     | ArgsLoadPcap {
         loadPcapPath :: FilePath
     }
-    | ArgsListSubflows {
+    | ArgsListTcpConnections {
       _listTcpDetailed :: Bool
+    }
+    | ArgsListMpTcpConnections {
+      _listMpTcpDetailed :: Bool
+    }
+    | ArgsListSubflows {
+      _listSubflowsDetailed :: Bool
     }
     | ArgsParserSummary {
       summaryFull :: Bool,

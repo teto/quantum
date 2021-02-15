@@ -43,24 +43,14 @@ loadCsvArgs =  ArgsLoadCsv <$> argument str (metavar "PCAP" <> completeWith ["to
 loadCsvOpts :: ParserInfo CommandArgs
 loadCsvOpts = info (loadCsvArgs <**> helper)
   ( fullDesc
-  <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
-              \performance via the generation of stats & plots"
+  <> progDesc "Load acsv file generated from wireshark"
   )
 
--- loadCsvOpts :: P.Member Command r => ParserInfo (Sem r RetCode)
--- loadCsvOpts = info (CMD.loadCsv <$> loadPcapArgs <**> helper)
---   ( fullDesc
---   <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
---               \performance via the generation of stats & plots"
---   )
-
--- loadPcapOpts :: P.Member Command r => ParserInfo (Sem r RetCode)
--- -- loadPcapOpts :: Members [Log String, P.State MyState, Cache, Embed IO] m => ParserInfo (Sem m RetCode)
--- loadPcapOpts = info (CMD.loadPcap <$> loadPcapArgs <**> helper)
---   ( fullDesc
---   <> progDesc "Tool to provide insight in MPTCP (Multipath Transmission Control Protocol)\
---               \performance via the generation of stats & plots"
---   )
+loadPcapOpts :: ParserInfo CommandArgs
+loadPcapOpts = info (loadPcapArgs <**> helper)
+  ( fullDesc
+  <> progDesc "Load a pcap file via wireshark"
+  )
 
 
 -- myHandleParseResult :: ParserResult a -> m CMD.RetCode

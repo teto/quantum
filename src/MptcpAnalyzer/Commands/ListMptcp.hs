@@ -30,15 +30,16 @@ listMpTcpOpts = info (
   ( progDesc "List MPTCP connections"
   )
   where
+    parserList = ArgsListMpTcpConnections <$> switch ( long "detailed" <> help "detail connections")
+
+listMptcpSubflowOpts :: ParserInfo CommandArgs
+listMptcpSubflowOpts = info (
+    parserList <**> helper)
+  ( progDesc "List MPTCP connections"
+  )
+  where
     parserList = ArgsListSubflows <$> switch ( long "detailed" <> help "detail connections")
 
--- listMpTcpOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
--- listMpTcpOpts = info (
---    CMD.listMpTcpConnections <$> parserList <**> helper)
---   ( progDesc "List MPTCP connections"
---   )
---   where
---     parserList = ParserListSubflows <$> switch ( long "detailed" <> help "detail connections")
 
 -- keepMptcpPackets :: PcapFrame -> PcapFrame
 -- keepMptcpPackets frame = do
@@ -120,6 +121,13 @@ buildMptcpConnectionFromStreamId frame (StreamId streamId) = do
     -- , subflowInterface = Nothing
   -- }
 
+listSubflowsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
+listSubflowsCmd _args = do
+  log "not implemented yet"
+  return CMD.Continue
+
+{-
+-}
 listMpTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
 listMpTcpConnectionsCmd _args = do
     -- TODO this part should be extracted so that

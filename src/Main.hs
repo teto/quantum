@@ -148,18 +148,6 @@ opts = info (startupParser <**> helper)
 
 
 -- https://github.com/sdiehl/repline/issues/32
--- data CommandEnum = 
---   LoadCsv CL.ArgsLoadPcap
---   | LoadPcap CL.ArgsLoadPcap
-
--- -- ( progDesc "Load a CSV file" )
--- -- TODO use this command parser
--- commandParser :: Parser CommandArgs
--- commandParser = subparser (
---     command "loadCsv" CL.loadCsvOpts
---     <> command "load-pcap" CL.loadPcapOpts
---     <> command "tcp-summary" CLI.tcpSummaryOpts
---     )
 
 -- just for testing, to remove afterwards
 defaultPcap :: FilePath
@@ -208,29 +196,18 @@ main = do
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 
--- -- |
--- runCommandStr ::  Members '[Log String, Cache, P.State MyState, P.Embed IO] r => [String] -> Sem r RetCode
--- runCommandStr [] = return $ CMD.Error "Please enter a command"
--- runCommandStr (commandStr:args) = do
---   case commandStr of
---     "loadPcap" -> genericRunCommand CL.loadPcapOpts args
---     "load-pcap" -> genericRunCommand CL.loadPcapOpts args
---     "load-csv" -> genericRunCommand CL.loadCsvOpts args
---     "list-tcp" -> genericRunCommand CLI.listTcpOpts args
---     "list-mptcp" -> genericRunCommand CLI.listMpTcpOpts args
---     "tcp-summary" -> genericRunCommand CLI.tcpSummaryOpts args
---     _ -> return $ CMD.Error $ commandStr ++ "Not implemented yet"
-
-
--- mainParser :: P.Member Command r => Parser (Sem r RetCode)
+-- TODO
+-- one can create groups with <|> subparser
 mainParser :: Parser CommandArgs
 mainParser = subparser (
     -- ( command "load-pcap" CL.loadPcapOpts
     command "load-csv" CL.loadCsvOpts
+    <> command "load-pcap" CL.loadPcapOpts
     <> command "tcp-summary" CLI.tcpSummaryOpts
+    <> command "list-tcp" CLI.listTcpOpts
+    <> command "list-mptcp" CLI.listMpTcpOpts
+    -- <> command "help" CLI.listMpTcpConnectionsCmd
     )
-    -- "loadPcap" -> genericRunCommand CL.loadPcapOpts args
-    -- "load-pcap" -> genericRunCommand CL.loadPcapOpts args
 
 
 -- mainParserInfo :: P.Member Command r => ParserInfo (Sem r RetCode)
@@ -243,17 +220,6 @@ mainParserInfo = info (mainParser <**> helper)
   <> footer "You can report issues/contribute at https://github.com/teto/mptcpanalyzer"
   )
 
-
--- type CommandList m = HM.Map String (CommandCb m)
--- commands :: Members DefaultMembers r => HM.Map String (Sem r RetCode)
--- commands :: Members DefaultMembers r => HM.Map String  (Sem r CMD.RetCode)
--- commands = HM.fromList [
---     -- ("load", loadPcap)
---     ("load_csv", loadCsv)
---     -- , ("list_tcp", listTcpConnections)
---     , ("help", printHelp)
---     -- , ("list_mptcp", listMpTcpConnections)
---     ]
 
 
 -- printHelp :: P.Members '[Log String] r => [String] -> Sem r CMD.RetCode
@@ -273,7 +239,9 @@ runCommand :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r => Com
 runCommand args@ArgsLoadPcap{} = CL.loadPcap args
 runCommand args@ArgsLoadCsv{} = CL.loadCsv args
 runCommand args@ArgsParserSummary{} = CLI.tcpSummary args
-runCommand args@ArgsListSubflows{} = CLI.listTcpConnectionsCmd args
+runCommand args@ArgsListSubflows{} = CLI.listSubflow args
+runCommand args@ArgsListTcpConnections{} = CLI.listTcpConnectionsCmd args
+runCommand args@ArgsListMpTcpConnections{} = CLI.listMpTcpConnectionsCmd args
 
 -- genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
 -- genericRunCommand parserInfo args = do
@@ -331,5 +299,5 @@ inputLoop args =
       runIteration minput >>= \case
         CMD.Exit -> log "Exiting"
         -- _ -> pure ()
-        _ -> inputLoop ["toto"]
+        _ -> inputLoop []
 
