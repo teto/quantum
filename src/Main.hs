@@ -200,11 +200,13 @@ main = do
 -- one can create groups with <|> subparser
 mainParser :: Parser CommandArgs
 mainParser = subparser (
-    -- ( command "load-pcap" CL.loadPcapOpts
-    command "load-csv" CL.loadCsvOpts
+    commandGroup "Loader commands"
+    <> command "load-csv" CL.loadCsvOpts
     <> command "load-pcap" CL.loadPcapOpts
+    <> commandGroup "TCP commands"
     <> command "tcp-summary" CLI.tcpSummaryOpts
     <> command "list-tcp" CLI.listTcpOpts
+    <> commandGroup "MPTCP commands"
     <> command "list-mptcp" CLI.listMpTcpOpts
     -- <> command "help" CLI.listMpTcpConnectionsCmd
     )

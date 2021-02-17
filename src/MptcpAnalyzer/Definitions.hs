@@ -19,6 +19,10 @@ makeLenses ''MyState
 
 
 
+-- alternatively could modify defaultPrefs
 defaultParserPrefs :: ParserPrefs
-defaultParserPrefs = defaultPrefs
+defaultParserPrefs = prefs showHelpOnEmpty
+-- {
+--     prefShowHelpOnError = True
+--     }
 
