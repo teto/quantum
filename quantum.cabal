@@ -112,6 +112,8 @@ executable mptcpanalyzer
         Tshark.TH
         , Tshark.TH2
         , Net.Mptcp.Types
+        -- reexport the rest
+        , MptcpAnalyzer
         , MptcpAnalyzer.Types
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache

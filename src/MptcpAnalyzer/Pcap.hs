@@ -23,7 +23,7 @@ where
 
 
 import Data.Monoid (First(..))
-import Frames.InCore (VectorFor)
+-- import Frames.InCore (VectorFor)
 import qualified Data.Vector as V
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -158,7 +158,7 @@ type ManColumnsTshark = '[
     , "tsEcr"  :-> Maybe Word32
 
     , "mtcpExpectedToken"  :-> MbMptcpExpectedToken
-    , "mptcpStream" :-> Maybe Word32
+    , "mptcpStream" :-> MbMptcpStream
     , "mptcpSendKey" :-> Maybe Word64
     , "mptcpRecvKey" :-> Maybe Word64
 

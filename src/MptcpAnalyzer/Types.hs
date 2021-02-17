@@ -28,6 +28,9 @@ import Language.Haskell.TH
 import qualified Data.Text.Lazy.Builder as B
 import Data.Typeable (Typeable)
 
+import Control.Monad (mzero)
+import Frames (CommonColumns, Readable(..))
+
 -- An en passant Default class
 -- class Default a where
 --   def :: a
@@ -48,6 +51,8 @@ data Tcp
 
 -- TODO use Word instead
 newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord)
+type StreamIdTcp = StreamId Tcp
+type StreamIdMptcp = StreamId Mptcp
 
 -- type MbMptcpStream = Maybe Word32
 type MbMptcpStream = Maybe (StreamId Mptcp)
@@ -125,6 +130,16 @@ instance Frames.ColumnTypeable.Parseable IP where
 -- instance Frames.ColumnTypeable.Parseable Word64 where
 --   parse = parseIntish
 
+instance Readable (StreamId Mptcp) where
+  --
+  fromText t = case T.readMaybe (T.unpack t) of
+      Just streamId -> return $ StreamId streamId
+      Nothing -> mzero
+
+
+-- forall a.
+instance Frames.ColumnTypeable.Parseable (StreamId Mptcp) where
+  parse = parseIntish
 
 
 -- could not parse 0x00000002
@@ -156,6 +171,11 @@ instance ShowCSV m => ShowCSV (Maybe m) where
     Nothing -> ""
     Just x -> showCSV x
 
+--
+instance ShowCSV (StreamId a) where
+  showCSV (StreamId stream) = showCSV stream
+
+
 -- type ManMaybe = Rec (Maybe :. ElField) ManColumns
 -- TODO goal here is to choose the most performant Data.Vector
 type instance VectorFor Word16 = V.Vector
@@ -170,6 +190,8 @@ type instance VectorFor TcpFlagList = V.Vector
 type instance VectorFor (Maybe Int) = V.Vector
 type instance VectorFor (Maybe Bool) = V.Vector
 type instance VectorFor (Maybe OptionList) = V.Vector
+type instance VectorFor MbMptcpStream = V.Vector
+-- type instance VectorFor MbTcpStream = V.Vector
 
 -- instance Default (ElField MyInt) where def = Field 0
 -- instance Default (ElField MyString) where def = Field ""

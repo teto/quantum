@@ -3,6 +3,7 @@ where
 import MptcpAnalyzer.Commands.Utils ()
 import MptcpAnalyzer.Definitions ()
 import MptcpAnalyzer.Pcap
+import MptcpAnalyzer.Types
 
 -- import Polysemy (Sem, Members, makeSem, interpret, Effect)
 

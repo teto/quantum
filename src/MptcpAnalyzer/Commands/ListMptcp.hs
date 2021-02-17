@@ -12,6 +12,7 @@ import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)
 import Net.Mptcp.Types (MptcpConnection(..), showMptcpConnection)
 import Options.Applicative
 import MptcpAnalyzer.Pcap
+import MptcpAnalyzer.Types
 import Frames
 import Control.Lens hiding (argument)
 import Polysemy (Member, Members, Sem, Embed)
@@ -47,19 +48,19 @@ listMptcpSubflowOpts = info (
 --     let mptcpStreams = getTcpStreams frame
 
 -- TODO return MptcpStreamId instead
-getMpTcpStreams :: PcapFrame -> [Word32]
+getMpTcpStreams :: PcapFrame -> [StreamIdMptcp]
 getMpTcpStreams ps =
     catMaybes $
     L.fold L.nub $ (view mptcpStream <$> ps)
 
 filterMptcpConnection :: PcapFrame -> StreamId Mptcp -> PcapFrameF MptcpConnection
-filterMptcpConnection frame (StreamId streamId) =
+filterMptcpConnection frame streamId =
   streamPackets
   where
     streamPackets = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
 
 buildMptcpConnectionFromStreamId :: PcapFrame -> StreamId Mptcp -> Either String MptcpConnection
-buildMptcpConnectionFromStreamId frame (StreamId streamId) = do
+buildMptcpConnectionFromStreamId frame streamId = do
     -- Right $ frameLength synPackets
     if frameLength streamPackets < 1 then
       Left $ "No packet with mptcp.stream == " ++ show streamId
@@ -139,10 +140,14 @@ listMpTcpConnectionsCmd _args = do
         log ( "please load a pcap first" :: String)
         return CMD.Continue
       Just frame -> do
-        let mptcpStreams = getMpTcpStreams frame
         -- log $ "Number of rows " ++ show (frameLength frame)
         P.embed $ putStrLn $ "Number of MPTCP connections " ++ show (length mptcpStreams)
         P.embed $ putStrLn $ show mptcpStreams
-        mapM (putStrLn . showMptcpConnection . fromRight . (buildMptcpConnectionFromStreamId frame) ) mptcpStreams
+        P.embed $ putStrLn $ concat $ map showMptcpConnection mptcpConnections
         -- >>
         return CMD.Continue
+        where
+          mptcpConnections :: [MptcpConnection]
+          mptcpConnections = map ((fromRight undefined) . (buildMptcpConnectionFromStreamId frame ) ) mptcpStreams
+          mptcpStreams = getMpTcpStreams frame
+

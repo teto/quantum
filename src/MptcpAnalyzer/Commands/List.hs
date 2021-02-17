@@ -19,6 +19,8 @@ import Polysemy.State as P
 import Colog.Polysemy (Log, log)
 import Data.Either (fromRight)
 
+import MptcpAnalyzer.Types
+
 -- import qualified Pipes.Prelude as P
 -- import Pipes (Producer, (>->))
 -- import qualified Pipes.Prelude as P
