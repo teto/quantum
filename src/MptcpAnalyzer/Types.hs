@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances                      #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module MptcpAnalyzer.Types
 where
@@ -28,7 +29,7 @@ import Language.Haskell.TH
 import qualified Data.Text.Lazy.Builder as B
 import Data.Typeable (Typeable)
 
-import Control.Monad (mzero)
+import Control.Monad (MonadPlus, mzero)
 import Frames (CommonColumns, Readable(..))
 
 -- An en passant Default class
@@ -102,9 +103,22 @@ baseFields = [
 instance (Read a, Typeable a, Frames.ColumnTypeable.Parseable a) => Frames.ColumnTypeable.Parseable (Maybe a) where
   parse txt = case T.null txt of
     True -> return $ Definitely Nothing
-    False -> return $ Definitely $ Just w64
+    False -> do
+      val2 <- val
+      return $ case val2 of
+        Possibly x -> Possibly (Just x)
+        Definitely x -> Definitely (Just x)
     where
-        w64 = read (T.unpack txt) :: a
+      val :: MonadPlus m => m (Parsed a)
+      val = parse txt
+
+      -- val2 :: MonadPlus m => m (Parsed (Maybe a))
+      -- val2 = Just <$> val
+    -- case w64 of
+    --   Left msg -> error $ "could not read " ++ show txt ++ ", error: " ++ msg
+    --   Right val -> Definitely (Just val)
+    -- where
+    --     w64 = T.readEither (T.unpack txt)
 
 
 -- TODO parse based on ,

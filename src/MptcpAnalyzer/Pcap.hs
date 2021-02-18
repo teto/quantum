@@ -136,6 +136,7 @@ declareColumn "mptcpDack" ''MbMptcpDack
 type ManColumnsTshark = '[
     "packetId" :-> Word64
     , "interfaceName" :-> Text
+    -- Load it as a Float
     , "relTime" :-> Text
     , "absTime" :-> Text
     , "ipSource" :-> IP
@@ -159,6 +160,7 @@ type ManColumnsTshark = '[
 
     , "mtcpExpectedToken"  :-> MbMptcpExpectedToken
     , "mptcpStream" :-> MbMptcpStream
+    -- Not 
     , "mptcpSendKey" :-> Maybe Word64
     , "mptcpRecvKey" :-> Maybe Word64
 
@@ -327,6 +329,8 @@ loadRowsEither path =  produceTextLines path >-> pipeTableEitherOpt defaultParse
 -- loadRowsEitherFiltered :: MonadSafe m => FilePath -> Producer ManEither m ()
 -- >-> P.map (tokenizeRow defaultParser)
 
+{- |Load rows and errors when it can't load a specific line
+-}
 eitherProcessed :: MonadSafe m => FilePath -> Producer Packet m ()
 eitherProcessed path = loadRowsEither path  >-> P.map fromEither
   where
@@ -338,7 +342,7 @@ eitherProcessed path = loadRowsEither path  >-> P.map fromEither
 
         fromEither :: Rec (Either Text :. ElField) (RecordColumns Packet) -> Packet
         fromEither x = case recEither x of
-          Left _txt -> error ( "eitherProcessed failure : " ++ T.unpack _txt ++ "toto")
+          Left _txt -> error ( "eitherProcessed failure : " ++ T.unpack _txt)
           Right pkt -> pkt
 
 -- | Undistribute 'Maybe' from a 'Rec' 'Maybe'. This is just a
