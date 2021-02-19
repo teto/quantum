@@ -137,8 +137,8 @@ type ManColumnsTshark = '[
     "packetId" :-> Word64
     , "interfaceName" :-> Text
     -- Load it as a Float
-    , "relTime" :-> Text
     , "absTime" :-> Text
+    , "relTime" :-> Text
     , "ipSource" :-> IP
     , "ipDest" :-> IP
     , "ipSrcHost" :-> Text
@@ -166,7 +166,7 @@ type ManColumnsTshark = '[
     , "mptcpRecvKey" :-> Maybe Word64
 
     , "mptcpRecvToken" :-> MbMptcpExpectedToken
-    , "mptcpdataFin" :-> Maybe Bool
+    , "mptcpDataFin" :-> Maybe Bool
     -- mptcp version for now is 0 or 1
     -- maybe use a word9 instead
     , "mptcpVersion" :-> Maybe Int
@@ -209,12 +209,12 @@ data TsharkParams = TsharkParams {
       tsharkReadFilter :: Maybe String
     }
 
+-- first argument allows to override csv header ("headerOverride")
 defaultParserOptions :: ParserOptions
 defaultParserOptions = ParserOptions Nothing (T.pack [csvDelimiter defaultTsharkPrefs]) NoQuoting
 
--- -- nub => remove duplicates
+-- nub => remove duplicates
 -- or just get the column
--- L.fold
 getTcpStreams :: PcapFrame -> [Word32]
 getTcpStreams ps =
     L.fold L.nub (view tcpStream <$> ps)
@@ -342,16 +342,10 @@ loadRowsEither path =  produceTextLines path >-> pipeTableEitherOpt defaultParse
 eitherProcessed :: MonadSafe m => FilePath -> Producer Packet m ()
 eitherProcessed path = loadRowsEither path  >-> P.map fromEither
   where
-        -- holeFiller :: Rec (Either Text :. ElField) (RecordColumns Packet) -> Maybe Packet
-        -- holeFiller = recMaybe . rmapX @(First :. ElField) getFirst
-        --            -- . rapply (rmapX @(First :. ElField) (flip mappend) def)
-        --            . rmapX @_ @(First :. ElField) First
-        --Rec (ElfField) (RecordColumns Packet)
-
-        fromEither :: Rec (Either Text :. ElField) (RecordColumns Packet) -> Packet
-        fromEither x = case recEither x of
-          Left _txt -> error ( "eitherProcessed failure : " ++ T.unpack _txt)
-          Right pkt -> pkt
+    fromEither :: Rec (Either Text :. ElField) (RecordColumns Packet) -> Packet
+    fromEither x = case recEither x of
+      Left _txt -> error ( "eitherProcessed failure : " ++ T.unpack _txt)
+      Right pkt -> pkt
 
 -- | Undistribute 'Maybe' from a 'Rec' 'Maybe'. This is just a
 -- specific usage of 'rtraverse', but it is quite common.

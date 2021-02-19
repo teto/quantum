@@ -87,7 +87,7 @@ baseFields = [
     -- -- TODO use Word32 instead
     -- -- TODO read as a list TcpFlagList
     , ("tcpflags", TsharkFieldDesc "tcp.flags" [t|TcpFlagList|] Nothing False)
-    , ("tcpoptionkind", TsharkFieldDesc "tcp.dstport" [t|Text|] Nothing False)
+    , ("tcpoptionkind", TsharkFieldDesc "tcp.option_kind" [t|Text|] Nothing False)
     , ("tcpseq", TsharkFieldDesc "tcp.seq" [t|Word32|] (Just "Sequence number") False)
     , ("tcplen", TsharkFieldDesc "tcp.len" [t|Word32|] (Just "Acknowledgement") False)
     , ("tcpack", TsharkFieldDesc "tcp.ack" [t|Word32|] (Just "Acknowledgement") False)
@@ -96,7 +96,7 @@ baseFields = [
     , ("tsecr", TsharkFieldDesc "tcp.options.timestamp.tsecr" [t|Word32|] (Just "Acknowledgement") False)
     , ("expectedToken", TsharkFieldDesc "mptcp.expected_token" [t|MbMptcpExpectedToken|] (Just "Acknowledgement") False)
 
-    , ("mptcpstream", TsharkFieldDesc "mptcp.stream" [t|MbMptcpStream|] Nothing False)
+    , ("mptcpStream", TsharkFieldDesc "mptcp.stream" [t|MbMptcpStream|] Nothing False)
     , ("mptcpSendKey", TsharkFieldDesc "tcp.options.mptcp.sendkey" [t|Word64|] Nothing False)
     , ("mptcpRecvKey", TsharkFieldDesc "tcp.options.mptcp.recvkey" [t|Word64|] Nothing False)
     , ("mptcpRecvToken", TsharkFieldDesc "tcp.options.mptcp.recvtok" [t|Word64|] Nothing False)
