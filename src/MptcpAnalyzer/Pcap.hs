@@ -143,6 +143,7 @@ type ManColumnsTshark = '[
     , "ipDest" :-> IP
     , "ipSrcHost" :-> Text
     , "ipDstHost" :-> Text
+    -- TODO pass as a StreamIdTcp
     , "tcpStream" :-> Word32
     , "tcpSrcPort" :-> Word16
     , "tcpDestPort" :-> Word16
@@ -255,6 +256,9 @@ generateCsvCommand fieldNames pcapFilename tsharkParams =
 -- TODO pass a list of options too
 -- TODO need to override 'WIRESHARK_CONFIG_DIR' = tempfile.gettempdir()
 -- (MonadIO m, KatipContext m) =>
+{- Export to CSV
+
+-}
 exportToCsv ::  TsharkParams ->
                 FilePath  -- ^Path to the pcap
                 -> FilePath -> Handle -- ^ temporary file

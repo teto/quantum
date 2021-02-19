@@ -12,6 +12,7 @@ import Data.Vinyl.Functor (Compose(..), (:.))
 import Data.Vinyl.Class.Method
 
 import Net.IP
+import Data.Text (Text)
 -- import Frames.TH
 -- import Frames
 import Frames.ShowCSV
@@ -66,25 +67,45 @@ type OptionList = T.Text
     -- deriving (Read, Generic)
 type FieldDescriptions = [(T.Text, TsharkFieldDesc)]
 
+-- MUST BE KEPT IN SYNC WITH  Pcap.hs ManColumnsTshark
+-- ORDER INCLUDED !
+-- until we can automate this
 baseFields :: FieldDescriptions
 baseFields = [
-    ("packetid", TsharkFieldDesc "frame.number" [t|Int|] Nothing False)
-    -- ("packetid", TsharkFieldDesc "frame.number" [t|Word64|] Nothing False)
-    -- ("packetid", TsharkFieldDesc "frame.number" ("packetid" :-> Word64) Nothing False)
-    -- ("ifname", TsharkFieldDesc "frame.interface_name" [t|Text|] Nothing False),
-    -- ("abstime", TsharkFieldDesc "frame.time_epoch" [t|String|] Nothing False),
-    -- , ("ipsrc", TsharkFieldDesc "_ws.col.ipsrc" [t|IP|] (Just "source ip") False)
-    -- , ("ipdst", TsharkFieldDesc "_ws.col.ipdst" [t|IP|] (Just "destination ip") False)
-    -- , ("tcpstream", TsharkFieldDesc "tcp.stream" [t|Word32|] Nothing False)
-    -- , ("mptcpstream", TsharkFieldDesc "mptcp.stream" [t|Word32|] Nothing False)
+    ("packetid", TsharkFieldDesc "frame.number" [t|Word64|] Nothing False)
+    , ("ifname", TsharkFieldDesc "frame.interface_name" [t|Text|] Nothing False)
+    , ("abstime", TsharkFieldDesc "frame.time_epoch" [t|Text|] Nothing False)
+    , ("abstime", TsharkFieldDesc "frame.time_relative" [t|Text|] Nothing False)
+    , ("ipsrc", TsharkFieldDesc "_ws.col.ipsrc" [t|IP|] (Just "source ip") False)
+    , ("ipdst", TsharkFieldDesc "_ws.col.ipdst" [t|IP|] (Just "destination ip") False)
+    , ("ipsrcHost", TsharkFieldDesc "_ws.col.ipsrc" [t|IP|] (Just "source ip") False)
+    , ("ipdstHost", TsharkFieldDesc "_ws.col.ipdst" [t|IP|] (Just "destination ip") False)
+    , ("tcpstream", TsharkFieldDesc "tcp.stream" [t|Word32|] Nothing False)
+    , ("sport", TsharkFieldDesc "tcp.srcport" [t|Word16|] Nothing False)
+    , ("dport", TsharkFieldDesc "tcp.dstport" [t|Word16|] Nothing False)
+    , ("rwnd", TsharkFieldDesc "tcp.rwnd" [t|Word32|] Nothing False)
     -- -- TODO use Word32 instead
-    -- , ("sport", TsharkFieldDesc "tcp.srcport" [t|Word16|] Nothing False)
-    -- , ("dport", TsharkFieldDesc "tcp.dstport" [t|Word16|] Nothing False)
-    -- -- TODO read as a list
-    -- ("tcpflags", TsharkFieldDesc "tcp.dstport" [t|String|] Nothing False),
-    -- ("tcpoptionkind", TsharkFieldDesc "tcp.dstport" [t|Word32|] Nothing False),
-    -- ("tcpseq", TsharkFieldDesc "tcp.seq" [t|Word32|] (Just "Sequence number") False),
-    -- ("tcpack", TsharkFieldDesc "tcp.ack" [t|Word32|] (Just "Acknowledgement") False)
+    -- -- TODO read as a list TcpFlagList
+    , ("tcpflags", TsharkFieldDesc "tcp.flags" [t|TcpFlagList|] Nothing False)
+    , ("tcpoptionkind", TsharkFieldDesc "tcp.dstport" [t|Text|] Nothing False)
+    , ("tcpseq", TsharkFieldDesc "tcp.seq" [t|Word32|] (Just "Sequence number") False)
+    , ("tcplen", TsharkFieldDesc "tcp.len" [t|Word32|] (Just "Acknowledgement") False)
+    , ("tcpack", TsharkFieldDesc "tcp.ack" [t|Word32|] (Just "Acknowledgement") False)
+
+    , ("tsval", TsharkFieldDesc "tcp.options.timestamp.tsval" [t|Word32|] (Just "Acknowledgement") False)
+    , ("tsecr", TsharkFieldDesc "tcp.options.timestamp.tsecr" [t|Word32|] (Just "Acknowledgement") False)
+    , ("expectedToken", TsharkFieldDesc "mptcp.expected_token" [t|MbMptcpExpectedToken|] (Just "Acknowledgement") False)
+
+    , ("mptcpstream", TsharkFieldDesc "mptcp.stream" [t|MbMptcpStream|] Nothing False)
+    , ("mptcpSendKey", TsharkFieldDesc "tcp.options.mptcp.sendkey" [t|Word64|] Nothing False)
+    , ("mptcpRecvKey", TsharkFieldDesc "tcp.options.mptcp.recvkey" [t|Word64|] Nothing False)
+    , ("mptcpRecvToken", TsharkFieldDesc "tcp.options.mptcp.recvtok" [t|Word64|] Nothing False)
+    -- bool ?
+    , ("mptcpDataFin", TsharkFieldDesc "tcp.options.mptcp.datafin.flag" [t|Word64|] Nothing False)
+    , ("mptcpVersion", TsharkFieldDesc "tcp.options.mptcp.version" [t|Maybe Int|] Nothing False)
+    , ("mptcpDack", TsharkFieldDesc "mptcp.ack" [t|Word64|] Nothing False)
+    , ("mptcpDsn", TsharkFieldDesc "mptcp.dsn" [t|Word64|] Nothing False)
+
     ]
 
 
@@ -206,16 +227,6 @@ type instance VectorFor (Maybe Bool) = V.Vector
 type instance VectorFor (Maybe OptionList) = V.Vector
 type instance VectorFor MbMptcpStream = V.Vector
 -- type instance VectorFor MbTcpStream = V.Vector
-
--- instance Default (ElField MyInt) where def = Field 0
--- instance Default (ElField MyString) where def = Field ""
--- instance Default (ElField MyBool) where def = Field False
-
--- instance (Applicative f, Default a) => Default (f a) where def = pure def
--- instance Default (f (g a)) => Default (Compose f g a) where def = Compose def
-
--- instance RecPointed Default f ts => Default (Rec f ts) where
---   def = rpointMethod @Default def
 
 getHeaders :: [(T.Text, TsharkFieldDesc)] -> [(T.Text, Q Type)]
 getHeaders = map (\(name, x) -> (name, colType x))

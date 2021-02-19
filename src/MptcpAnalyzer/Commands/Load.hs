@@ -37,13 +37,13 @@ loadPcapArgs =  ArgsLoadPcap <$> argument str (metavar "PCAP" <> completeWith ["
 
 loadCsvArgs :: Parser CommandArgs
 loadCsvArgs =  ArgsLoadCsv <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
-          <> help "Load a Pcap file"
+          <> help "Load a Csv file"
       )
 
 loadCsvOpts :: ParserInfo CommandArgs
 loadCsvOpts = info (loadCsvArgs <**> helper)
   ( fullDesc
-  <> progDesc "Load acsv file generated from wireshark"
+  <> progDesc "Load a csv file generated from wireshark"
   )
 
 loadPcapOpts :: ParserInfo CommandArgs
