@@ -32,7 +32,7 @@ import Tshark.TH2
 -- import Net.IP
 -- creates cycle
 -- import MptcpAnalyzer.Definitions
-import System.IO (Handle, hGetContents)
+import System.IO (BufferMode(LineBuffering), hSetBuffering, SeekMode(AbsoluteSeek), hSeek, Handle, hGetContents)
 import System.Process
 import System.Exit
 -- import Katip
@@ -236,8 +236,7 @@ generateCsvCommand fieldNames pcapFilename tsharkParams =
               "-r", pcapFilename,
               "-E", "separator=" ++ [csvDelimiter tsharkParams]
             ]
-        -- if self.profile:
-        --     cmd.extend(['-C', self.profile])
+
         args :: [String]
         args = (start ++ opts ++ readFilter ) ++ map T.unpack  fields
 
@@ -253,24 +252,27 @@ generateCsvCommand fieldNames pcapFilename tsharkParams =
         fields = ["-T", "fields"]
             ++ Prelude.foldr (\fieldName l -> ["-e", fieldName] ++ l) [] fieldNames
 
+
+
 -- TODO pass a list of options too
 -- TODO need to override 'WIRESHARK_CONFIG_DIR' = tempfile.gettempdir()
 -- (MonadIO m, KatipContext m) =>
 {- Export to CSV
 
 -}
-exportToCsv ::  TsharkParams ->
-                FilePath  -- ^Path to the pcap
-                -> FilePath -> Handle -- ^ temporary file
+exportToCsv :: TsharkParams ->
+               FilePath  -- ^Path to the pcap
+               -> FilePath -- ^ temporary file
+               -> Handle -- ^ temporary file
               -- ^See haskell:readCreateProcessWithExitCode
                 -> IO (FilePath, ExitCode, String)
-exportToCsv params pcapPath path fd = do
+exportToCsv params pcapPath path tmpFileHandle = do
     let
         (RawCommand bin args) = generateCsvCommand fields pcapPath params
         createProc :: CreateProcess
         createProc = (proc bin args) {
             std_err = CreatePipe,
-            std_out = UseHandle fd
+            std_out = UseHandle tmpFileHandle
             }
     putStrLn $ "Exporting fields " ++ show fields
     putStrLn $ "Command run: " ++ show (RawCommand bin args)
@@ -278,18 +280,20 @@ exportToCsv params pcapPath path fd = do
     -- withCreateProcess (proc cmd args) { ... }  $ \stdin stdout stderr ph -> do
     -- runInteractiveProcess
     -- TODO redirect stdout towards the out handle
-    -- TODO use createProcess instead
-    -- readCreateProcessWithExitCode ignores std_out/std_err
-    -- IO (Maybe Handle, Maybe Handle, Maybe Handle, ProcessHandle)
+    hSetBuffering tmpFileHandle LineBuffering
+    hSeek tmpFileHandle AbsoluteSeek 0 >> T.hPutStrLn tmpFileHandle fieldHeader 
     (_, _, Just herr, ph) <-  createProcess_ "error" createProc
     exitCode <- waitForProcess ph
     -- TODO do it only in case of error ?
     err <- hGetContents herr
-    -- TODO retrun stderr
     return (path, exitCode, err)
     where
       fields :: [T.Text]
       fields = map (\(_, desc) -> fullname desc) baseFields
+
+      csvSeparator = T.pack [csvDelimiter params]
+      fieldHeader :: Text
+      fieldHeader = T.intercalate csvSeparator (map (\(name, _) -> name) baseFields)
 
 -- "data/server_2_filtered.pcapng.csv"
 -- la le probleme c'est que je ne passe pas d'options sur les separators etc

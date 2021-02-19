@@ -4,13 +4,16 @@ module MptcpAnalyzer.Cache
 where
 
 import MptcpAnalyzer.Pcap
-import Data.List (intercalate)
+
+import System.Directory (doesFileExist)
+-- import System.Posix.Files.ByteString
 import System.FilePath.Posix (takeBaseName)
+import Control.Exception as CE
+import Polysemy
+import Data.List (intercalate)
 import Frames
 import Frames.CSV
-import System.Directory
-import Polysemy
-import Control.Exception as CE
+
 
 data CacheId = CacheId {
   cacheDeps :: [FilePath]
@@ -62,15 +65,18 @@ runCache config = do
         -- return Right rpcap
       IsValid cid -> isCacheValid config cid
 
+-- first check if the file exists ?
 doGetCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> Sem r (Either String CachePlaceHolder)
-doGetCache config cid = do
-  -- res <- embed $ loadRows csvFilename
-  res <- embed $ CE.try @IOException $  loadRows csvFilename
-  case res of
-    Left _excpt -> return $ Left "Exception"
-    Right x -> return (Right x)
-  where
-      csvFilename = getFullPath config cid
+doGetCache config cid = return $ Left "Not implemented yet"
+  -- do
+  -- -- res <- embed $ loadRows csvFilename
+  -- -- exists <- embed $ fileExist csvFilename
+  -- res <- embed $ CE.try @IOException $ loadRows csvFilename
+  -- case res of
+  --   Left _excpt -> return $ Left "Exception"
+  --   Right x -> return (Right x)
+  -- where
+  --     csvFilename = getFullPath config cid
 
 
 -- PcapFrame
@@ -82,7 +88,7 @@ doPutCache config cid frame =
   where
       csvFilename = getFullPath config cid
 
--- TODO  log ?
+-- TODO log ? / compare inputs date
 isCacheValid :: Members '[Embed IO] r => CacheConfig -> CacheId -> Sem r Bool
 isCacheValid config cid =
   embed $ doesFileExist filename

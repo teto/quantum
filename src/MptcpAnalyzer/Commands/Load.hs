@@ -24,12 +24,6 @@ import Polysemy (Sem, Members, Embed)
 import Polysemy.State as P
 -- import qualified Polysemy.Internal as P
 
--- loadPcapParser :: P.Member Command r => Parser (Sem r RetCode)
--- loadPcapParser = CMD.loadPcap <$> loadPcapArgs
--- (
---     ArgsLoadPcap <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
---           <> help "Target for the greeting"
---       ))
 loadPcapArgs :: Parser CommandArgs
 loadPcapArgs =  ArgsLoadPcap <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
           <> help "Load a Pcap file"
@@ -81,8 +75,6 @@ loadPcap args = do
       pcapFilename = loadPcapPath args
 
 -- TODO return an Either or Maybe ?
--- MonadIO m, KatipContext m
-  -- EmbedIO
 loadPcapIntoFrame :: Members [Cache, Log String, Embed IO ] m => TsharkParams -> FilePath -> Sem m (Maybe PcapFrame)
 loadPcapIntoFrame params path = do
     log $ "Start loading pcap " ++ path
