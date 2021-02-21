@@ -12,6 +12,8 @@ main = hspec $ do
   describe "absolute" $ do
     it "returns the original number when given a positive input" $
       numberToTcpFlags 2 `shouldBe` [TcpFlagSyn]
+      -- numberToTcpFlags 8 `shouldBe` [TcpFlagAck]
+      -- numberToTcpFlags 10 `shouldBe` [TcpFlagAck, TcpFlagSyn]
 
 -- spec :: Spec
 -- spec = do

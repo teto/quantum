@@ -82,7 +82,7 @@ common shared-properties
     -- -ddump-splices to dump TH code
     ghc-options:
         -Wall -fno-warn-unused-binds -fno-warn-unused-matches
-        -threaded -fprof-auto -rtsopts 
+        -fprof-auto
         -ddump-splices -ddump-to-file -dth-dec-file
         -Wno-unused-imports
         -- -fplugin=Polysemy.Plugin
@@ -103,11 +103,34 @@ common shared-properties
     -- Other-modules:
 
 
+library libmptcpanalyzer
+    import: shared-properties
+    visibility: public
+    -- Other-modules:
+    Exposed-Modules:
+        Tshark.TH
+        , Tshark.TH2
+        , Net.Mptcp.Types
+        -- reexport the rest
+        , MptcpAnalyzer
+        , MptcpAnalyzer.Types
+        , MptcpAnalyzer.Pcap
+        , MptcpAnalyzer.Cache
+        , MptcpAnalyzer.Commands
+        , MptcpAnalyzer.Commands.Definitions
+        , MptcpAnalyzer.Commands.Load
+        , MptcpAnalyzer.Commands.Export
+        , Columns, MptcpAnalyzer.Commands.Utils
+        , MptcpAnalyzer.Commands.List, MptcpAnalyzer.Definitions, Connection
+        , MptcpAnalyzer.Commands.ListMptcp
+        , MptcpAnalyzer.Commands.Plot
+        , Plots.Stream
+    hs-source-dirs: src/
 
 -- monitor new mptcp connections
--- and delegate the behavior to a monitor
 executable mptcpanalyzer
     import: shared-properties
+    build-depends: libmptcpanalyzer
     Other-modules:
         Tshark.TH
         , Tshark.TH2
@@ -119,25 +142,29 @@ executable mptcpanalyzer
         , MptcpAnalyzer.Cache
         , MptcpAnalyzer.Commands
         , MptcpAnalyzer.Commands.Definitions
-        , MptcpAnalyzer.Commands.Load, Columns, MptcpAnalyzer.Commands.Utils
+        , MptcpAnalyzer.Commands.Load
+        , MptcpAnalyzer.Commands.Export
+        , Columns
+        , MptcpAnalyzer.Commands.Utils
         , MptcpAnalyzer.Commands.List, MptcpAnalyzer.Definitions, Connection
         , MptcpAnalyzer.Commands.ListMptcp
         , MptcpAnalyzer.Commands.Plot
-        -- , Mptcp.Logging,
         , Plots.Stream
     -- for now reference mptcp-pm but later move part to a core
     -- build-depends: mptcp-pm >= 0.0.3
     main-is: Main.hs
     hs-source-dirs: src/
-    -- ghc-options: -threaded -fprof-auto -rtsopts
+    ghc-options: -threaded -fprof-auto -rtsopts
 
--- Test-Suite test
--- --   -- 2 types supported, exitcode is based on ... exit codes ....
---   type:               exitcode-stdio-1.0
---   main-is:            test/Pcap.hs
---   -- hs-source-dirs:     test
---   -- Other-modules:     Pcap, Columns
+Test-Suite test
+  -- 2 types supported, exitcode is based on ... exit codes ....
+  type:               exitcode-stdio-1.0
+  main-is:            PcapSpec.hs
+  hs-source-dirs:     tests
+  -- Other-modules:     Pcap, Columns
 
---   build-depends:      base >=4.12 && <4.20
---                      , HUnit
---                      , quantum
+  build-depends:      base >=4.12 && <4.20
+                     , HUnit
+                     , hspec
+                     , QuickCheck
+                     , libmptcpanalyzer

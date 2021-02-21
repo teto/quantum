@@ -14,7 +14,6 @@ import Colog.Polysemy (Log)
 
 import qualified Polysemy.State as P
 
-data RetCode = Exit | Error String | Continue
 
 -- TODO remove IO
 -- type DefaultMembers = [Log, Cache, P.State MyState]

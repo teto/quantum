@@ -65,7 +65,8 @@ buildMptcpConnectionFromStreamId frame streamId = do
     if frameLength streamPackets < 1 then
       Left $ "No packet with mptcp.stream == " ++ show streamId
     else if frameLength synAckPackets < 1 then
-      Left $ "No syn/ack packet found for stream" ++ show streamId
+      Left $ "No syn/ack packet found for stream" ++ show streamId ++ " First packet: " 
+      -- ++ show streamPackets
     else 
         -- TODO now add a check on abstime
         -- if ds.loc[server_id, "abstime"] < ds.loc[client_id, "abstime"]:
@@ -143,11 +144,16 @@ listMpTcpConnectionsCmd _args = do
         -- log $ "Number of rows " ++ show (frameLength frame)
         P.embed $ putStrLn $ "Number of MPTCP connections " ++ show (length mptcpStreams)
         P.embed $ putStrLn $ show mptcpStreams
-        P.embed $ putStrLn $ concat $ map showMptcpConnection mptcpConnections
+        P.embed $ putStrLn $ concat $ map showEitherCon mptcpConnections
         -- >>
         return CMD.Continue
         where
-          mptcpConnections :: [MptcpConnection]
-          mptcpConnections = map ((fromRight undefined) . (buildMptcpConnectionFromStreamId frame ) ) mptcpStreams
+          mptcpConnections :: [Either String MptcpConnection]
+          mptcpConnections = map (buildMptcpConnectionFromStreamId frame) mptcpStreams
+
+          showEitherCon :: Either String MptcpConnection -> String
+          showEitherCon (Left msg) = msg ++ "\n"
+          showEitherCon (Right mptcpCon) = showMptcpConnection mptcpCon ++ "\n"
+
           mptcpStreams = getMpTcpStreams frame
 

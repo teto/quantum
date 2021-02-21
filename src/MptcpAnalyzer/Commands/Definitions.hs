@@ -26,7 +26,12 @@ data CommandArgs = ArgsLoadCsv {
       summaryFull :: Bool,
       summaryTcpStreamId :: StreamId Tcp
     }
+    | ArgsExport {
+      _exportFilename :: String
+    }
 
+
+data RetCode = Exit | Error String | Continue
 
 
 

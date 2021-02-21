@@ -166,7 +166,6 @@ instance Frames.ColumnTypeable.Parseable IP where
 --   parse = parseIntish
 
 instance Readable (StreamId Mptcp) where
-  --
   fromText t = case T.readMaybe (T.unpack t) of
       Just streamId -> return $ StreamId streamId
       Nothing -> mzero

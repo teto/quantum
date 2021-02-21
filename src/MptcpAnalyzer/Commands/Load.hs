@@ -17,12 +17,8 @@ import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
 import System.Exit (ExitCode(..))
 import Prelude hiding (log)
 import Colog.Polysemy (Log, log)
--- import Mptcp.Logging (Log, log)
--- import System.Environment (withProgName)
 import Polysemy (Sem, Members, Embed)
--- import qualified Polysemy as P
 import Polysemy.State as P
--- import qualified Polysemy.Internal as P
 
 loadPcapArgs :: Parser CommandArgs
 loadPcapArgs =  ArgsLoadPcap <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]

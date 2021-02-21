@@ -24,21 +24,17 @@ TemplateHaskell for Katip :(
 
 module Main where
 
-import System.FilePath
-import System.Directory
-import Prelude hiding (concat, init, log)
-import Options.Applicative
-import Colog.Core.IO (logStringStdout)
-import Colog.Polysemy (Log, log, runLogAction)
 -- for monadmask
 -- import Control.Monad.Catch
 -- import qualified Data.Map         as HM
-import MptcpAnalyzer.Commands.Utils (RetCode(..), )
-import qualified MptcpAnalyzer.Commands.Utils as CMD
+import MptcpAnalyzer.Cache
+import MptcpAnalyzer.Definitions
+-- import qualified MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands
-import MptcpAnalyzer.Commands.Definitions
+import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.List as CLI
 import MptcpAnalyzer.Commands.ListMptcp as CLI
+import MptcpAnalyzer.Commands.Export as CLI
 import qualified MptcpAnalyzer.Commands.Load as CL
 -- import Control.Monad (void)
 
@@ -51,9 +47,13 @@ import qualified Polysemy.Embed as P
 import qualified Polysemy.Internal as P
 -- import qualified Polysemy.Output as P
 -- import qualified Polysemy.Trace as P
+import System.FilePath
+import System.Directory
+import Prelude hiding (concat, init, log)
+import Options.Applicative
+import Colog.Core.IO (logStringStdout)
+import Colog.Polysemy (Log, log, runLogAction)
 
-import MptcpAnalyzer.Cache
-import MptcpAnalyzer.Definitions
 
 -- for noCompletion
 import System.Console.Haskeline
@@ -208,6 +208,7 @@ mainParser = subparser (
     <> command "list-tcp" CLI.listTcpOpts
     <> commandGroup "MPTCP commands"
     <> command "list-mptcp" CLI.listMpTcpOpts
+    <> command "export" CLI.parseExportOpts
     -- <> command "help" CLI.listMpTcpConnectionsCmd
     )
 
@@ -244,6 +245,7 @@ runCommand args@ArgsParserSummary{} = CLI.tcpSummary args
 runCommand args@ArgsListSubflows{} = CLI.listSubflowsCmd args
 runCommand args@ArgsListTcpConnections{} = CLI.listTcpConnectionsCmd args
 runCommand args@ArgsListMpTcpConnections{} = CLI.listMpTcpConnectionsCmd args
+runCommand args@ArgsExport{} = CLI.cmdExport args
 
 -- genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
 -- genericRunCommand parserInfo args = do
