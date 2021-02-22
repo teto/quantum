@@ -3,16 +3,18 @@
 module MptcpAnalyzer.Commands.ListMptcp
 where
 
-import Prelude hiding (log)
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
-import MptcpAnalyzer.Commands.Utils as CMD
+-- import MptcpAnalyzer.Commands.Utils as CMD
+import MptcpAnalyzer.Commands.List as CMD
 import MptcpAnalyzer.Definitions
-import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)
-import Net.Mptcp.Types (MptcpConnection(..), showMptcpConnection)
-import Options.Applicative
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
+import Net.Mptcp.Types (MptcpConnection(..), MptcpSubflow, showMptcpConnection)
+
+import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)
+import Prelude hiding (log)
+import Options.Applicative
 import Frames
 import Control.Lens hiding (argument)
 import Polysemy (Member, Members, Sem, Embed)
@@ -65,25 +67,26 @@ buildMptcpConnectionFromStreamId frame streamId = do
     if frameLength streamPackets < 1 then
       Left $ "No packet with mptcp.stream == " ++ show streamId
     else if frameLength synAckPackets < 1 then
-      Left $ "No syn/ack packet found for stream" ++ show streamId ++ " First packet: " 
+      Left $ "No syn/ack packet found for stream" ++ show streamId ++ " First packet: "
       -- ++ show streamPackets
-    else 
-        -- TODO now add a check on abstime
-        -- if ds.loc[server_id, "abstime"] < ds.loc[client_id, "abstime"]:
-        --     log.error("Clocks are not synchronized correctly")
+    else
+      -- TODO now add a check on abstime
+      -- if ds.loc[server_id, "abstime"] < ds.loc[client_id, "abstime"]:
+      --     log.error("Clocks are not synchronized correctly")
       Right $ MptcpConnection {
         mptcpServerKey = fromJust $ synAckPacket ^. mptcpSendKey
         , mptcpClientKey = fromJust $ synPacket ^. mptcpSendKey
-        , mptcpServerToken = 0 -- fromJust $ synAckPacket ^. mptcpToken
-        , mptcpClientToken = 0 -- fromJust $ synPacket ^. mptcpToken
+        , mptcpServerToken = fromJust $ synAckPacket ^. mptcpExpectedToken
+        , mptcpClientToken = fromJust $ synPacket ^. mptcpExpectedToken
         , mptcpNegotiatedVersion = fromIntegral $ fromJust clientMptcpVersion :: Word8
 
-        , subflows = Set.empty
+        , subflows = Set.fromList subflows
         , localIds = Set.empty
         , remoteIds = Set.empty
       }
       --  $ frameRow synPackets 0
     where
+      streamPackets :: PcapFrameF Mptcp
       streamPackets = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
       -- suppose tcpflags is a list of flags, check if it is in the list
       -- of type FrameRec [(Symbol, *)]
@@ -93,23 +96,19 @@ buildMptcpConnectionFromStreamId frame streamId = do
 
       synPacket = frameRow synPackets 0
       synAckPacket = frameRow synAckPackets 0
+
       masterTcpstreamId = synPacket ^. tcpStream
       -- buildConnectionFromTcpStreamId frame masterTcpstreamId
 
-
       clientMptcpVersion = synPacket ^. mptcpVersion
 
-      -- buildCon = MptcpConnection {
-      --   mptcpServerKey = 0
-      --   , mptcpClientKey = 0
-      --   , mptcpServerToken = 0
-      --   , mptcpClientToken = 0
-      --   , mptcpNegotiatedVersion = 0
+      subflows = map (buildSubflow frame) (getTcpStreams streamPackets)
 
-      --   , subflows = Set.empty
-      --   , localIds = Set.empty
-      --   , remoteIds = Set.empty
-      -- }
+
+buildSubflow :: PcapFrame -> StreamId Tcp -> MptcpSubflow
+buildSubflow frame (StreamId sfId) = case buildConnectionFromTcpStreamId frame (StreamId sfId) of
+  Left _ -> error "should not happen"
+  Right con -> con
 
 -- buildMptcpConnectionFromRow :: Packet -> TcpConnection
 -- buildMptcpConnectionFromRow r =

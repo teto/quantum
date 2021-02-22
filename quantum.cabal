@@ -111,11 +111,13 @@ library libmptcpanalyzer
         Tshark.TH
         , Tshark.TH2
         , Net.Mptcp.Types
+        , Net.Tcp.Stats
         -- reexport the rest
         , MptcpAnalyzer
         , MptcpAnalyzer.Types
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache
+        , MptcpAnalyzer.Plots
         , MptcpAnalyzer.Commands
         , MptcpAnalyzer.Commands.Definitions
         , MptcpAnalyzer.Commands.Load

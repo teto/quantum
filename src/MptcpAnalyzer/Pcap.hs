@@ -22,23 +22,16 @@ module MptcpAnalyzer.Pcap
 where
 
 
+import Tshark.TH
+import Tshark.TH2
+
 import Data.Monoid (First(..))
--- import Frames.InCore (VectorFor)
 import qualified Data.Vector as V
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Tshark.TH
-import Tshark.TH2
--- import Net.IP
--- creates cycle
--- import MptcpAnalyzer.Definitions
 import System.IO (BufferMode(LineBuffering), hSetBuffering, SeekMode(AbsoluteSeek), hSeek, Handle, hGetContents)
 import System.Process
 import System.Exit
--- import Katip
--- import Data.Vinyl (ElField(..))
--- import Control.Lens hiding (Identity)
--- import Control.Lens.TH
 import Frames.TH
 import Frames
 import Frames.ShowCSV
@@ -60,7 +53,7 @@ import Data.Word (Word8, Word16, Word32, Word64)
 import Net.Tcp
 -- import Net.Tcp.Constants
 import Numeric (readHex)
-import Net.Tcp ( TcpFlag(..), numberToTcpFlags)
+import Net.Tcp ( TcpFlag(..))
 import MptcpAnalyzer.Types
 import qualified Pipes.Prelude as P
 import Pipes (cat, Producer, (>->))
@@ -101,7 +94,7 @@ declareColumn "frameEpoch" ''Text
 declareColumn "ipSource" ''IP
 declareColumn "ipDest" ''IP
 -- TODO use tcpStream instead
-declareColumn "tcpStream" ''Word32
+declareColumn "tcpStream" ''StreamIdTcp
 declareColumn "tcpSrcPort" ''Word16
 declareColumn "tcpDestPort" ''Word16
 declareColumn "tcpFlags" ''TcpFlagList
@@ -112,7 +105,7 @@ declareColumn "tcpAck" ''Word32
 declareColumn "mptcpStream" ''MbMptcpStream
 declareColumn "mptcpVersion" ''MbMptcpVersion
 declareColumn "mptcpSendKey" ''MbMptcpSendKey
-declareColumn "mptcpToken" ''MbMptcpExpectedToken
+declareColumn "mptcpExpectedToken" ''MbMptcpExpectedToken
 declareColumn "mptcpDsn" ''MbMptcpDsn
 declareColumn "mptcpDack" ''MbMptcpDack
 
@@ -144,7 +137,7 @@ type ManColumnsTshark = '[
     , "ipSrcHost" :-> Text
     , "ipDstHost" :-> Text
     -- TODO pass as a StreamIdTcp
-    , "tcpStream" :-> Word32
+    , "tcpStream" :-> StreamId Tcp
     , "tcpSrcPort" :-> Word16
     , "tcpDestPort" :-> Word16
     , "rwnd" :-> Word32
@@ -159,7 +152,7 @@ type ManColumnsTshark = '[
     -- -- timestamp echo-reply
     , "tsEcr"  :-> Maybe Word32
 
-    , "mtcpExpectedToken"  :-> MbMptcpExpectedToken
+    , "mptcpExpectedToken"  :-> MbMptcpExpectedToken
     , "mptcpStream" :-> MbMptcpStream
     -- Not 
     , "mptcpSendKey" :-> Maybe Word64
@@ -192,8 +185,9 @@ type Packet = Record ManColumnsTshark
 
 type PcapFrame = Frame Packet
 
--- data 
 -- shadow param
+-- @a@ be Tcp / Mptcp
+-- @b@ could be the direction
 type PcapFrameF a = Frame Packet
 
 -- shadow type to know if it was filtered or not
@@ -215,7 +209,7 @@ defaultParserOptions = ParserOptions Nothing (T.pack [csvDelimiter defaultTshark
 
 -- nub => remove duplicates
 -- or just get the column
-getTcpStreams :: PcapFrame -> [Word32]
+getTcpStreams :: PcapFrame -> [StreamIdTcp]
 getTcpStreams ps =
     L.fold L.nub (view tcpStream <$> ps)
 
@@ -363,13 +357,13 @@ recEither = rtraverse getCompose
 
 -- | Fill in missing columns with a default 'Row' value synthesized
 -- from 'Default' instances.
-holesFilled :: MonadSafe m => FilePath -> Producer Packet m ()
-holesFilled path = readTableMaybeOpt defaultParserOptions  path  >-> P.map (fromJust . holeFiller)
-  where holeFiller :: Rec (Maybe :. ElField) (RecordColumns Packet) -> Maybe Packet
-        holeFiller = recMaybe . rmapX @(First :. ElField) getFirst
-                   -- . rapply (rmapX @(First :. ElField) (flip mappend) def)
-                   . rmapX @_ @(First :. ElField) First
-        fromJust = maybe (error "Frames holesFilled failure") id
+-- holesFilled :: MonadSafe m => FilePath -> Producer Packet m ()
+-- holesFilled path = readTableMaybeOpt defaultParserOptions  path  >-> P.map (fromJust . holeFiller)
+--   where holeFiller :: Rec (Maybe :. ElField) (RecordColumns Packet) -> Maybe Packet
+--         holeFiller = recMaybe . rmapX @(First :. ElField) getFirst
+--                    -- . rapply (rmapX @(First :. ElField) (flip mappend) def)
+--                    . rmapX @_ @(First :. ElField) First
+--         fromJust = maybe (error "Frames holesFilled failure") id
 
 -- showFilledHoles :: IO ()
 -- showFilledHoles = runSafeT (pipePreview holesFilled 10 cat)

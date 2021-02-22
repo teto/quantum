@@ -37,14 +37,19 @@ data MptcpConnection = MptcpConnection {
 tshow :: Show a => a -> TS.Text
 tshow = TS.pack . Prelude.show
 
+-- TODO add sthg in case it's the master subflow ?
+showSubflow :: MptcpSubflow -> String
+showSubflow = showTcpConnection
+
 showMptcpConnectionText :: MptcpConnection -> TS.Text
 showMptcpConnectionText con =
   -- showIp (srcIp con) <> ":" <> tshow (srcPort con) <> " -> " <> showIp (dstIp con) <> ":" <> tshow (dstPort con)
-  tpl
+  tpl <> "\n" <> TS.unlines (map tshowSubflow (Set.toList $ subflows con))
   where
     -- showIp = Net.IP.encode
     -- masterSf :: TcpConnection
     -- masterSf =
+    tshowSubflow = tshow . showSubflow
 
     -- todo show server key/
     tpl :: Text

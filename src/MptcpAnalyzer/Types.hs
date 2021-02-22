@@ -10,18 +10,16 @@ import Data.Monoid (First(..))
 import Data.Vinyl (Rec(..), ElField(..), rapply, xrec, rmapX)
 import Data.Vinyl.Functor (Compose(..), (:.))
 import Data.Vinyl.Class.Method
-
+import Net.Tcp (TcpFlag(..))
+import Net.Bitset (fromBitMask)
 import Net.IP
 import Data.Text (Text)
--- import Frames.TH
--- import Frames
 import Frames.ShowCSV
 import Frames.CSV (QuotingMode(..), ParserOptions(..))
 import Frames.ColumnTypeable (Parseable(..), parseIntish, Parsed(..))
 import Data.Word (Word16, Word32, Word64)
 import qualified Data.Text as T
 import qualified Text.Read as T
-import Net.Tcp ( TcpFlag(..), numberToTcpFlags)
 import Frames.InCore (VectorFor)
 import qualified Data.Vector as V
 import Numeric (readHex)
@@ -165,15 +163,25 @@ instance Frames.ColumnTypeable.Parseable IP where
 -- instance Frames.ColumnTypeable.Parseable Word64 where
 --   parse = parseIntish
 
-instance Readable (StreamId Mptcp) where
+instance Readable (StreamId a) where
   fromText t = case T.readMaybe (T.unpack t) of
       Just streamId -> return $ StreamId streamId
       Nothing -> mzero
 
 
--- forall a.
+-- forall a.  parseIntish => (Readable a, MonadPlus f)
+-- TODO unify
+-- instance (Typeable (StreamId a )) => Frames.ColumnTypeable.Parseable (StreamId a) where
+--   parse = parseIntish 
+
 instance Frames.ColumnTypeable.Parseable (StreamId Mptcp) where
   parse = parseIntish
+
+instance Frames.ColumnTypeable.Parseable (StreamId Tcp) where
+  parse = parseIntish
+
+-- instance (Typeable (StreamId a )) => Frames.ColumnTypeable.Parseable (StreamId a) where
+--   parse = parseIntish
 
 
 -- could not parse 0x00000002
@@ -181,7 +189,7 @@ instance Frames.ColumnTypeable.Parseable (StreamId Mptcp) where
 instance Frames.ColumnTypeable.Parseable [TcpFlag] where
   parse text = case readHex (T.unpack $ T.drop 2 text) of
     -- TODO generate
-    [(n, "")] -> return $ Definitely $ numberToTcpFlags n
+    [(n, "")] -> return $ Definitely $ fromBitMask n
     _ -> error $ "TcpFlags: could not parse " ++ T.unpack text
 
 -- tcpFlags as a list of flags
@@ -220,6 +228,7 @@ type instance VectorFor (Maybe Word32) = V.Vector
 type instance VectorFor (Maybe Word64) = V.Vector
 type instance VectorFor IP = V.Vector
 type instance VectorFor TcpFlagList = V.Vector
+type instance VectorFor (StreamId a) = V.Vector
 
 type instance VectorFor (Maybe Int) = V.Vector
 type instance VectorFor (Maybe Bool) = V.Vector

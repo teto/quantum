@@ -6,7 +6,7 @@ where
 import Prelude hiding (log)
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
-import MptcpAnalyzer.Commands.Utils as CMD
+-- import MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Definitions
 import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)
 import Options.Applicative
@@ -87,7 +87,6 @@ tcpSummaryOpts = info (
     -- L.genericLength
     -- filterFrame :: RecVec rs => (Record rs -> Bool) -> FrameRec rs -> FrameRec rs
 
--- ManRowPacket
 buildConnectionFromRow :: Packet -> TcpConnection
 buildConnectionFromRow r =
   TcpConnection {
@@ -101,10 +100,10 @@ buildConnectionFromRow r =
     , subflowInterface = Nothing
   }
 
--- | Tcp connection
--- TcpConnection
+{- Builds a Tcp connection from a non filtered frame
+-}
 buildConnectionFromTcpStreamId :: PcapFrame -> StreamId Tcp -> Either String TcpConnection
-buildConnectionFromTcpStreamId frame (StreamId streamId) =
+buildConnectionFromTcpStreamId frame streamId =
     -- Right $ frameLength synPackets
     if frameLength synPackets < 1 then
       Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
@@ -143,7 +142,7 @@ listTcpConnectionsCmd args = do
         return CMD.Continue
       Just frame -> do
         let tcpStreams = getTcpStreams frame
-        let streamIdList = if _listTcpDetailed args then [] else map StreamId tcpStreams
+        let streamIdList = if _listTcpDetailed args then [] else tcpStreams
         -- log $ "Number of rows " ++ show (frameLength frame)
         P.embed $ putStrLn $ "Number of TCP connections " ++ show (length tcpStreams)
         _ <- P.embed $ mapM (putStrLn . describeCon . buildConnectionFromTcpStreamId frame ) streamIdList
