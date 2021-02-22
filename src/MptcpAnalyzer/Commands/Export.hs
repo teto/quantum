@@ -1,7 +1,7 @@
 module MptcpAnalyzer.Commands.Export
 where
 
-import MptcpAnalyzer.Definitions
+import MptcpAnalyzer.Types
 import MptcpAnalyzer.Commands.Definitions
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Pcap

@@ -114,6 +114,7 @@ library libmptcpanalyzer
         , Net.Tcp.Stats
         -- reexport the rest
         , MptcpAnalyzer
+        , MptcpAnalyzer.Frame
         , MptcpAnalyzer.Types
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache
@@ -122,10 +123,12 @@ library libmptcpanalyzer
         , MptcpAnalyzer.Commands.Definitions
         , MptcpAnalyzer.Commands.Load
         , MptcpAnalyzer.Commands.Export
-        , Columns, MptcpAnalyzer.Commands.Utils
-        , MptcpAnalyzer.Commands.List, MptcpAnalyzer.Definitions, Connection
+        , MptcpAnalyzer.Commands.Utils
+        , MptcpAnalyzer.Commands.List
         , MptcpAnalyzer.Commands.ListMptcp
         , MptcpAnalyzer.Commands.Plot
+        , Columns
+        , Connection
         , Plots.Stream
     hs-source-dirs: src/
 
@@ -148,7 +151,7 @@ executable mptcpanalyzer
         , MptcpAnalyzer.Commands.Export
         , Columns
         , MptcpAnalyzer.Commands.Utils
-        , MptcpAnalyzer.Commands.List, MptcpAnalyzer.Definitions, Connection
+        , MptcpAnalyzer.Commands.List, MptcpAnalyzer.Types, Connection
         , MptcpAnalyzer.Commands.ListMptcp
         , MptcpAnalyzer.Commands.Plot
         , Plots.Stream

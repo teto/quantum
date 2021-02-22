@@ -50,8 +50,6 @@ import qualified Control.Foldl as L
 -- import Lens.Micro.Extras
 import Control.Lens
 import Data.Word (Word8, Word16, Word32, Word64)
-import Net.Tcp
--- import Net.Tcp.Constants
 import Numeric (readHex)
 import Net.Tcp ( TcpFlag(..))
 import MptcpAnalyzer.Types
@@ -85,110 +83,7 @@ import Data.Vinyl.Class.Method
 
 
 
-type MbMptcpDsn = Maybe Word64
-type MbMptcpDack = Maybe Word64
 
-declareColumn "frameNumber" ''Word64
-declareColumn "interfaceName" ''Text
-declareColumn "frameEpoch" ''Text
-declareColumn "ipSource" ''IP
-declareColumn "ipDest" ''IP
--- TODO use tcpStream instead
-declareColumn "tcpStream" ''StreamIdTcp
-declareColumn "tcpSrcPort" ''Word16
-declareColumn "tcpDestPort" ''Word16
-declareColumn "tcpFlags" ''TcpFlagList
-declareColumn "tcpOptionKinds" ''Text
-declareColumn "tcpSeq" ''Word32
-declareColumn "tcpLen" ''Word16
-declareColumn "tcpAck" ''Word32
-declareColumn "mptcpStream" ''MbMptcpStream
-declareColumn "mptcpVersion" ''MbMptcpVersion
-declareColumn "mptcpSendKey" ''MbMptcpSendKey
-declareColumn "mptcpExpectedToken" ''MbMptcpExpectedToken
-declareColumn "mptcpDsn" ''MbMptcpDsn
-declareColumn "mptcpDack" ''MbMptcpDack
-
--- tableTypesExplicitFull myRow
---   rowGen { rowTypeName = "Packet"
---         , separator = "|"
---         -- TODO I could generate it as well
---         -- , columnNames
---     })
-
--- headersFromFields
--- headersFromFields baseFields
--- $(headersFromFields baseFields)
--- tableTypesExplicitFull [] myRow
--- tableTypesExplicitFull myHeaders myRow
-
--- myRowGen "ManColumnsTshark" baseFields
--- type OptionList = [Int]
-
--- ManColumnsTshark :: [(Symbol, *)]
-type ManColumnsTshark = '[
-    "packetId" :-> Word64
-    , "interfaceName" :-> Text
-    -- Load it as a Float
-    , "absTime" :-> Text
-    , "relTime" :-> Text
-    , "ipSource" :-> IP
-    , "ipDest" :-> IP
-    , "ipSrcHost" :-> Text
-    , "ipDstHost" :-> Text
-    -- TODO pass as a StreamIdTcp
-    , "tcpStream" :-> StreamId Tcp
-    , "tcpSrcPort" :-> Word16
-    , "tcpDestPort" :-> Word16
-    , "rwnd" :-> Word32
-    , "tcpFlags" :-> TcpFlagList
-    , "tcpOptionKinds" :-> Text
-    , "tcpSeq"  :-> Word32
-    , "tcpLen"  :-> Word16
-    , "tcpAck"  :-> Word32
-
-    -- -- timetsamp Val
-    , "tsVal"  :-> Maybe Word32
-    -- -- timestamp echo-reply
-    , "tsEcr"  :-> Maybe Word32
-
-    , "mptcpExpectedToken"  :-> MbMptcpExpectedToken
-    , "mptcpStream" :-> MbMptcpStream
-    -- Not 
-    , "mptcpSendKey" :-> Maybe Word64
-    , "mptcpRecvKey" :-> Maybe Word64
-
-    , "mptcpRecvToken" :-> MbMptcpExpectedToken
-    , "mptcpDataFin" :-> Maybe Bool
-    -- mptcp version for now is 0 or 1
-    -- maybe use a word9 instead
-    , "mptcpVersion" :-> Maybe Int
-    -- TODO check
-    -- , "tcpOptionSubtypes" :-> OptionList
-    -- , "mptcpRawDsn" :-> Word64
-    -- , "mptcpRawDack" :-> Word64
-    -- , "mptcpSSN" :-> Word64
-    -- , "mptcpDssLen" :-> Word32
-    -- , "mptcpAddrId" :-> Maybe Int
-    -- , "mptcpRawDsn" :-> Word64
-    -- relative or abs
-    , "mptcpDack" :-> Maybe Word64
-    , "mptcpDsn" :-> Maybe Word64
-    -- , "mptcpRelatedMappings" :-> Maybe OptionList
-    -- , "mptcpReinjectionOf" :-> Maybe OptionList
-    -- , "mptcpReinjectedIn" :-> Maybe OptionList
-    ]
-
-
--- row / ManRow
-type Packet = Record ManColumnsTshark
-
-type PcapFrame = Frame Packet
-
--- shadow param
--- @a@ be Tcp / Mptcp
--- @b@ could be the direction
-type PcapFrameF a = Frame Packet
 
 -- shadow type to know if it was filtered or not
 -- Make it a record ?

@@ -3,46 +3,62 @@ where
 
 type Byte = Int
 
+-- tus = tcp Unidrectional Stats
 data TcpUnidirectionalStats = TcpUnidirectionalStats {
     -- sum of tcplen / should be the same for tcp/mptcp
     -- Include redundant packets contrary to '''
-    throughputBytes :: Byte
+    tusThroughputBytes :: Byte
 
     -- duration
-    , tcpDuration :: Double
+    , tusDuration :: Double
 
     -- For now = max(tcpseq) - minx(tcpseq). Should add the size of packets'''
-    , tcpByteRange :: Int
+    , tusByteRange :: Int
 
     -- application data = goodput = useful bytes '''
+    -- TODO move to its own ?
     , mptcp_application_bytes :: Byte
 
+    -- TODO this should be updated
     , throughput_contribution :: Double
-
     , goodput_contribution :: Double
-
     -- For now = max(tcpseq) - minx(tcpseq). Should add the size of packets'''
     , tcp_goodput :: Byte
     }
 
+
+-- def transmitted_seq_range(df, seq_name):
+--     '''
+--     test
+--     '''
+--     log.debug("Computing byte range for sequence field %s", seq_name)
+
+--     sorted_seq = df.dropna(subset=[seq_name]).sort_values(by=seq_name)
+--     log.log(mp.TRACE, "sorted_seq %s", sorted_seq)
+
+--     seq_min = sorted_seq.loc[sorted_seq.first_valid_index(), seq_name]
+--     last_valid_index = sorted_seq.last_valid_index()
+--     seq_max = sorted_seq.loc[last_valid_index, seq_name] \
+--         + sorted_seq.loc[last_valid_index, "tcplen"]
+
+--     # -1 because of SYN
+--     # seq_range = seq_max - seq_min - 1
+--     seq_range = seq_max - seq_min - 1
+
+--     msg = "seq_range ({}) = {} (seq_max) - {} (seq_min) - 1"
+--     log.log(mp.TRACE, msg.format(seq_range, seq_max, seq_min))
+
+--     return seq_range, seq_max, seq_min
 
 -- TODO do a variant with an already filtered one
 -- getTcpUnidirectionalStats :: PcapFrameF Tcp ConnectionRole ->  -> TcpUnidirectionalStats
 -- getTcpUnidirectionalStats frame streamId = do
 
 getTcpUnidirectionalStats :: PcapFrame -> StreamIdTcp -> ConnectionRole -> TcpUnidirectionalStats
-getTcpUnidirectionalStats frame streamId = do
-  packetStreams
--- def tcp_get_stats(
---     rawdf,
---     tcpstreamid: TcpStreamId,
---     destination: ConnectionRoles,
---     mptcp=False
--- ) -> TcpUnidirectionalStats:
-    -- '''
-    -- Expects df to have tcpdest set
-    -- '''
+getTcpUnidirectionalStats frame streamId role = do
 
+  where
+    packetStreams = filterStreamPackets frame streamId (Just role)
     -- log.debug("Getting TCP stats for stream %d", tcpstreamid)
     -- assert destination in ConnectionRoles, "destination is %r" % type(destination)
 

@@ -7,9 +7,9 @@ import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
 -- import MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands.List as CMD
-import MptcpAnalyzer.Definitions
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
+
 import Net.Mptcp.Types (MptcpConnection(..), MptcpSubflow, showMptcpConnection)
 
 import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)

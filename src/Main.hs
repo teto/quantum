@@ -156,6 +156,13 @@ defaultPcap = "examples/client_2_filtered.pcapng"
 promptSuffix :: String
 promptSuffix = "> "
 
+-- alternatively could modify defaultPrefs
+defaultParserPrefs :: ParserPrefs
+defaultParserPrefs = prefs showHelpOnEmpty
+-- {
+--     prefShowHelpOnError = True
+--     }
+
 main :: IO ()
 main = do
 

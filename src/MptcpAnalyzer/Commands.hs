@@ -10,7 +10,7 @@ import Colog.Polysemy (Log)
 
 import MptcpAnalyzer.Commands.Definitions
 import MptcpAnalyzer.Cache
-import MptcpAnalyzer.Definitions
+import MptcpAnalyzer.Types
 import MptcpAnalyzer.Commands.Load
 import MptcpAnalyzer.Commands.Export
 import qualified MptcpAnalyzer.Commands.List as CL

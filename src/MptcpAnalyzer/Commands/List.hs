@@ -6,8 +6,7 @@ where
 import Prelude hiding (log)
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
--- import MptcpAnalyzer.Commands.Utils as CMD
-import MptcpAnalyzer.Definitions
+import MptcpAnalyzer.Types
 import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)
 import Options.Applicative
 import MptcpAnalyzer.Pcap
@@ -130,7 +129,6 @@ buildConnectionFromTcpStreamId frame streamId =
   tcp.stream 6: 11.0.0.1:35589 -> 10.0.0.2:05201
   tcp.stream 7: 11.0.0.1:50007 -> 10.0.0.2:05201
 -}
--- listTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserListSubflows -> Sem r RetCode
 listTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
 listTcpConnectionsCmd args = do
     -- TODO this part should be extracted so that

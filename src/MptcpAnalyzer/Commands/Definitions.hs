@@ -1,7 +1,7 @@
 module MptcpAnalyzer.Commands.Definitions
 where
 import MptcpAnalyzer.Commands.Utils ()
-import MptcpAnalyzer.Definitions ()
+import MptcpAnalyzer.Types ()
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
 

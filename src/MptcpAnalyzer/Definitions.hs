@@ -1,5 +1,5 @@
 {-# LANGUAGE TemplateHaskell            #-}
-module MptcpAnalyzer.Definitions
+module MptcpAnalyzer.Types
 where
 
 import MptcpAnalyzer.Pcap
@@ -18,6 +18,7 @@ data MyState = MyState {
 makeLenses ''MyState
 
 
+data ConnectionRole = Server | Client
 
 -- alternatively could modify defaultPrefs
 defaultParserPrefs :: ParserPrefs
