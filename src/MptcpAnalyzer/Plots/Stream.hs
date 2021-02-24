@@ -1,5 +1,5 @@
 -- TODO make as plugin
-module Plots.Stream
+module MptcpAnalyzer.Plots.Stream
 where
 
 -- import Diagrams.Backend.Rasterific

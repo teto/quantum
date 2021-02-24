@@ -35,6 +35,7 @@ import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.List as CLI
 import MptcpAnalyzer.Commands.ListMptcp as CLI
 import MptcpAnalyzer.Commands.Export as CLI
+import MptcpAnalyzer.Commands.Plots as Plots
 import qualified MptcpAnalyzer.Commands.Load as CL
 -- import Control.Monad (void)
 
@@ -216,6 +217,9 @@ mainParser = subparser (
     <> commandGroup "MPTCP commands"
     <> command "list-mptcp" CLI.listMpTcpOpts
     <> command "export" CLI.parseExportOpts
+    <> commandGroup "TCP plots"
+    -- TODO here we should pass a subparser
+    <> command "plot" Plots.cmdPlot
     -- <> command "help" CLI.listMpTcpConnectionsCmd
     )
 

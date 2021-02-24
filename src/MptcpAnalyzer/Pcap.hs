@@ -297,3 +297,8 @@ defaultTsharkPrefs = TsharkParams {
       tsharkReadFilter = Just "mptcp or tcp and not icmp"
     }
 
+
+-- PcapFrameWithRole
+addRole :: PcapFrame -> TcpConnection -> PcapFrameWithRole
+addRole frame con = 
+  getStre

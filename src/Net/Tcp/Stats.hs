@@ -1,6 +1,9 @@
 module Net.Tcp.Stats
 where
 
+import MptcpAnalyzer.Types
+import MptcpAnalyzer.Pcap
+
 type Byte = Int
 
 -- tus = tcp Unidrectional Stats

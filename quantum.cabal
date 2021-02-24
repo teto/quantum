@@ -23,6 +23,7 @@ Flag WithPolysemy {
 }
 
 
+
 -- aeson to (de)serialize to json
 -- text is used to convert from string and in aeson
 -- http://hackage.haskell.org/package/bitset-1.4.8/docs/Data-BitSet-Word.html
@@ -72,6 +73,12 @@ common shared-properties
        , vector
        , haskeline >= 0.8.0.0
        , mptcp-pm >= 0.0.4
+
+        -- for plotting that's what is used in Frames
+       , Chart >= 1.5
+       , Chart-diagrams >= 1.5
+       , diagrams-rasterific >= 1.3
+       , diagrams-lib >= 1.3
     default-language: Haskell2010
     -- -fno-warn-unused-imports
     -- -fforce-recomp  makes it build twice
@@ -129,7 +136,7 @@ library libmptcpanalyzer
         , MptcpAnalyzer.Commands.Plot
         , Columns
         , Connection
-        , Plots.Stream
+        , MptcpAnalyzer.Plots.Stream
     hs-source-dirs: src/
 
 -- monitor new mptcp connections
@@ -149,12 +156,13 @@ executable mptcpanalyzer
         , MptcpAnalyzer.Commands.Definitions
         , MptcpAnalyzer.Commands.Load
         , MptcpAnalyzer.Commands.Export
+        , MptcpAnalyzer.Commands.Plot
         , Columns
         , MptcpAnalyzer.Commands.Utils
         , MptcpAnalyzer.Commands.List, MptcpAnalyzer.Types, Connection
         , MptcpAnalyzer.Commands.ListMptcp
         , MptcpAnalyzer.Commands.Plot
-        , Plots.Stream
+        , MptcpAnalyzer.Plots.Stream
     -- for now reference mptcp-pm but later move part to a core
     -- build-depends: mptcp-pm >= 0.0.3
     main-is: Main.hs
