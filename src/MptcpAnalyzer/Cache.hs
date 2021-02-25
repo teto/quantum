@@ -4,6 +4,7 @@ module MptcpAnalyzer.Cache
 where
 
 import MptcpAnalyzer.Pcap
+import MptcpAnalyzer.Types
 
 import System.Directory (doesFileExist)
 -- import System.Posix.Files.ByteString

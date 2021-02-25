@@ -25,6 +25,8 @@ where
 import Tshark.TH
 import Tshark.TH2
 
+import Net.Tcp
+
 import Data.Monoid (First(..))
 import qualified Data.Vector as V
 import qualified Data.Text as T
@@ -299,6 +301,6 @@ defaultTsharkPrefs = TsharkParams {
 
 
 -- PcapFrameWithRole
-addRole :: PcapFrame -> TcpConnection -> PcapFrameWithRole
-addRole frame con = 
-  getStre
+-- addRole :: PcapFrame -> TcpConnection -> PcapFrameWithRole
+-- addRole frame con = 
+--   getStre

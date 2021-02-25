@@ -3,7 +3,7 @@
   nixpkgs ? import ./pinned_nixpkgs.nix
   # nixpkgs ? import <nixpkgs> {}
   # , compilerName ? "ghc8101" # not supported yet
-  # , compilerName ? "ghc8102"
+  # , compilerName ? "ghc8104"
   # , compilerName ? "ghc901"
   , compilerName ? "ghc884"
 }:
@@ -12,10 +12,16 @@ let
   # compiler = pkgs.haskell.packages."${compilerName}";
   pkgs = nixpkgs.pkgs;
 
-  # hsEnv = pkgs.haskellPackages.ghcWithPackages(hs: [
-  #   # hs.cairo
-  #   hs.diagrams
-  # ]);
+  hsEnv = myHaskellPackages.ghcWithPackages(hs: [
+    # hs.cairo
+    # hs.diagrams
+    hs.haskell-language-server
+    myHaskellPackages.cabal-install
+    # myHaskellPackages.stylish-haskell
+    hs.hasktags
+    # myHaskellPackages.hlint
+    # haskellPackages.stan  # broken
+  ]);
   # my_pkg = (import ./. { inherit compiler; } );
   myHaskellPackages = pkgs.haskell.packages."${compilerName}";
 in
@@ -24,18 +30,12 @@ in
     buildInputs = with pkgs; [
       # cairo
       glib
-      # hsEnv
+      hsEnv
       pkg-config
       zlib
       zlib.dev
-      myHaskellPackages.cabal-install
-      # myHaskellPackages.stylish-haskell
-      myHaskellPackages.hasktags
-      # myHaskellPackages.hlint
-      myHaskellPackages.haskell-language-server
 
       pkgs.llvm_11  # for llvm-symbolizer
-      # haskellPackages.stan  # broken
     ];
 
   # (my_pkg.envFunc { withHoogle = true; }).overrideAttrs (oa: {

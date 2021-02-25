@@ -3,6 +3,7 @@ where
 
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Pcap
+import MptcpAnalyzer.Frame
 
 type Byte = Int
 
@@ -50,7 +51,7 @@ data TcpUnidirectionalStats = TcpUnidirectionalStats {
 
 --     msg = "seq_range ({}) = {} (seq_max) - {} (seq_min) - 1"
 --     log.log(mp.TRACE, msg.format(seq_range, seq_max, seq_min))
-
+ 
 --     return seq_range, seq_max, seq_min
 
 -- TODO do a variant with an already filtered one
@@ -58,10 +59,10 @@ data TcpUnidirectionalStats = TcpUnidirectionalStats {
 -- getTcpUnidirectionalStats frame streamId = do
 
 getTcpUnidirectionalStats :: PcapFrame -> StreamIdTcp -> ConnectionRole -> TcpUnidirectionalStats
-getTcpUnidirectionalStats frame streamId role = do
+getTcpUnidirectionalStats frame streamId role = TcpUnidirectionalStats 0 0 0 0 0 0 0
 
-  where
-    packetStreams = filterStreamPackets frame streamId (Just role)
+  -- where
+  --   packetStreams = filterStreamPackets frame streamId (Just role)
     -- log.debug("Getting TCP stats for stream %d", tcpstreamid)
     -- assert destination in ConnectionRoles, "destination is %r" % type(destination)
 
