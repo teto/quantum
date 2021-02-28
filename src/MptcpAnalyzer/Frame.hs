@@ -5,7 +5,7 @@ where
 import MptcpAnalyzer.Types
 
 -- Specialize depending on StreamId
--- filterStreamPackets :: PcapFrame -> StreamId Tcp -> Maybe ConnectionRole  -> PcapFrameF Tcp
+-- filterStreamPackets :: SomeFrame -> StreamId Tcp -> Maybe ConnectionRole  -> SomeFrameF Tcp
 -- filterStreamPackets frame streamId role =
 
 --   filterFrame

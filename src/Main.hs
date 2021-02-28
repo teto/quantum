@@ -204,7 +204,8 @@ main = do
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 
--- TODO
+-- TODO for some commands we could factorize the preprocessing
+-- aka check the if loadedFile was loaded
 -- one can create groups with <|> subparser
 mainParser :: Parser CommandArgs
 mainParser = subparser (

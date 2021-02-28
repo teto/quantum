@@ -29,11 +29,19 @@ data CommandArgs = ArgsLoadCsv {
     | ArgsExport {
       _exportFilename :: String
     }
+    | ArgsPlot {
+
+      plotOut :: String
+      -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
+      -- , plotDisplay ::
+      , plotTcpStreamId :: StreamId Tcp
+      , plotTitle :: Maybe String
+      , plotToClipboard :: Maybe Bool
+    }
+
 
 
 data RetCode = Exit | Error String | Continue
-
-
 
 -- newtype ArgsLoadPcap = ArgsLoadPcap {
 --   loadPcapPath :: FilePath
@@ -48,15 +56,6 @@ data RetCode = Exit | Error String | Continue
 --   listTcpDetailed :: Bool
 --   -- tcpStreamId :: StreamId Tcp
 -- }
-
-data ArgsPlot = ArgsPlot {
-
-  plotOut :: String
-  -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
-  -- , plotDisplay ::
-  , plotTitle :: Maybe String
-  , plotToClipboard :: Maybe Bool
-}
 
 -- data Command m a where
 --   LoadCsv :: ArgsLoadPcap -> Command m RetCode

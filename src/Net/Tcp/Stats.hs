@@ -55,10 +55,10 @@ data TcpUnidirectionalStats = TcpUnidirectionalStats {
 --     return seq_range, seq_max, seq_min
 
 -- TODO do a variant with an already filtered one
--- getTcpUnidirectionalStats :: PcapFrameF Tcp ConnectionRole ->  -> TcpUnidirectionalStats
+-- getTcpUnidirectionalStats :: SomeFrameF Tcp ConnectionRole ->  -> TcpUnidirectionalStats
 -- getTcpUnidirectionalStats frame streamId = do
 
-getTcpUnidirectionalStats :: PcapFrame -> StreamIdTcp -> ConnectionRole -> TcpUnidirectionalStats
+getTcpUnidirectionalStats :: SomeFrame -> StreamIdTcp -> ConnectionRole -> TcpUnidirectionalStats
 getTcpUnidirectionalStats frame streamId role = TcpUnidirectionalStats 0 0 0 0 0 0 0
 
   -- where

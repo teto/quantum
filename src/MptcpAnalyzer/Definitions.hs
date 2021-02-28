@@ -11,7 +11,7 @@ import Options.Applicative
 data MyState = MyState {
   _stateCacheFolder :: FilePath
 
-  , _loadedFile   :: Maybe PcapFrame  -- ^ cached loaded pcap
+  , _loadedFile   :: Maybe SomeFrame  -- ^ cached loaded pcap
   , _prompt   :: String  -- ^ cached loaded pcap
 }
 

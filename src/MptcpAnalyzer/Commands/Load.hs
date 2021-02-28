@@ -69,7 +69,7 @@ loadPcap args = do
       pcapFilename = loadPcapPath args
 
 -- TODO return an Either or Maybe ?
-loadPcapIntoFrame :: Members [Cache, Log String, Embed IO ] m => TsharkParams -> FilePath -> Sem m (Maybe PcapFrame)
+loadPcapIntoFrame :: Members [Cache, Log String, Embed IO ] m => TsharkParams -> FilePath -> Sem m (Maybe SomeFrame)
 loadPcapIntoFrame params path = do
     log $ "Start loading pcap " ++ path
     x <- getCache cacheId

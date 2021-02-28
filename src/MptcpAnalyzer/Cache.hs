@@ -28,16 +28,16 @@ data CacheConfig = CacheConfig {
 } deriving Show
 
 -- type CachePlaceHolder = Int
-type CachePlaceHolder = PcapFrame
+type CachePlaceHolder = SomeFrame
 
 filenameFromCacheId :: CacheId -> FilePath
 filenameFromCacheId cid =
-    cachePrefix cid ++ intercalate "_" basenames ++ hash ++ cacheSuffix cid
+    cachePrefix cid ++ intercalate "_" basenames ++ myHash ++ cacheSuffix cid
     where
         -- takeBaseName
         basenames = map takeBaseName $ cacheDeps cid
         -- TODO
-        hash = "hash"
+        myHash = "hash"
 
 -- Return full path to the config folder
 getFullPath :: CacheConfig -> CacheId -> FilePath
@@ -80,7 +80,7 @@ doGetCache config cid = return $ Left "Not implemented yet"
   --     csvFilename = getFullPath config cid
 
 
--- PcapFrame
+-- SomeFrame
 -- TODO reuse export function ?
 doPutCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> CachePlaceHolder -> Sem r Bool
 doPutCache config cid frame =

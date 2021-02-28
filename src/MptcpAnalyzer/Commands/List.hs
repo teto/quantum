@@ -3,13 +3,14 @@
 module MptcpAnalyzer.Commands.List
 where
 
-import Prelude hiding (log)
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Types
 import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)
-import Options.Applicative
 import MptcpAnalyzer.Pcap
+
+import Prelude hiding (log)
+import Options.Applicative
 import Frames
 import Control.Lens hiding (argument)
 import Polysemy (Member, Members, Sem, Embed)
@@ -86,37 +87,6 @@ tcpSummaryOpts = info (
     -- L.genericLength
     -- filterFrame :: RecVec rs => (Record rs -> Bool) -> FrameRec rs -> FrameRec rs
 
-buildConnectionFromRow :: Packet -> TcpConnection
-buildConnectionFromRow r =
-  TcpConnection {
-    srcIp = r ^. ipSource
-    , dstIp = r ^. ipDest
-    , srcPort = r ^. tcpSrcPort
-    , dstPort = r ^. tcpDestPort
-    , priority = Nothing  -- for now
-    , localId = 0
-    , remoteId = 0
-    , subflowInterface = Nothing
-  }
-
-{- Builds a Tcp connection from a non filtered frame
--}
-buildConnectionFromTcpStreamId :: PcapFrame -> StreamId Tcp -> Either String TcpConnection
-buildConnectionFromTcpStreamId frame streamId =
-    -- Right $ frameLength synPackets
-    if frameLength synPackets < 1 then
-      Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
-    else
-      Right $ buildConnectionFromRow $ frameRow synPackets 0
-    where
-      streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
-      -- suppose tcpflags is a list of flags, check if it is in the list
-      -- of type FrameRec [(Symbol, *)]
-      synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
-        -- where
-          -- syns = np.bitwise_and(df['tcpflags'], TcpFlags.SYN)
-          -- filterSyn flags = elem TcpFlagSyn flags
-        --       fromStreamId = (== streamId) . view tcpStream
 
 {-| Show a list of all connections
 8 tcp connection(s)
@@ -187,7 +157,7 @@ tcpSummary args = do
 --         where
 --             tcpCon = buildConnectionFromTcpStreamId frame (summaryTcpStreamId args)
 
--- listTcpConnectionsInFrame :: PcapFrame -> IO ()
+-- listTcpConnectionsInFrame :: SomeFrame -> IO ()
 -- listTcpConnectionsInFrame frame = do
 --   putStrLn "Listing tcp connections"
 --   let streamIds = getTcpStreams frame
@@ -197,7 +167,7 @@ tcpSummary args = do
   -- L.fold
   -- putStrLn $ show $ rcast @'[TcpStream] $ frameRow frame 0
   -- let l =  L.fold L.nub (view tcpstream <$> frame)
--- listMptcpConnections :: PcapFrame -> MyStack IO ()
+-- listMptcpConnections :: SomeFrame -> MyStack IO ()
 -- listMptcpConnections frame = do
 --     return ()
 

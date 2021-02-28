@@ -11,7 +11,7 @@
 {-# LANGUAGE FlexibleContexts, QuasiQuotes #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module MptcpAnalyzer.Pcap
--- (PcapFrame, TsharkParams(..),
+-- (SomeFrame, TsharkParams(..),
 --     defaultTsharkPrefs
 --     , defaultTsharkOptions
 --     , generateCsvCommand
@@ -89,8 +89,8 @@ import Data.Vinyl.Class.Method
 
 -- shadow type to know if it was filtered or not
 -- Make it a record ?
-type ConFrame a = PcapFrame
--- type PcapFrame = Frame ManColumnsTshark
+type ConFrame a = SomeFrame
+-- type SomeFrame = Frame ManColumnsTshark
 
 
 data TsharkParams = TsharkParams {
@@ -106,7 +106,7 @@ defaultParserOptions = ParserOptions Nothing (T.pack [csvDelimiter defaultTshark
 
 -- nub => remove duplicates
 -- or just get the column
-getTcpStreams :: PcapFrame -> [StreamIdTcp]
+getTcpStreams :: SomeFrame -> [StreamIdTcp]
 getTcpStreams ps =
     L.fold L.nub (view tcpStream <$> ps)
 
@@ -192,18 +192,15 @@ exportToCsv params pcapPath path tmpFileHandle = do
 -- maybe use a readTableMaybe instead
 -- readTable path
 
-loadRows :: FilePath -> IO PcapFrame
+loadRows :: FilePath -> IO SomeFrame
 loadRows path = inCoreAoS (
-  -- readTableOpt defaultParserOptions path
-  -- holesFilled path
-  -- loadRowsEither path
   eitherProcessed path
   )
 
 -- maybeRows :: MonadSafe m => Producer (Rec (Maybe :. ElField) (RecordColumns Row)) m ()
 -- maybeRows = readTableMaybe "test/data/prestigePartial.csv"
 loadMaybeRows :: MonadSafe m => FilePath -> Producer (Rec (Maybe :. ElField) (RecordColumns Packet)) m ()
-loadMaybeRows path = 
+loadMaybeRows path =
   -- inCoreAoS (
   readTableMaybeOpt defaultParserOptions path
   -- )
@@ -248,29 +245,8 @@ recEither = rtraverse getCompose
 -- recMaybe :: Rec (Maybe :. ElField) cs -> Maybe (Record cs)
 -- recMaybe = rtraverse getCompose
 
--- readFileLatin1Ln :: P.MonadSafe m => FilePath -> P.Producer [T.Text] m ()
--- readFileLatin1Ln fp = pipeLines (try . fmap T.decodeLatin1 . B8.hGetLine) fp
---                       >-> P.map (tokenizeRow defaultParser)
-
--- | Fill in missing columns with a default 'Row' value synthesized
--- from 'Default' instances.
--- holesFilled :: MonadSafe m => FilePath -> Producer Packet m ()
--- holesFilled path = readTableMaybeOpt defaultParserOptions  path  >-> P.map (fromJust . holeFiller)
---   where holeFiller :: Rec (Maybe :. ElField) (RecordColumns Packet) -> Maybe Packet
---         holeFiller = recMaybe . rmapX @(First :. ElField) getFirst
---                    -- . rapply (rmapX @(First :. ElField) (flip mappend) def)
---                    . rmapX @_ @(First :. ElField) First
---         fromJust = maybe (error "Frames holesFilled failure") id
-
--- showFilledHoles :: IO ()
--- showFilledHoles = runSafeT (pipePreview holesFilled 10 cat)
-
 -- http://acowley.github.io/Frames/#orgf328b25
--- movieStream :: MonadSafe m => Producer User m ()
--- movieStream = readTableOpt userParser "data/ml-100k/u.user"
 
--- todo pass as text ?
--- derive from Order ?
 defaultTsharkOptions :: [(String, String)]
 defaultTsharkOptions = [
       -- TODO join these
@@ -300,7 +276,42 @@ defaultTsharkPrefs = TsharkParams {
     }
 
 
--- PcapFrameWithRole
--- addRole :: PcapFrame -> TcpConnection -> PcapFrameWithRole
+getTcpFrame :: SomeFrame -> StreamId Tcp -> Either String TcpConnection
+getTcpFrame = buildConnectionFromTcpStreamId
+
+buildConnectionFromRow :: Packet -> TcpConnection
+buildConnectionFromRow r =
+  TcpConnection {
+    srcIp = r ^. ipSource
+    , dstIp = r ^. ipDest
+    , srcPort = r ^. tcpSrcPort
+    , dstPort = r ^. tcpDestPort
+    , priority = Nothing  -- for now
+    , localId = 0
+    , remoteId = 0
+    , subflowInterface = Nothing
+  }
+
+{- Builds a Tcp connection from a non filtered frame
+-}
+buildConnectionFromTcpStreamId :: SomeFrame -> StreamId Tcp -> Either String TcpConnection
+buildConnectionFromTcpStreamId frame streamId =
+    -- Right $ frameLength synPackets
+    if frameLength synPackets < 1 then
+      Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
+    else
+      Right $ buildConnectionFromRow $ frameRow synPackets 0
+    where
+      streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
+      -- suppose tcpflags is a list of flags, check if it is in the list
+      -- of type FrameRec [(Symbol, *)]
+      synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
+        -- where
+          -- syns = np.bitwise_and(df['tcpflags'], TcpFlags.SYN)
+          -- filterSyn flags = elem TcpFlagSyn flags
+        --       fromStreamId = (== streamId) . view tcpStream
+
+-- SomeFrameWithRole
+-- addRole :: SomeFrame -> TcpConnection -> SomeFrameWithRole
 -- addRole frame con = 
 --   getStre

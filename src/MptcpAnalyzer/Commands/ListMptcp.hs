@@ -45,23 +45,23 @@ listMptcpSubflowOpts = info (
     parserList = ArgsListSubflows <$> switch ( long "detailed" <> help "detail connections")
 
 
--- keepMptcpPackets :: PcapFrame -> PcapFrame
+-- keepMptcpPackets :: SomeFrame -> SomeFrame
 -- keepMptcpPackets frame = do
 --     let mptcpStreams = getTcpStreams frame
 
 -- TODO return MptcpStreamId instead
-getMpTcpStreams :: PcapFrame -> [StreamIdMptcp]
+getMpTcpStreams :: SomeFrame -> [StreamIdMptcp]
 getMpTcpStreams ps =
     catMaybes $
     L.fold L.nub $ (view mptcpStream <$> ps)
 
-filterMptcpConnection :: PcapFrame -> StreamId Mptcp -> PcapFrameF MptcpConnection
+filterMptcpConnection :: SomeFrame -> StreamId Mptcp -> SomeFrameF MptcpConnection
 filterMptcpConnection frame streamId =
   streamPackets
   where
     streamPackets = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
 
-buildMptcpConnectionFromStreamId :: PcapFrame -> StreamId Mptcp -> Either String MptcpConnection
+buildMptcpConnectionFromStreamId :: SomeFrame -> StreamId Mptcp -> Either String MptcpConnection
 buildMptcpConnectionFromStreamId frame streamId = do
     -- Right $ frameLength synPackets
     if frameLength streamPackets < 1 then
@@ -86,7 +86,7 @@ buildMptcpConnectionFromStreamId frame streamId = do
       }
       --  $ frameRow synPackets 0
     where
-      streamPackets :: PcapFrameF Mptcp
+      streamPackets :: SomeFrameF Mptcp
       streamPackets = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
       -- suppose tcpflags is a list of flags, check if it is in the list
       -- of type FrameRec [(Symbol, *)]
@@ -105,7 +105,7 @@ buildMptcpConnectionFromStreamId frame streamId = do
       subflows = map (buildSubflow frame) (getTcpStreams streamPackets)
 
 
-buildSubflow :: PcapFrame -> StreamId Tcp -> MptcpSubflow
+buildSubflow :: SomeFrame -> StreamId Tcp -> MptcpSubflow
 buildSubflow frame (StreamId sfId) = case buildConnectionFromTcpStreamId frame (StreamId sfId) of
   Left _ -> error "should not happen"
   Right con -> con

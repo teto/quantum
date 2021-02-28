@@ -11,9 +11,10 @@ import Data.Monoid (First(..))
 import Data.Vinyl (Rec(..), ElField(..), rapply, xrec, rmapX)
 import Data.Vinyl.Functor (Compose(..), (:.))
 import Data.Vinyl.Class.Method
-import Net.Tcp (TcpFlag(..))
+import Net.Tcp (TcpFlag(..), TcpConnection)
 import Net.Bitset (fromBitMask)
 import Net.IP
+
 import Data.Text (Text)
 import Frames.ShowCSV
 import Frames.CSV (QuotingMode(..), ParserOptions(..))
@@ -161,18 +162,27 @@ type ManColumnsTshark = '[
 -- row / ManRow
 type Packet = Record ManColumnsTshark
 
-type PcapFrame = Frame Packet
+type SomeSomeFrame = Frame Packet
 
 -- shadow param
 -- @a@ be Tcp / Mptcp
 -- @b@ could be the direction
-type PcapFrameF a = Frame Packet
+-- SomeFrame Qualified
+type PcapFrame a = Frame Packet
+type SomeFrame = PcapFrame ()
+
+data FrameFiltered = FrameTcp {
+    ffTcpCon :: TcpConnection
+    , ffTcpFrame :: PcapFrame Tcp
+  }
+  | FrameMptcp {
+  }
 
 -- |Helper to pass information across functions
 data MyState = MyState {
   _stateCacheFolder :: FilePath
 
-  , _loadedFile   :: Maybe PcapFrame  -- ^ cached loaded pcap
+  , _loadedFile   :: Maybe SomeFrame  -- ^ cached loaded pcap
   , _prompt   :: String  -- ^ cached loaded pcap
 }
 
