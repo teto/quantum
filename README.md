@@ -13,10 +13,20 @@ Install zsh
 
 # How to develop
 
+Enter the nix-shell then run your typical cabal commands
+```
+$ nix-shell
+$ cabal build
+```
+## Dependencies
+
+- [Diagrams](diagrams) with the svg backend
 
 ## Debug splices
 
 `-ddump-splices -ddump-to-file -dth-dec-file`
+
+
 
 # How to use ?
 
@@ -27,3 +37,4 @@ manually. I use [vd](visidata).
 
 https://www.wireshark.org/docs/dfref/m/mptcp.html
 visidata: https://www.visidata.org/
+diagrams: https://hackage.haskell.org/package/diagrams

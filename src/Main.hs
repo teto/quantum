@@ -220,7 +220,9 @@ mainParser = subparser (
     <> command "export" CLI.parseExportOpts
     <> commandGroup "TCP plots"
     -- TODO here we should pass a subparser
-    <> command "plot" Plots.cmdPlot
+    <> subparser (
+      command "plot" Plots.cmdPlot
+      )
     -- <> command "help" CLI.listMpTcpConnectionsCmd
     )
 

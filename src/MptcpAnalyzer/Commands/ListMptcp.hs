@@ -55,60 +55,14 @@ getMpTcpStreams ps =
     catMaybes $
     L.fold L.nub $ (view mptcpStream <$> ps)
 
-filterMptcpConnection :: SomeFrame -> StreamId Mptcp -> SomeFrameF MptcpConnection
+filterMptcpConnection :: SomeFrame -> StreamId Mptcp -> SomeFrame
 filterMptcpConnection frame streamId =
   streamPackets
   where
     streamPackets = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
 
-buildMptcpConnectionFromStreamId :: SomeFrame -> StreamId Mptcp -> Either String MptcpConnection
-buildMptcpConnectionFromStreamId frame streamId = do
-    -- Right $ frameLength synPackets
-    if frameLength streamPackets < 1 then
-      Left $ "No packet with mptcp.stream == " ++ show streamId
-    else if frameLength synAckPackets < 1 then
-      Left $ "No syn/ack packet found for stream" ++ show streamId ++ " First packet: "
-      -- ++ show streamPackets
-    else
-      -- TODO now add a check on abstime
-      -- if ds.loc[server_id, "abstime"] < ds.loc[client_id, "abstime"]:
-      --     log.error("Clocks are not synchronized correctly")
-      Right $ MptcpConnection {
-        mptcpServerKey = fromJust $ synAckPacket ^. mptcpSendKey
-        , mptcpClientKey = fromJust $ synPacket ^. mptcpSendKey
-        , mptcpServerToken = fromJust $ synAckPacket ^. mptcpExpectedToken
-        , mptcpClientToken = fromJust $ synPacket ^. mptcpExpectedToken
-        , mptcpNegotiatedVersion = fromIntegral $ fromJust clientMptcpVersion :: Word8
-
-        , subflows = Set.fromList subflows
-        , localIds = Set.empty
-        , remoteIds = Set.empty
-      }
-      --  $ frameRow synPackets 0
-    where
-      streamPackets :: SomeFrameF Mptcp
-      streamPackets = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
-      -- suppose tcpflags is a list of flags, check if it is in the list
-      -- of type FrameRec [(Symbol, *)]
-      -- Looking for synack packets
-      synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
-      synAckPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags) && TcpFlagAck `elem` (x ^. tcpFlags)) streamPackets
-
-      synPacket = frameRow synPackets 0
-      synAckPacket = frameRow synAckPackets 0
-
-      masterTcpstreamId = synPacket ^. tcpStream
-      -- buildConnectionFromTcpStreamId frame masterTcpstreamId
-
-      clientMptcpVersion = synPacket ^. mptcpVersion
-
-      subflows = map (buildSubflow frame) (getTcpStreams streamPackets)
 
 
-buildSubflow :: SomeFrame -> StreamId Tcp -> MptcpSubflow
-buildSubflow frame (StreamId sfId) = case buildConnectionFromTcpStreamId frame (StreamId sfId) of
-  Left _ -> error "should not happen"
-  Right con -> con
 
 -- buildMptcpConnectionFromRow :: Packet -> TcpConnection
 -- buildMptcpConnectionFromRow r =
