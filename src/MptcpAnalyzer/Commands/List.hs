@@ -113,12 +113,12 @@ listTcpConnectionsCmd args = do
         let streamIdList = if _listTcpDetailed args then [] else tcpStreams
         -- log $ "Number of rows " ++ show (frameLength frame)
         P.embed $ putStrLn $ "Number of TCP connections " ++ show (length tcpStreams)
-        _ <- P.embed $ mapM (putStrLn . describeCon . buildConnectionFromTcpStreamId frame ) streamIdList
+        _ <- P.embed $ mapM (putStrLn . describeFrame . buildConnectionFromTcpStreamId frame ) streamIdList
         return CMD.Continue
     where
-      describeCon = \case
+      describeFrame = \case
         Left msg -> msg
-        Right con -> showTcpConnection con
+        Right ff -> showTcpConnection (ffTcpCon ff)
 
 {-| Display statistics for the connection:
 throughput/goodput
@@ -132,13 +132,13 @@ tcpSummary args = do
       Just frame -> do
         let _tcpstreams = getTcpStreams frame
         log $ "Number of rows " ++ show (frameLength frame)
-        case fmap showTcpConnection tcpCon of
+        case showTcpConnection <$> ffTcpCon <$> filteredFrame of
           Left err -> log $ "error happened:" ++ err
           Right desc -> log desc
         -- log $ "Number of SYN packets " ++ (fmap  )
         >> return CMD.Continue
         where
-            tcpCon = buildConnectionFromTcpStreamId frame (summaryTcpStreamId args)
+            filteredFrame = buildConnectionFromTcpStreamId frame (summaryTcpStreamId args)
 
 -- tcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserSummary -> Sem r RetCode
 -- tcpSummary args = do

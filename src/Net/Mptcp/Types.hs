@@ -28,7 +28,7 @@ data MptcpConnection = MptcpConnection {
   -- use SubflowWithMetrics instead ?!
   -- , subflows :: Set.Set [TcpConnection]
   -- TODO use MptcpSubflow instead ?
-  , subflows :: Set.Set MptcpSubflow
+  , mpconSubflows :: Set.Set MptcpSubflow
   , localIds :: Set.Set Word8  -- ^ Announced addresses
   , remoteIds :: Set.Set Word8   -- ^ Announced addresses
 
@@ -44,7 +44,7 @@ showSubflow = showTcpConnection
 showMptcpConnectionText :: MptcpConnection -> TS.Text
 showMptcpConnectionText con =
   -- showIp (srcIp con) <> ":" <> tshow (srcPort con) <> " -> " <> showIp (dstIp con) <> ":" <> tshow (dstPort con)
-  tpl <> "\n" <> TS.unlines (map tshowSubflow (Set.toList $ subflows con))
+  tpl <> "\n" <> TS.unlines (map tshowSubflow (Set.toList $ mpconSubflows con))
   where
     -- showIp = Net.IP.encode
     -- masterSf :: TcpConnection

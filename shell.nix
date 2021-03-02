@@ -21,22 +21,26 @@ let
     hs.hasktags
     # myHaskellPackages.hlint
     # haskellPackages.stan  # broken
+    pkgs.zlib
+
   ]);
   # my_pkg = (import ./. { inherit compiler; } );
   myHaskellPackages = pkgs.haskell.packages."${compilerName}";
 in
-    pkgs.mkShell {
+  pkgs.mkShell rec {
     name = "quantum";
     buildInputs = with pkgs; [
-      # cairo
+      cairo # for chart-cairo
       glib
       hsEnv
       pkg-config
       zlib
-      zlib.dev
 
       pkgs.llvm_11  # for llvm-symbolizer
     ];
+
+    # see https://discourse.nixos.org/t/shared-libraries-error-with-cabal-repl-in-nix-shell/8921/9
+    LD_LIBRARY_PATH = nixpkgs.lib.makeLibraryPath buildInputs;
 
   # (my_pkg.envFunc { withHoogle = true; }).overrideAttrs (oa: {
   #   nativeBuildInputs = oa.nativeBuildInputs ++ (with pkgs; [

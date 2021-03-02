@@ -171,11 +171,17 @@ type SomeSomeFrame = Frame Packet
 type PcapFrame a = Frame Packet
 type SomeFrame = PcapFrame ()
 
+--kj
+-- data Connection = TcpConnection 
+--   | MptcpConnection 
+
 data FrameFiltered = FrameTcp {
     ffTcpCon :: !TcpConnection
     , ffTcpFrame :: PcapFrame Tcp
   }
   | FrameMptcp {
+    -- ffTcpCon :: !MptcpConnection
+    ffMptcpFrame :: PcapFrame Mptcp
   }
 
 -- |Helper to pass information across functions

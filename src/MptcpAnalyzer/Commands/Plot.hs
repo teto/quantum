@@ -13,18 +13,30 @@ import Prelude hiding (filter, lookup, repeat, log)
 import Options.Applicative
 import Polysemy
 -- import Diagrams.Backend.Rasterific
-import Diagrams (dims2D, width, height)
+-- import Diagrams (dims2D, width, height)
 import Frames
-import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
+
+-- import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
+-- import Graphics.Rendering.Chart.Easy
+
 import Graphics.Rendering.Chart.Easy
+import Graphics.Rendering.Chart.Backend.Cairo
+-- from package 'time'
+-- import Data.Time.LocalTime
+
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
 import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
 import Colog.Polysemy (Log, log)
-import Diagrams.Prelude
-import Diagrams.Backend.SVG.CmdLine
+-- import Diagrams.Prelude
+-- import Diagrams.Backend.SVG.CmdLine
+
+piPlot :: ParserInfo CommandArgs
+piPlot = info (plotParser)
+  ( progDesc "Filename to export to"
+  )
 
 plotParser :: Parser CommandArgs
 plotParser = ArgsPlot <$>
@@ -69,15 +81,13 @@ cmdPlotTcpAttribute args = do
         -- inCore converts into a producer
         Right tcpFrame -> do
           -- tcpSeq
-          ldlData <- runSafeT . P.toListM $ seqData P.>-> P.map rcast
-
-          let myCircle :: Diagram B
-          myCircle = circle 1
-
+          -- ldlData <- runSafeT . P.toListM $ seqData P.>-> P.map rcast
+          -- let myCircle :: Diagram B
+          -- myCircle = circle 1
           -- let chart2diagram = fst . runBackendR env . toRenderable . execEC
 
-          let d = chart2diagram $ mkPlots ldlData
-              sz = dims2D (width d) (height d)
+          -- let d = chart2diagram $ mkPlots ldlData
+          --     sz = dims2D (width d) (height d)
           -- renderRasterific "plot.png" sz d
           return Continue
           where

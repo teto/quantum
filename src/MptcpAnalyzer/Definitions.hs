@@ -1,8 +1,10 @@
 {-# LANGUAGE TemplateHaskell            #-}
-module MptcpAnalyzer.Types
+module MptcpAnalyzer.Definitions
 where
 
 import MptcpAnalyzer.Pcap
+import MptcpAnalyzer.Types
+
 -- import Lens.Micro
 import Control.Lens
 import Options.Applicative

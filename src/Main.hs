@@ -28,14 +28,14 @@ module Main where
 -- import Control.Monad.Catch
 -- import qualified Data.Map         as HM
 import MptcpAnalyzer.Cache
-import MptcpAnalyzer.Definitions
+import MptcpAnalyzer.Types
 -- import qualified MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.List as CLI
 import MptcpAnalyzer.Commands.ListMptcp as CLI
 import MptcpAnalyzer.Commands.Export as CLI
-import MptcpAnalyzer.Commands.Plots as Plots
+import MptcpAnalyzer.Commands.Plot as Plots
 import qualified MptcpAnalyzer.Commands.Load as CL
 -- import Control.Monad (void)
 
@@ -220,9 +220,9 @@ mainParser = subparser (
     <> command "export" CLI.parseExportOpts
     <> commandGroup "TCP plots"
     -- TODO here we should pass a subparser
-    <> subparser (
-      command "plot" Plots.cmdPlot
-      )
+    -- <> subparser (
+    <> command "plot" Plots.piPlot
+      -- )
     -- <> command "help" CLI.listMpTcpConnectionsCmd
     )
 
@@ -260,6 +260,7 @@ runCommand args@ArgsListSubflows{} = CLI.listSubflowsCmd args
 runCommand args@ArgsListTcpConnections{} = CLI.listTcpConnectionsCmd args
 runCommand args@ArgsListMpTcpConnections{} = CLI.listMpTcpConnectionsCmd args
 runCommand args@ArgsExport{} = CLI.cmdExport args
+runCommand args@ArgsPlot{} = Plots.cmdPlotTcpAttribute args
 
 -- genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
 -- genericRunCommand parserInfo args = do

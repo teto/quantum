@@ -338,7 +338,7 @@ buildMptcpConnectionFromStreamId frame streamId = do
         , mptcpClientToken = fromJust $ synPacket ^. mptcpExpectedToken
         , mptcpNegotiatedVersion = fromIntegral $ fromJust clientMptcpVersion :: Word8
 
-        , subflows = Set.fromList subflows
+        , mpconSubflows = Set.fromList subflows
         , localIds = Set.empty
         , remoteIds = Set.empty
       }
