@@ -31,7 +31,7 @@ data CommandArgs = ArgsLoadCsv {
     }
     | ArgsPlot {
 
-      plotOut :: String
+      plotOut :: Maybe String
       -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
       -- , plotDisplay ::
       -- , plotTcpStreamId :: StreamId Tcp

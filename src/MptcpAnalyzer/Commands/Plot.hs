@@ -21,6 +21,8 @@ import Frames
 
 import Graphics.Rendering.Chart.Easy
 import Graphics.Rendering.Chart.Backend.Cairo
+
+-- import Prices(prices,mkDate,filterPrices)
 -- from package 'time'
 -- import Data.Time.LocalTime
 
@@ -32,18 +34,22 @@ import Polysemy.State as P
 import Colog.Polysemy (Log, log)
 -- import Diagrams.Prelude
 -- import Diagrams.Backend.SVG.CmdLine
+import System.Process
+import System.Exit
+-- import Data.Time.LocalTime
 
 piPlot :: ParserInfo CommandArgs
 piPlot = info (plotParser)
-  ( progDesc "Filename to export to"
+  ( progDesc "Generate a plot"
   )
 
 plotParser :: Parser CommandArgs
 plotParser = ArgsPlot <$>
-      strOption
+      -- this ends up being not optional !
+      optional (strOption
       ( long "out" <> short 'o'
       <> help "Name of the output plot."
-      <> metavar "OUT" )
+      <> metavar "OUT" ))
     <*> optional ( strOption
       ( long "title" <> short 't'
       <> help "Overrides the default plot title."
@@ -60,6 +66,14 @@ plotParser = ArgsPlot <$>
 -- cmdPlot :: Members [Log String,  Cache, Embed IO] m => ArgsPlot -> Sem m RetCode
 -- cmdPlot args = do
 --   return Continue
+
+-- prices' :: [(LocalTime, Double, Double)]
+-- prices' = filterPrices prices (mkDate 1 1 2005) (mkDate 31 12 2006)
+prices' :: [(Int, Int)]
+-- prices' = zip [1..30] [10,12..40]
+prices' = [ (4, 2), (6, 9)]
+
+-- openPicture :: FilePath -> 
 
 -- called PlotTcpAttribute in mptcpanalyzer
 -- todo pass --filterSyn Args fields
@@ -79,16 +93,20 @@ cmdPlotTcpAttribute args = do
         Left err -> return $ CMD.Error "error could not get "
 
         -- inCore converts into a producer
+        -- TODO save the file
         Right tcpFrame -> do
-          -- tcpSeq
-          -- ldlData <- runSafeT . P.toListM $ seqData P.>-> P.map rcast
-          -- let myCircle :: Diagram B
-          -- myCircle = circle 1
-          -- let chart2diagram = fst . runBackendR env . toRenderable . execEC
-
-          -- let d = chart2diagram $ mkPlots ldlData
-          --     sz = dims2D (width d) (height d)
-          -- renderRasterific "plot.png" sz d
+          embed $ toFile def "example2_big.png" $ do
+              -- layoutlr_title .= "Tcp Sequence number"
+              -- layoutlr_left_axis . laxis_override .= axisGridHide
+              -- layoutlr_right_axis . laxis_override .= axisGridHide
+              plot (line "price 1" [ [ (d,v) | (d,v) <- prices'] ])
+              -- plotRight (line "price 2" [ [ (d,v) | (d,_,v) <- prices'] ])
+          let
+            createProc :: CreateProcess
+            createProc = proc "xdg-open" [ "example2_big.png"]
+          (_, _, mbHerr, ph) <- embed $  createProcess createProc
+          exitCode <- embed $ waitForProcess ph
+          -- TODO launch xdg-open
           return Continue
           where
             seqData = view tcpSeq <$> (ffTcpFrame tcpFrame)
@@ -96,7 +114,3 @@ cmdPlotTcpAttribute args = do
   where
     tcpStreamId = StreamId 0
 
-
-
--- parserPlot
--- toVegaLite [ bkg, cars, mark Circle [MTooltip TTEncoding], enc [] ]

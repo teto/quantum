@@ -172,8 +172,10 @@ type PcapFrame a = Frame Packet
 type SomeFrame = PcapFrame ()
 
 --kj
--- data Connection = TcpConnection 
---   | MptcpConnection 
+-- TcpConnection {
+-- data Connection where
+--     TcpConnection :: TcpConnection -> Connection
+--     MptcpConnection  -> Connection
 
 data FrameFiltered = FrameTcp {
     ffTcpCon :: !TcpConnection

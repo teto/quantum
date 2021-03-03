@@ -133,7 +133,7 @@ startupParser = CLIArguments
          <> Options.Applicative.value InfoS
          <> metavar "LOG_LEVEL" )
       -- optional arguments
-      <*> some ( argument str (
+      <*> many ( argument str (
             metavar "COMMANDS..."
         ))
 
@@ -286,6 +286,7 @@ runIteration fullCmd = do
           case parserResult of
             (Failure failure) -> do
                 log $ show failure
+                log $ "Passed args " ++ show args
                 return $ CMD.Error $ "could not parse: " ++ show failure
             (CompletionInvoked _compl) -> return CMD.Continue
             (Success parsedArgs) -> runCommand parsedArgs

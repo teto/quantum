@@ -45,6 +45,14 @@ listMptcpSubflowOpts = info (
     parserList = ArgsListSubflows <$> switch ( long "detailed" <> help "detail connections")
 
 
+listMptcpReinjectionsOpts :: ParserInfo CommandArgs
+listMptcpReinjectionsOpts = info (
+    parserList <**> helper)
+  ( progDesc "List MPTCP reinjections"
+  )
+  where
+    parserList = ArgsListSubflows <$> switch ( long "detailed" <> help "detail connections")
+
 -- keepMptcpPackets :: SomeFrame -> SomeFrame
 -- keepMptcpPackets frame = do
 --     let mptcpStreams = getTcpStreams frame
