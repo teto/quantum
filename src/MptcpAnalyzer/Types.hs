@@ -15,6 +15,7 @@ import Net.Tcp (TcpFlag(..), TcpConnection)
 import Net.Bitset (fromBitMask)
 import Net.IP
 
+import Data.Word (Word8, Word16, Word32, Word64)
 import Data.Text (Text)
 import Frames.ShowCSV
 import Frames.CSV (QuotingMode(..), ParserOptions(..))
@@ -32,10 +33,32 @@ import Data.Typeable (Typeable)
 import Control.Lens
 import Control.Monad (MonadPlus, mzero)
 import Frames (CommonColumns, Readable(..))
+import qualified Data.Set as Set
+import qualified Data.Text as TS
 
 -- An en passant Default class
 -- class Default a where
 --   def :: a
+
+{- Describe a TCP connection, possibly an Mptcp subflow
+  The equality implementation ignores several fields
+-}
+-- data TcpConnection = TcpConnection {
+--   -- TODO use libraries to deal with that ? filter from the command line for instance ?
+--   srcIp :: IP -- ^Source ip
+--   , dstIp :: IP -- ^Destination ip
+--   , srcPort :: Word16  -- ^ Source port
+--   , dstPort :: Word16  -- ^Destination port
+--   , priority :: Maybe Word8 -- ^subflow priority
+--   , localId :: Word8  -- ^ Convert to AddressFamily
+--   , remoteId :: Word8
+--   -- TODO remove could be deduced from srcIp / dstIp ?
+--   , subflowInterface :: Maybe Word32 -- ^Interface of Maybe ? why a maybe ?
+--   -- add TcpMetrics member
+--   -- , tcpMetrics :: Maybe [SockDiagExtension]  -- ^Metrics retrieved from kernel
+
+-- } deriving (Show, Generic, Ord)
+
 
 data TsharkFieldDesc = TsharkFieldDesc {
         fullname :: T.Text
@@ -67,9 +90,14 @@ type MbMptcpExpectedToken = Maybe Word32
 type MbMptcpDsn = Maybe Word64
 type MbMptcpDack = Maybe Word64
 
+
+-- |Filters a connection depending on its role
+data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq)
+
 declareColumn "frameNumber" ''Word64
 declareColumn "interfaceName" ''Text
-declareColumn "frameEpoch" ''Text
+declareColumn "absTime" ''Text
+declareColumn "relTime" ''Double
 declareColumn "ipSource" ''IP
 declareColumn "ipDest" ''IP
 -- TODO use tcpStream instead
@@ -87,6 +115,8 @@ declareColumn "mptcpSendKey" ''MbMptcpSendKey
 declareColumn "mptcpExpectedToken" ''MbMptcpExpectedToken
 declareColumn "mptcpDsn" ''MbMptcpDsn
 declareColumn "mptcpDack" ''MbMptcpDack
+declareColumn "mptcpRole" ''ConnectionRole
+declareColumn "tcpRole" ''ConnectionRole
 
 -- tableTypesExplicitFull myRow
 --   rowGen { rowTypeName = "Packet"
@@ -110,7 +140,7 @@ type ManColumnsTshark = '[
     , "interfaceName" :-> Text
     -- Load it as a Float
     , "absTime" :-> Text
-    , "relTime" :-> Text
+    , "relTime" :-> Double
     , "ipSource" :-> IP
     , "ipDest" :-> IP
     , "ipSrcHost" :-> Text
@@ -171,14 +201,49 @@ type SomeSomeFrame = Frame Packet
 type PcapFrame a = Frame Packet
 type SomeFrame = PcapFrame ()
 
---kj
--- TcpConnection {
--- data Connection where
---     TcpConnection :: TcpConnection -> Connection
---     MptcpConnection  -> Connection
 
+-- TODO PcapFrame should be a monoid and a semigroup with a list of Connection []
+
+-- Named ConnectionTcp to not clash with mptcppm's one ?
+data Connection = TcpConnection {
+--   -- TODO use libraries to deal with that ? filter from the command line for instance ?
+  conTcpClientIp :: IP -- ^Client ip
+  , conTcpServerIp :: IP -- ^Server ip
+  , conTcpClientPort :: Word16  -- ^ Source port
+  , conTcpServerPort :: Word16  -- ^Destination port
+  }
+    | MptcpSubflow {
+      consf :: TcpConnection
+      , consfPriority :: Maybe Word8 -- ^subflow priority
+      , consfPocalId :: Word8  -- ^ Convert to AddressFamily
+      , consfRemoteId :: Word8
+      --conTcp TODO remove could be deduced from srcIp / dstIp ?
+      , contcpSubflowInterface :: Maybe Word32 -- ^Interface of Maybe ? why a maybe ?
+    }
+    | MptcpConnection {
+      mptcpServerKey :: Word64
+      , mptcpClientKey :: Word64
+      , mptcpServerToken :: Word32
+      , mptcpClientToken :: Word32
+      , mptcpNegotiatedVersion :: Word8
+
+      -- master subflow
+      -- use SubflowWithMetrics instead ?!
+      -- , subflows :: Set.Set [TcpConnection]
+      -- should be a MptcpSubflow instead ?
+      -- should be a subflow
+      , mpconSubflows :: Set.Set Connection
+      -- , localIds :: Set.Set Word8  -- ^ Announced addresses
+      -- , remoteIds :: Set.Set Word8   -- ^ Announced addresses
+
+} deriving (Show, Eq, Ord)
+
+-- class Connection where
+--   showConnection  :: Text
+
+-- | TODO adapt
 data FrameFiltered = FrameTcp {
-    ffTcpCon :: !TcpConnection
+    ffTcpCon :: !Connection
     , ffTcpFrame :: PcapFrame Tcp
   }
   | FrameMptcp {
@@ -195,9 +260,6 @@ data MyState = MyState {
 }
 
 makeLenses ''MyState
-
-
-data ConnectionRole = Server | Client
 
 
 
@@ -382,3 +444,36 @@ getHeaders = map (\(name, x) -> (name, colType x))
 headersFromFields :: [(T.Text, TsharkFieldDesc)] -> Q [(T.Text, Q Type)]
 headersFromFields fields = do
   pure (getHeaders fields)
+
+
+tshow :: Show a => a -> TS.Text
+tshow = TS.pack . Prelude.show
+
+-- TODO add sthg in case it's the master subflow ?
+showConnection :: Connection -> String
+showConnection = TS.unpack . showConnectionText
+
+showConnectionText :: Connection -> Text
+showConnectionText con@MptcpConnection{} =
+  -- showIp (srcIp con) <> ":" <> tshow (srcPort con) <> " -> " <> showIp (dstIp con) <> ":" <> tshow (dstPort con)
+  tpl <> "\n" <> TS.unlines (map showConnectionText (Set.toList $ mpconSubflows con))
+  where
+    -- showIp = Net.IP.encode
+    -- tshowSubflow = tshow . showSubflow
+
+    -- todo show server key/
+    tpl :: Text
+    tpl = "Server key/token: " <> tshow (mptcpServerKey con) <> "/" <> tshow ( mptcpServerToken con)
+        <> "\nClient key/token: " <> tshow (mptcpClientKey con) <> "/" <> tshow ( mptcpClientToken con)
+showConnectionText con@TcpConnection{} =
+  showIp (conTcpClientIp con) <> ":" <> tshow (conTcpClientPort con) <> " -> "
+      <> showIp (conTcpServerIp con) <> ":" <> tshow (conTcpServerPort con)
+  where
+    showIp = Net.IP.encode
+--
+showConnectionText con@MptcpSubflow{} = tshow (consf con)
+
+
+-- showMptcpConnection :: MptcpConnection -> String
+-- showMptcpConnection = TS.unpack . showMptcpConnectionText
+

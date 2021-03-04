@@ -10,7 +10,7 @@ import MptcpAnalyzer.Commands.List as CMD
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
 
-import Net.Mptcp.Types (MptcpConnection(..), MptcpSubflow, showMptcpConnection)
+-- import Net.Mptcp.Types (MptcpConnection(..), MptcpSubflow, showMptcpConnection)
 
 import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)
 import Prelude hiding (log)
@@ -53,6 +53,7 @@ listMptcpReinjectionsOpts = info (
   where
     parserList = ArgsListSubflows <$> switch ( long "detailed" <> help "detail connections")
 
+
 -- keepMptcpPackets :: SomeFrame -> SomeFrame
 -- keepMptcpPackets frame = do
 --     let mptcpStreams = getTcpStreams frame
@@ -85,6 +86,11 @@ filterMptcpConnection frame streamId =
     -- , subflowInterface = Nothing
   -- }
 
+
+cmdListReinjections :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
+cmdListReinjections args = do
+  return CMD.Continue
+
 listSubflowsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
 listSubflowsCmd _args = do
   log "not implemented yet"
@@ -109,12 +115,12 @@ listMpTcpConnectionsCmd _args = do
         -- >>
         return CMD.Continue
         where
-          mptcpConnections :: [Either String MptcpConnection]
+          mptcpConnections :: [Either String Connection]
           mptcpConnections = map (buildMptcpConnectionFromStreamId frame) mptcpStreams
 
-          showEitherCon :: Either String MptcpConnection -> String
+          showEitherCon :: Either String Connection -> String
           showEitherCon (Left msg) = msg ++ "\n"
-          showEitherCon (Right mptcpCon) = showMptcpConnection mptcpCon ++ "\n"
+          showEitherCon (Right mptcpCon) = showConnection mptcpCon ++ "\n"
 
           mptcpStreams = getMpTcpStreams frame
 

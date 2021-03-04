@@ -20,8 +20,6 @@ data MyState = MyState {
 makeLenses ''MyState
 
 
-data ConnectionRole = Server | Client
-
 -- alternatively could modify defaultPrefs
 defaultParserPrefs :: ParserPrefs
 defaultParserPrefs = prefs showHelpOnEmpty

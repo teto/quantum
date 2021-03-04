@@ -9,6 +9,21 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts, QuasiQuotes #-}
+{-# LANGUAGE ConstraintKinds,
+             DataKinds,
+             EmptyCase,
+             FlexibleContexts,
+             FlexibleInstances,
+             FunctionalDependencies,
+             KindSignatures,
+             GADTs,
+             MultiParamTypeClasses,
+             PatternSynonyms,
+             PolyKinds,
+             ScopedTypeVariables,
+             TypeFamilies,
+             TypeOperators,
+             UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module MptcpAnalyzer.Pcap
 -- (SomeFrame, TsharkParams(..),
@@ -25,9 +40,6 @@ where
 import Tshark.TH
 import Tshark.TH2
 
-import Net.Tcp
-import Net.Mptcp.Types
-
 import Data.Monoid (First(..))
 import qualified Data.Vector as V
 import qualified Data.Text as T
@@ -38,6 +50,7 @@ import System.Exit
 import Frames.TH
 import Frames
 import Frames.ShowCSV
+import Frames.Col
 import Frames.CSV (produceTextLines, pipeTableEitherOpt, readFileLatin1Ln, readTableMaybeOpt, QuotingMode(..), ParserOptions(..))
 import Frames.ColumnTypeable (Parseable(..), parseIntish, Parsed(..))
 -- for Record
@@ -63,6 +76,8 @@ import Data.Vinyl (Rec(..), ElField(..), rapply, xrec, rmapX)
 import Data.Vinyl.Functor (Compose(..), (:.))
 import Data.Vinyl.Class.Method
 import Data.Maybe (fromJust, catMaybes)
+import GHC.Base (Symbol)
+import GHC.TypeLits (KnownSymbol)
 
 
 -- tableTypes is a Template Haskell function, which means that it is executed at compile time. It generates a data type for our CSV, so we have everything under control with our types.
@@ -284,17 +299,18 @@ defaultTsharkPrefs = TsharkParams {
 getTcpFrame :: SomeFrame -> StreamId Tcp -> Either String FrameFiltered
 getTcpFrame = buildConnectionFromTcpStreamId
 
-buildConnectionFromRow :: Packet -> TcpConnection
-buildConnectionFromRow r =
+-- | 
+buildTcpConnectionFromRow :: Packet -> Connection
+buildTcpConnectionFromRow r =
   TcpConnection {
-    srcIp = r ^. ipSource
-    , dstIp = r ^. ipDest
-    , srcPort = r ^. tcpSrcPort
-    , dstPort = r ^. tcpDestPort
-    , priority = Nothing  -- for now
-    , localId = 0
-    , remoteId = 0
-    , subflowInterface = Nothing
+    conTcpClientIp = r ^. ipSource
+    , conTcpServerIp = r ^. ipDest
+    , conTcpClientPort = r ^. tcpSrcPort
+    , conTcpServerPort = r ^. tcpDestPort
+    -- , priority = Nothing  -- for now
+    -- , localId = 0
+    -- , remoteId = 0
+    -- , subflowInterface = Nothing
   }
 
 {- Builds a Tcp connection from a non filtered frame
@@ -305,21 +321,40 @@ buildConnectionFromTcpStreamId frame streamId =
     if frameLength synPackets < 1 then
       Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
     else
-      Right $ FrameTcp (buildConnectionFromRow $ frameRow synPackets 0) streamPackets
+      -- TODO check who is client
+      Right $ FrameTcp (buildTcpConnectionFromRow $ frameRow synPackets 0) streamPackets
     where
       streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
       synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
 
+
+type RoleTest = "tcpRole" :-> ConnectionRole
+
 -- SomeFrameWithRole
--- addRole :: SomeFrame -> TcpConnection -> SomeFrameWithRole
--- addRole frame con = 
---   getStre
-buildSubflow :: SomeFrame -> StreamId Tcp -> MptcpSubflow
+-- append a column with a value role
+addRole :: IpSource ∈ rs => Frame (Record rs) -> Connection -> Frame (Record  ( RoleTest ': rs ))
+addRole frame con =
+  fmap addRoleCol frame
+  where
+    -- TcpRole
+    -- addRoleCol :: Record rs -> rs :& MptcpRole
+    -- addRoleCol :: Record (rs) -> Record (RoleTest ': rs)
+    -- '("tcpRole" :->
+    addRoleCol x =   (Col $ findRole x) :& x
+    -- :& RNil
+    -- addRoleCol x = (findRole x) :& x
+
+    -- findRole :: Record rs -> (ConnectionRole)
+    -- TODO filter more
+    findRole x = if (rgetField @IpSource x) == (conTcpClientIp con) then RoleClient else RoleServer
+
+
+buildSubflow :: SomeFrame -> StreamId Tcp -> Connection
 buildSubflow frame (StreamId sfId) = case buildConnectionFromTcpStreamId frame (StreamId sfId) of
   Right con@FrameTcp{} -> ffTcpCon con
   _ -> error "should not happen"
 
-buildMptcpConnectionFromStreamId :: SomeFrame -> StreamId Mptcp -> Either String MptcpConnection
+buildMptcpConnectionFromStreamId :: SomeFrame -> StreamId Mptcp -> Either String Connection
 buildMptcpConnectionFromStreamId frame streamId = do
     -- Right $ frameLength synPackets
     if frameLength streamPackets < 1 then
@@ -339,8 +374,8 @@ buildMptcpConnectionFromStreamId frame streamId = do
         , mptcpNegotiatedVersion = fromIntegral $ fromJust clientMptcpVersion :: Word8
 
         , mpconSubflows = Set.fromList subflows
-        , localIds = Set.empty
-        , remoteIds = Set.empty
+        -- , localIds = Set.empty
+        -- , remoteIds = Set.empty
       }
       --  $ frameRow synPackets 0
     where

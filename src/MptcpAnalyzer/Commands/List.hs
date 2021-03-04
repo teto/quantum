@@ -6,7 +6,7 @@ where
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Types
-import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)
+import Net.Tcp (TcpConnection(..), TcpFlag(..))
 import MptcpAnalyzer.Pcap
 
 import Prelude hiding (log)
@@ -118,7 +118,7 @@ listTcpConnectionsCmd args = do
     where
       describeFrame = \case
         Left msg -> msg
-        Right ff -> showTcpConnection (ffTcpCon ff)
+        Right ff -> showConnection (ffTcpCon ff)
 
 {-| Display statistics for the connection:
 throughput/goodput
@@ -132,13 +132,35 @@ tcpSummary args = do
       Just frame -> do
         let _tcpstreams = getTcpStreams frame
         log $ "Number of rows " ++ show (frameLength frame)
-        case showTcpConnection <$> ffTcpCon <$> filteredFrame of
+        case showConnection <$> ffTcpCon <$> filteredFrame of
           Left err -> log $ "error happened:" ++ err
           Right desc -> log desc
         -- log $ "Number of SYN packets " ++ (fmap  )
         >> return CMD.Continue
         where
             filteredFrame = buildConnectionFromTcpStreamId frame (summaryTcpStreamId args)
+
+{-
+mptcp stream 0 transferred 308.0 Bytes over 45.658558 sec(308.0 Bytes per second) towards Client.
+tcpstream 0 transferred 308.0 Bytes out of 308.0 Bytes, accounting for 100.00%
+tcpstream 2 transferred 0.0 Bytes out of 308.0 Bytes, accounting for 0.00%
+tcpstream 6 transferred 0.0 Bytes out of 308.0 Bytes, accounting for 0.00%
+mptcp stream 0 transferred 469.0 Bytes over 45.831181 sec(456.0 Bytes per second) towards Server.
+tcpstream 0 transferred 460.0 Bytes out of 469.0 Bytes, accounting for 98.08%
+tcpstream 2 transferred 9.0 Bytes out of 469.0 Bytes, accounting for 1.92%
+tcpstream 4 transferred 0.0 Bytes out of 469.0 Bytes, accounting for 0.00%
+tcpstream 6 transferred 0.0 Bytes out of 469.0 Bytes, accounting for 0.00%
+-}
+cmdMptcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
+cmdMptcpSummary args = do
+  -- for destination in args.dest:
+  --   stats = mptcp_compute_throughput(
+  --       self.data, args.mptcpstream,
+  --       destination,
+  --       False
+  --   )
+
+  return CMD.Continue
 
 -- tcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserSummary -> Sem r RetCode
 -- tcpSummary args = do
