@@ -42,6 +42,8 @@ import System.Process
 import System.Exit
 -- import Data.Time.LocalTime
 import Data.Foldable (toList)
+import Data.Maybe (fromMaybe)
+import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
 
 
 data PlotTypes = PlotTcpAttribute {
@@ -145,6 +147,8 @@ instance PlotValue Word32 where
 -- called PlotTcpAttribute in mptcpanalyzer
 -- todo pass --filterSyn Args fields
 -- TODO filter according to destination
+
+-- destinations is an array of destination
 cmdPlotTcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m => CommandArgs -> Sem m RetCode
 cmdPlotTcpAttribute args = do
   let
@@ -166,18 +170,34 @@ cmdPlotTcpAttribute args = do
         -- inCore converts into a producer
         -- TODO save the file
         Right tcpFrame -> do
+          -- TODO
+          -- :: TempFileOptions	 
+-- -> FilePath	
+-- Temp dir to create the file in
+-- -> String	
+-- File name template. See openTempFile.
+-- -> (FilePath -> Handle -> IO a)
+          (tempPath , exitCode, stdErr) <- embed $ withTempFileEx opts "/tmp" "plot.png" _
+          -- openTempFile
+
           let
             frame2 = addRole (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
-          embed $ toFile def "example2_big.png" $ do
+          embed $ toFile def tempPath $ do
               -- layoutlr_title .= "Tcp Sequence number"
               -- layoutlr_left_axis . laxis_override .= axisGridHide
               -- layoutlr_right_axis . laxis_override .= axisGridHide
               -- TODO generate for mptcp plot
               plot (line "price 1" [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
               -- plotRight (line "price 2" [ [ (d,v) | (d,_,v) <- prices'] ])
+          case plotOut args of
+            -- move the file
+            Just x -> 
+            Nothing -> _
+          let outFilename = fromMaybe tempPath (plotOut args)
+
           let
             createProc :: CreateProcess
-            createProc = proc "xdg-open" [ "example2_big.png"]
+            createProc = proc "xdg-open" [ tempPath ]
           (_, _, mbHerr, ph) <- embed $  createProcess createProc
           exitCode <- embed $ waitForProcess ph
           -- TODO launch xdg-open
@@ -189,3 +209,7 @@ cmdPlotTcpAttribute args = do
   where
     tcpStreamId = plotStreamId args
     pcapFilename = plotFilename args
+    destinations :: [ConnectionRole]
+    destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) $ plotDest args)
+    opts :: TempFileOptions
+    opts = TempFileOptions True
