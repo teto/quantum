@@ -1,15 +1,28 @@
 module MptcpAnalyzer.Loader
 where
+import MptcpAnalyzer.Types
+import MptcpAnalyzer.Cache
+import MptcpAnalyzer.Pcap
+
+import Prelude hiding (log)
+import Control.Monad.Trans (liftIO)
+import System.Exit (ExitCode(..))
+import Colog.Polysemy (Log, log)
+import Polysemy (Sem, Members, Embed)
+import Polysemy.State as P
+import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
+import Frames
 
 -- TODO return an Either or Maybe ?
-loadPcapIntoFrame :: Members [Cache, Log String, Embed IO ] m => TsharkParams -> FilePath -> Sem m (Maybe SomeFrame)
+-- return an either instead
+loadPcapIntoFrame :: Members [Cache, Log String, Embed IO ] m => TsharkParams -> FilePath -> Sem m (Either String SomeFrame)
 loadPcapIntoFrame params path = do
     log $ "Start loading pcap " ++ path
     x <- getCache cacheId
     case x of
       Right frame -> do
           log $ show cacheId ++ " in cache"
-          return $ Just frame
+          return $ Right frame
       Left err -> do
           log $ "getCache error: " ++ err
           log "Calling tshark"
@@ -29,12 +42,12 @@ loadPcapIntoFrame params path = do
                   log "Saved into cache"
                 else
                   pure ()
-                return $ Just frame
+                return $ Right frame
               else do
                 log $ "Error happened: " ++ show exitCode
                 log stdErr
                 log "error happened: exitCode"
-                return Nothing
+                return $ Left stdErr
 
     where
       cacheId = CacheId [path] "" ""

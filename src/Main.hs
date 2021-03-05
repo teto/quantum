@@ -57,6 +57,7 @@ import Colog.Polysemy (Log, log, runLogAction)
 
 
 -- for noCompletion
+        -- <> Options.Applicative.value "/tmp"
 import System.Console.Haskeline
 import Control.Lens ((^.), view)
 
@@ -204,7 +205,8 @@ main = do
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 
--- TODO for some commands we could factorize the preprocessing
+-- TODO for some commands we could factorize the preprocessing eg check a file
+-- was pre-loaded
 -- aka check the if loadedFile was loaded
 -- one can create groups with <|> subparser
 mainParser :: Parser CommandArgs
@@ -221,13 +223,13 @@ mainParser = subparser (
     <> commandGroup "TCP plots"
     -- TODO here we should pass a subparser
     -- <> subparser (
-    <> command "plot" Plots.piPlot
+    <> command "plot" Plots.piPlotTcpAttr
       -- )
     -- <> command "help" CLI.listMpTcpConnectionsCmd
     )
 
 
--- mainParserInfo :: P.Member Command r => ParserInfo (Sem r RetCode)
+-- |Main parser
 mainParserInfo :: ParserInfo CommandArgs
 mainParserInfo = info (mainParser <**> helper)
   ( fullDesc
@@ -260,7 +262,7 @@ runCommand args@ArgsListSubflows{} = CLI.listSubflowsCmd args
 runCommand args@ArgsListTcpConnections{} = CLI.listTcpConnectionsCmd args
 runCommand args@ArgsListMpTcpConnections{} = CLI.listMpTcpConnectionsCmd args
 runCommand args@ArgsExport{} = CLI.cmdExport args
-runCommand args@ArgsPlot{} = Plots.cmdPlotTcpAttribute args
+runCommand args@ArgsPlotTcpAttr{} = Plots.cmdPlotTcpAttribute args
 
 -- genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
 -- genericRunCommand parserInfo args = do
@@ -285,7 +287,9 @@ runIteration fullCmd = do
           let parserResult = execParserPure defaultParserPrefs mainParserInfo args
           case parserResult of
             (Failure failure) -> do
-                log $ show failure
+                -- last arg is progname
+                let (h, exit) = renderFailure failure "prompt>"
+                log $ h
                 log $ "Passed args " ++ show args
                 return $ CMD.Error $ "could not parse: " ++ show failure
             (CompletionInvoked _compl) -> return CMD.Continue

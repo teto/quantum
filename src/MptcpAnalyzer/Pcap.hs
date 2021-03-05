@@ -332,7 +332,7 @@ type RoleTest = "tcpRole" :-> ConnectionRole
 
 -- SomeFrameWithRole
 -- append a column with a value role
-addRole :: IpSource ∈ rs => Frame (Record rs) -> Connection -> Frame (Record  ( RoleTest ': rs ))
+addRole :: (IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) => Frame (Record rs) -> Connection -> Frame (Record  ( RoleTest ': rs ))
 addRole frame con =
   fmap addRoleCol frame
   where
@@ -346,7 +346,11 @@ addRole frame con =
 
     -- findRole :: Record rs -> (ConnectionRole)
     -- TODO filter more
-    findRole x = if (rgetField @IpSource x) == (conTcpClientIp con) then RoleClient else RoleServer
+    findRole x = if (rgetField @IpSource x) == (conTcpClientIp con)
+                && (rgetField @IpDest x) == (conTcpClientIp con)
+                && (rgetField @TcpSrcPort x) == (conTcpClientPort con)
+                && (rgetField @TcpDestPort x) == (conTcpServerPort con)
+        then RoleClient else RoleServer
 
 
 buildSubflow :: SomeFrame -> StreamId Tcp -> Connection

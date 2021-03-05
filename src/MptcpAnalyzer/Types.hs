@@ -35,6 +35,7 @@ import Control.Monad (MonadPlus, mzero)
 import Frames (CommonColumns, Readable(..))
 import qualified Data.Set as Set
 import qualified Data.Text as TS
+import Options.Applicative
 
 -- An en passant Default class
 -- class Default a where
@@ -92,7 +93,7 @@ type MbMptcpDack = Maybe Word64
 
 
 -- |Filters a connection depending on its role
-data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq)
+data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read)
 
 declareColumn "frameNumber" ''Word64
 declareColumn "interfaceName" ''Text
@@ -188,11 +189,23 @@ type ManColumnsTshark = '[
     -- , "mptcpReinjectedIn" :-> Maybe OptionList
     ]
 
+-- |Can load stream ids from CSV files
+readStreamId :: ReadM (StreamId Tcp)
+readStreamId = eitherReader $ \arg -> case reads arg of
+  [(r, "")] -> return $ StreamId r
+  _ -> Left $ "readStreamId: cannot parse value `" ++ arg ++ "`"
+
+readConnectionRole :: ReadM ConnectionRole
+readConnectionRole = eitherReader $ \arg -> case reads arg of
+  [(a, "")] -> return $ a
+  -- [("client", "")] -> return $ RoleClient
+  _ -> Left $ "readConnectionRole: cannot parse value `" ++ arg ++ "`"
+
 
 -- row / ManRow
 type Packet = Record ManColumnsTshark
 
-type SomeSomeFrame = Frame Packet
+-- type SomeSomeFrame = Frame Packet
 
 -- shadow param
 -- @a@ be Tcp / Mptcp

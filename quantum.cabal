@@ -124,12 +124,14 @@ library libmptcpanalyzer
         , Net.Tcp.Stats
         -- reexport the rest
         , MptcpAnalyzer
+        , MptcpAnalyzer.Loader
         , MptcpAnalyzer.Frame
         , MptcpAnalyzer.Types
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache
         , MptcpAnalyzer.Plots
         , MptcpAnalyzer.Plots.Stream
+        -- TODO remove les commandes ?
         , MptcpAnalyzer.Commands
         , MptcpAnalyzer.Commands.Definitions
         , MptcpAnalyzer.Commands.Load
@@ -155,6 +157,7 @@ executable mptcpanalyzer
         , Net.Mptcp.Types
         -- reexport the rest
         , MptcpAnalyzer
+        , MptcpAnalyzer.Loader
         , MptcpAnalyzer.Types
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache

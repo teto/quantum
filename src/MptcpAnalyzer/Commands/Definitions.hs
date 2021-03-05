@@ -7,6 +7,8 @@ import MptcpAnalyzer.Types
 
 -- import Polysemy (Sem, Members, makeSem, interpret, Effect)
 
+-- | Registered commands
+-- TODO make it possible to add some from a plugin
 data CommandArgs = ArgsLoadCsv {
       _loadCsvPath :: FilePath
     }
@@ -25,18 +27,22 @@ data CommandArgs = ArgsLoadCsv {
     | ArgsParserSummary {
       summaryFull :: Bool,
       summaryTcpStreamId :: StreamId Tcp
+      -- hidden file
     }
     | ArgsExport {
-      _exportFilename :: String
+      plotExportFilename :: FilePath
     }
-    | ArgsPlot {
-
-      plotOut :: Maybe String
+    | ArgsPlotTcpAttr {
+      plotFilename :: FilePath
+      , plotStreamId :: StreamId Tcp
+      , plotDest :: Maybe ConnectionRole
+      , plotOut :: Maybe String
       -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
       -- , plotDisplay ::
       -- , plotTcpStreamId :: StreamId Tcp
       , plotTitle :: Maybe String
       , plotToClipboard :: Maybe Bool
+      , plotDisplay :: Bool
     }
 
 

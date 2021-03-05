@@ -39,12 +39,6 @@ parserSummary = ArgsParserSummary <$> switch
           -- TODO pass a default
           )
 
--- |Can load stream ids from CSV files
-readStreamId :: ReadM (StreamId Tcp)
-readStreamId = eitherReader $ \arg -> case reads arg of
-  [(r, "")] -> return $ StreamId r
-  _ -> Left $ "cannot parse value `" ++ arg ++ "`"
-
 
 listTcpOpts ::  ParserInfo CommandArgs
 listTcpOpts = info (
