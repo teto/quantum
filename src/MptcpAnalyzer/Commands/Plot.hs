@@ -44,6 +44,7 @@ import System.Exit
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
+import System.Directory (renameFile)
 
 
 data PlotTypes = PlotTcpAttribute {
@@ -176,23 +177,25 @@ cmdPlotTcpAttribute args = do
 -- Temp dir to create the file in
 -- -> String	
 -- File name template. See openTempFile.
--- -> (FilePath -> Handle -> IO a)
-          (tempPath , exitCode, stdErr) <- embed $ withTempFileEx opts "/tmp" "plot.png" _
-          -- openTempFile
+-- -> (FilePath -> Handle -> IO a) 
+-- (FilePath -> Handle -> IO a)
+          -- (tempPath , exitCode, stdErr)
+          tempPath <- embed $ withTempFileEx opts "/tmp" "plot.png" (\tmpPath hd -> do
+              let
+                frame2 = addRole (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
+              toFile def tmpPath $ do
+                  layout_title .= "Tcp Sequence number"
+                  -- layoutlr_left_axis . laxis_override .= axisGridHide
+                  -- layoutlr_right_axis . laxis_override .= axisGridHide
+                  -- TODO generate for mptcp plot
+                  plot (line "price 1" [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
+              return tmpPath)
 
-          let
-            frame2 = addRole (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
-          embed $ toFile def tempPath $ do
-              -- layoutlr_title .= "Tcp Sequence number"
-              -- layoutlr_left_axis . laxis_override .= axisGridHide
-              -- layoutlr_right_axis . laxis_override .= axisGridHide
-              -- TODO generate for mptcp plot
-              plot (line "price 1" [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
               -- plotRight (line "price 2" [ [ (d,v) | (d,_,v) <- prices'] ])
-          case plotOut args of
-            -- move the file
-            Just x -> 
-            Nothing -> _
+          _ <- embed $ case plotOut args of
+            -- user specified a file move the file
+            Just x -> renameFile tempPath x
+            Nothing -> return ()
           let outFilename = fromMaybe tempPath (plotOut args)
 
           let
@@ -203,7 +206,8 @@ cmdPlotTcpAttribute args = do
           -- TODO launch xdg-open
           return Continue
           where
-            seqData = toList $ view tcpSeq <$> (ffTcpFrame tcpFrame)
+            seqData :: [Double]
+            seqData = map fromIntegral (toList $ view tcpSeq <$> (ffTcpFrame tcpFrame))
             timeData = toList $ view relTime <$> (ffTcpFrame tcpFrame)
   return ret
   where
