@@ -127,6 +127,7 @@ library libmptcpanalyzer
         , MptcpAnalyzer.Loader
         , MptcpAnalyzer.Frame
         , MptcpAnalyzer.Types
+        , MptcpAnalyzer.Plots.Types
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache
         , MptcpAnalyzer.Plots
@@ -159,6 +160,7 @@ executable mptcpanalyzer
         , MptcpAnalyzer
         , MptcpAnalyzer.Loader
         , MptcpAnalyzer.Types
+        , MptcpAnalyzer.Plots.Types
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache
         , MptcpAnalyzer.Commands

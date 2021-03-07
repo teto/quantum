@@ -95,6 +95,12 @@ type MbMptcpDack = Maybe Word64
 -- |Filters a connection depending on its role
 data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read)
 
+
+-- artificial types
+declareColumn "tcpRole" ''ConnectionRole
+declareColumn "mptcpRole" ''ConnectionRole
+
+-- wireshark types
 declareColumn "frameNumber" ''Word64
 declareColumn "interfaceName" ''Text
 declareColumn "absTime" ''Text
@@ -116,8 +122,6 @@ declareColumn "mptcpSendKey" ''MbMptcpSendKey
 declareColumn "mptcpExpectedToken" ''MbMptcpExpectedToken
 declareColumn "mptcpDsn" ''MbMptcpDsn
 declareColumn "mptcpDack" ''MbMptcpDack
-declareColumn "mptcpRole" ''ConnectionRole
-declareColumn "tcpRole" ''ConnectionRole
 
 -- tableTypesExplicitFull myRow
 --   rowGen { rowTypeName = "Packet"
@@ -449,6 +453,7 @@ type instance VectorFor (Maybe Int) = V.Vector
 type instance VectorFor (Maybe Bool) = V.Vector
 type instance VectorFor (Maybe OptionList) = V.Vector
 type instance VectorFor MbMptcpStream = V.Vector
+type instance VectorFor ConnectionRole = V.Vector
 -- type instance VectorFor MbTcpStream = V.Vector
 
 getHeaders :: [(T.Text, TsharkFieldDesc)] -> [(T.Text, Q Type)]

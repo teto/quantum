@@ -5,6 +5,7 @@ where
 -- import Graphics.Vega.VegaLite
 -- import qualified Graphics.Vega.VegaLite as VL
 import MptcpAnalyzer.Types
+import MptcpAnalyzer.Plots.Types
 import MptcpAnalyzer.Commands.Definitions
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
@@ -63,7 +64,7 @@ piPlotParserTcpAttr = PlotTcpAttribute <$> argument str
       <> metavar "FIELD" )
 
 piPlotTcpAttr :: ParserInfo CommandArgs
-piPlotTcpAttr = info (plotParser)
+piPlotTcpAttr = info (plotStreamParser)
   ( progDesc "Generate a plot"
   )
 
@@ -71,15 +72,15 @@ piPlotTcpAttr = info (plotParser)
 -- plotSubparser = 
 
 piPlot :: ParserInfo CommandArgs
-piPlot = info (plotParser)
+piPlot = info (plotStreamParser)
   ( progDesc "Generate a plot"
   )
 
 -- |Options that are available for all parsers
 -- plotParserGenericOptions 
 
-plotParser :: Parser CommandArgs
-plotParser = ArgsPlotTcpAttr <$>
+plotStreamParser :: Parser ArgsPlots
+plotStreamParser = ArgsPlotTcpAttr <$>
       -- this ends up being not optional !
       strArgument (
           metavar "PCAP"
@@ -180,16 +181,28 @@ cmdPlotTcpAttribute args = do
 -- -> (FilePath -> Handle -> IO a) 
 -- (FilePath -> Handle -> IO a)
           -- (tempPath , exitCode, stdErr)
-          tempPath <- embed $ withTempFileEx opts "/tmp" "plot.png" (\tmpPath hd -> do
-              let
-                frame2 = addRole (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
+          tempPath <- embed $ withTempFileEx opts "/tmp" "plot.png" $ \tmpPath hd -> do
               toFile def tmpPath $ do
                   layout_title .= "Tcp Sequence number"
                   -- layoutlr_left_axis . laxis_override .= axisGridHide
                   -- layoutlr_right_axis . laxis_override .= axisGridHide
                   -- TODO generate for mptcp plot
-                  plot (line "price 1" [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
-              return tmpPath)
+                  -- plot (
+                  flip mapM_ destinations plotAttr
+                      -- plot (line "price 1" [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
+                      -- where
+                      --     -- seqData :: [Double]
+                      --     -- seqData = map fromIntegral (toList $ view tcpSeq <$> (ffTcpFrame tcpFrame))
+                      --     timeData = toList $ view relTime <$> (ffTcpFrame tcpFrame)
+                  -- }
+
+
+              return tmpPath
+              -- where
+              --     -- plot
+              --     -- filter by dest
+              --     plotAttr dest = 
+              --         plot (line "price 1" [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
 
               -- plotRight (line "price 2" [ [ (d,v) | (d,_,v) <- prices'] ])
           _ <- embed $ case plotOut args of
@@ -206,11 +219,23 @@ cmdPlotTcpAttribute args = do
           -- TODO launch xdg-open
           return Continue
           where
-            seqData :: [Double]
-            seqData = map fromIntegral (toList $ view tcpSeq <$> (ffTcpFrame tcpFrame))
-            timeData = toList $ view relTime <$> (ffTcpFrame tcpFrame)
+    -- filter by dest
+            frame2 = addRole (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
+            plotAttr dest =
+                plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
+                where
+                  -- frameDest = ffTcpFrame tcpFrame
+                  frameDest = frame2
+                  -- frameDest = frame2
+                  unidirectionalFrame = filterFrame (\x -> x ^. tcpRole == dest) frameDest
+
+                  seqData :: [Double]
+                  seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
+                  timeData = toList $ view relTime <$> unidirectionalFrame
   return ret
   where
+    -- plot
+
     tcpStreamId = plotStreamId args
     pcapFilename = plotFilename args
     destinations :: [ConnectionRole]

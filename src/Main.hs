@@ -36,6 +36,7 @@ import MptcpAnalyzer.Commands.List as CLI
 import MptcpAnalyzer.Commands.ListMptcp as CLI
 import MptcpAnalyzer.Commands.Export as CLI
 import MptcpAnalyzer.Commands.Plot as Plots
+import MptcpAnalyzer.Plots.Types
 import qualified MptcpAnalyzer.Commands.Load as CL
 -- import Control.Monad (void)
 
@@ -105,6 +106,36 @@ loggerName = "main"
 -- -- todo we should react depending on ParseError
 -- -- CompletionResult
 -- generateCompleter (OptP opt) = noCompletion
+
+plotParserGeneric :: Parser CommandArgs
+plotParserGeneric = ArgsPlot plotParserSpecific
+      -- <$> optional (strOption
+      -- ( long "out" <> short 'o'
+      -- <> help "Name of the output plot."
+      -- <> metavar "OUT" ))
+    -- <*> optional ( strOption
+      -- ( long "title" <> short 't'
+      -- <> help "Overrides the default plot title."
+      -- <> metavar "TITLE" ))
+    -- <*> optional (switch
+      -- ( long "primary"
+      -- <> help "Copy to X clipboard, requires `xsel` to be installed"
+      -- ))
+    -- <*> (switch
+      -- ( long "display"
+      -- <> help "Copy to X clipboard, requires `xsel` to be installed"
+      -- ))
+
+-- ArgsPlots
+plotParserSpecific :: Parser ArgsPlots
+plotParserSpecific = plotStreamParser
+
+    -- <*> commandGroup "Loader commands"
+    -- <> command "load-csv" CL.loadCsvOpts
+
+    -- <*> 
+    -- subparser (
+    -- )
 
 startupParser :: Parser CLIArguments
 startupParser = CLIArguments
@@ -223,7 +254,8 @@ mainParser = subparser (
     <> commandGroup "TCP plots"
     -- TODO here we should pass a subparser
     -- <> subparser (
-    <> command "plot" Plots.piPlotTcpAttr
+    <> command "plot" ArgsPlotsGeneric <$> Main.plotParser
+    -- Plots.piPlotTcpAttr
       -- )
     -- <> command "help" CLI.listMpTcpConnectionsCmd
     )
@@ -262,7 +294,7 @@ runCommand args@ArgsListSubflows{} = CLI.listSubflowsCmd args
 runCommand args@ArgsListTcpConnections{} = CLI.listTcpConnectionsCmd args
 runCommand args@ArgsListMpTcpConnections{} = CLI.listMpTcpConnectionsCmd args
 runCommand args@ArgsExport{} = CLI.cmdExport args
-runCommand args@ArgsPlotTcpAttr{} = Plots.cmdPlotTcpAttribute args
+-- runCommand args(ArgsPlotGeneric  =  Plots.cmdPlotTcpAttribute args
 
 -- genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
 -- genericRunCommand parserInfo args = do

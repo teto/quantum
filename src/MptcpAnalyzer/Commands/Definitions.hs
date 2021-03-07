@@ -4,6 +4,7 @@ import MptcpAnalyzer.Commands.Utils ()
 import MptcpAnalyzer.Types ()
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
+import MptcpAnalyzer.Plots.Types
 
 -- import Polysemy (Sem, Members, makeSem, interpret, Effect)
 
@@ -30,20 +31,24 @@ data CommandArgs = ArgsLoadCsv {
       -- hidden file
     }
     | ArgsExport {
-      plotExportFilename :: FilePath
+      argsExportFilename :: FilePath
     }
-    | ArgsPlotTcpAttr {
-      plotFilename :: FilePath
-      , plotStreamId :: StreamId Tcp
-      , plotDest :: Maybe ConnectionRole
-      , plotOut :: Maybe String
-      -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
-      -- , plotDisplay ::
-      -- , plotTcpStreamId :: StreamId Tcp
-      , plotTitle :: Maybe String
-      , plotToClipboard :: Maybe Bool
-      , plotDisplay :: Bool
+    | ArgsPlotGeneric {
+      plotArgs :: ArgsPlots
     }
+
+    -- ArgsPlotTcpAttr {
+    --   plotFilename :: FilePath
+    --   , plotStreamId :: StreamId Tcp
+    --   , plotDest :: Maybe ConnectionRole
+    --   , plotOut :: Maybe String
+    --   -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
+    --   -- , plotDisplay ::
+    --   -- , plotTcpStreamId :: StreamId Tcp
+    --   , plotTitle :: Maybe String
+    --   , plotToClipboard :: Maybe Bool
+    --   , plotDisplay :: Bool
+    -- }
 
 
 
