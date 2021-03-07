@@ -55,6 +55,8 @@ import Prelude hiding (concat, init, log)
 import Options.Applicative
 import Colog.Core.IO (logStringStdout)
 import Colog.Polysemy (Log, log, runLogAction)
+import Graphics.Rendering.Chart.Easy hiding (argument)
+import Graphics.Rendering.Chart.Backend.Cairo
 
 
 -- for noCompletion
@@ -67,6 +69,8 @@ import Control.Lens ((^.), view)
 -- import System.Console.Repline
 import MptcpAnalyzer.Pcap ()
 import Pipes hiding (Proxy)
+import System.Process hiding (runCommand)
+import Distribution.Simple.Utils (withTempFileEx)
 
 
 data Severity = TraceS | DebugS | InfoS | ErrorS deriving (Read, Show, Eq)
@@ -108,11 +112,11 @@ loggerName = "main"
 -- generateCompleter (OptP opt) = noCompletion
 
 plotParserGeneric :: Parser CommandArgs
-plotParserGeneric = ArgsPlot plotParserSpecific
-      -- <$> optional (strOption
-      -- ( long "out" <> short 'o'
-      -- <> help "Name of the output plot."
-      -- <> metavar "OUT" ))
+plotParserGeneric = ArgsPlotGeneric 
+      <$> optional (strOption
+      ( long "out" <> short 'o'
+      <> help "Name of the output plot."
+      <> metavar "OUT" ))
     -- <*> optional ( strOption
       -- ( long "title" <> short 't'
       -- <> help "Overrides the default plot title."
@@ -121,10 +125,16 @@ plotParserGeneric = ArgsPlot plotParserSpecific
       -- ( long "primary"
       -- <> help "Copy to X clipboard, requires `xsel` to be installed"
       -- ))
-    -- <*> (switch
-      -- ( long "display"
-      -- <> help "Copy to X clipboard, requires `xsel` to be installed"
-      -- ))
+    <*> (switch
+      ( long "display"
+      <> help "Uses xdg-open to display plot"
+      ))
+      <*> plotParserSpecific
+
+plotinfoParserGeneric :: ParserInfo CommandArgs
+plotinfoParserGeneric = info (plotParserGeneric)
+  ( progDesc "Generate a plot"
+  )
 
 -- ArgsPlots
 plotParserSpecific :: Parser ArgsPlots
@@ -254,7 +264,7 @@ mainParser = subparser (
     <> commandGroup "TCP plots"
     -- TODO here we should pass a subparser
     -- <> subparser (
-    <> command "plot" ArgsPlotsGeneric <$> Main.plotParser
+    <> command "plot" Main.plotinfoParserGeneric
     -- Plots.piPlotTcpAttr
       -- )
     -- <> command "help" CLI.listMpTcpConnectionsCmd
@@ -286,7 +296,7 @@ mainParserInfo = info (mainParser <**> helper)
 -- liftIO $ putStrLn doPrintHelp >> 
 
 -- runCommand :: CommandArgs -> CMD.RetCode
-runCommand :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
+runCommand, runPlotCommand :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
 runCommand args@ArgsLoadPcap{} = CL.loadPcap args
 runCommand args@ArgsLoadCsv{} = CL.loadCsv args
 runCommand args@ArgsParserSummary{} = CLI.tcpSummary args
@@ -294,17 +304,39 @@ runCommand args@ArgsListSubflows{} = CLI.listSubflowsCmd args
 runCommand args@ArgsListTcpConnections{} = CLI.listTcpConnectionsCmd args
 runCommand args@ArgsListMpTcpConnections{} = CLI.listMpTcpConnectionsCmd args
 runCommand args@ArgsExport{} = CLI.cmdExport args
--- runCommand args(ArgsPlotGeneric  =  Plots.cmdPlotTcpAttribute args
+runCommand args@ArgsPlotGeneric{} = runPlotCommand args
 
--- genericRunCommand ::  Members '[Log String, P.State MyState, Cache, P.Embed IO] r => ParserInfo (Sem (Command : r) RetCode) -> [String] -> Sem r RetCode
--- genericRunCommand parserInfo args = do
---   let parserResult = execParserPure defaultParserPrefs parserInfo args
---   case parserResult of
---     (Failure failure) -> do
---         log $ show failure
---         return $ CMD.Error $ "could not parse: " ++ show failure
---     (CompletionInvoked _compl) -> return CMD.Continue
---     (Success parsedArgs) -> runCommand parsedArgs
+
+-- |Command specific to plots
+-- TODO these should return a file
+runPlotCommand (ArgsPlotGeneric mbOut displayPlot specificArgs ) = do
+    -- file is not removed afterwards
+    (tempPath, hd) <- openTempFile "/tmp" "plot.png"
+    -- tempPath <- embed $ withTempFileEx opts "/tmp" "plot.png" $ \tmpPath hd -> do
+        embed $ Plots.cmdPlotTcpAttribute specificArgs tmpPath hd
+
+    _ <- embed $ case mbOut of
+            -- user specified a file move the file
+            -- outFilename = fromMaybe tempPath mbOut
+            Just outFilename -> renameFile tempPath outFilename
+            Nothing -> return ()
+    if displayPlot then do
+        let 
+          createProc :: CreateProcess
+          createProc = proc "xdg-open" [ tempPath ]
+
+        (_, _, mbHerr, ph) <- embed $  createProcess createProc
+        exitCode <- embed $ waitForProcess ph
+        return Continue
+        -- TODO launch xdg-open
+
+    else
+      return Continue
+    -- where
+    --     createProc :: CreateProcess
+    --     createProc = proc "xdg-open" [ tempPath ]
+runPlotCommand _ = error "Should not happen, file a bug report"
+
 
 
 -- TODO use genericRunCommand

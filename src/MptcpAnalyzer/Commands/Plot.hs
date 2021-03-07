@@ -39,13 +39,14 @@ import Polysemy.State as P
 import Colog.Polysemy (Log, log)
 -- import Diagrams.Prelude
 -- import Diagrams.Backend.SVG.CmdLine
-import System.Process
+import System.Process hiding (runCommand)
 import System.Exit
 -- import Data.Time.LocalTime
 import Data.Foldable (toList)
 import Data.Maybe (fromMaybe)
 import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
 import System.Directory (renameFile)
+import System.IO (Handle)
 
 
 data PlotTypes = PlotTcpAttribute {
@@ -63,18 +64,18 @@ piPlotParserTcpAttr = PlotTcpAttribute <$> argument str
       ( help "Choose an mptcp attribute to plot"
       <> metavar "FIELD" )
 
-piPlotTcpAttr :: ParserInfo CommandArgs
-piPlotTcpAttr = info (plotStreamParser)
-  ( progDesc "Generate a plot"
-  )
+-- piPlotTcpAttr :: ParserInfo CommandArgs
+-- piPlotTcpAttr = info (ArgsPlotGeneric <$> plotStreamParser)
+--   ( progDesc "Generate a plot"
+--   )
 
 -- plotSubparser :: Parser PlotTypes
 -- plotSubparser = 
 
-piPlot :: ParserInfo CommandArgs
-piPlot = info (plotStreamParser)
-  ( progDesc "Generate a plot"
-  )
+-- piPlot :: ParserInfo CommandArgs
+-- piPlot = info (plotStreamParser)
+--   ( progDesc "Generate a plot"
+--   )
 
 -- |Options that are available for all parsers
 -- plotParserGenericOptions 
@@ -96,22 +97,22 @@ plotStreamParser = ArgsPlotTcpAttr <$>
         -- <> Options.Applicative.value RoleServer
         <> help ""
       ))
-      <*> optional (strOption
-      ( long "out" <> short 'o'
-      <> help "Name of the output plot."
-      <> metavar "OUT" ))
+      -- <*> optional (strOption
+      -- ( long "out" <> short 'o'
+      -- <> help "Name of the output plot."
+      -- <> metavar "OUT" ))
     <*> optional ( strOption
       ( long "title" <> short 't'
       <> help "Overrides the default plot title."
       <> metavar "TITLE" ))
-    <*> optional (switch
-      ( long "primary"
-      <> help "Copy to X clipboard, requires `xsel` to be installed"
-      ))
-    <*> (switch
-      ( long "display"
-      <> help "Copy to X clipboard, requires `xsel` to be installed"
-      ))
+    -- <*> optional (switch
+    --   ( long "primary"
+    --   <> help "Copy to X clipboard, requires `xsel` to be installed"
+    --   ))
+    -- <*> (switch
+    --   ( long "display"
+    --   <> help "Copy to X clipboard, requires `xsel` to be installed"
+    --   ))
 
 
 -- {- TODO a generic version
@@ -151,20 +152,18 @@ instance PlotValue Word32 where
 -- TODO filter according to destination
 
 -- destinations is an array of destination
-cmdPlotTcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m => CommandArgs -> Sem m RetCode
-cmdPlotTcpAttribute args = do
-  let
-    cacheId :: CacheId
-    cacheId = CacheId [pcapFilename]  "" ""
-  -- res <- getCache cacheId
+cmdPlotTcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
+          ArgsPlots ->
+          FilePath
+          -> Handle
+          -> Sem m RetCode
+cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
   res <- loadPcapIntoFrame defaultTsharkPrefs pcapFilename
   ret <- case res of
     Left err -> do
         log $ "Not found in a cache" ++ (show cacheId)
         return CMD.Continue
     Right frame -> do
-      -- TODO load streamId from command
-      -- (plotTcpStreamId args)
       case getTcpFrame frame tcpStreamId of
         -- log "error could not get " >>
         Left err -> return $ CMD.Error "error could not get "
@@ -172,51 +171,26 @@ cmdPlotTcpAttribute args = do
         -- inCore converts into a producer
         -- TODO save the file
         Right tcpFrame -> do
-          -- TODO
-          -- :: TempFileOptions	 
--- -> FilePath	
--- Temp dir to create the file in
--- -> String	
--- File name template. See openTempFile.
--- -> (FilePath -> Handle -> IO a) 
--- (FilePath -> Handle -> IO a)
-          -- (tempPath , exitCode, stdErr)
-          tempPath <- embed $ withTempFileEx opts "/tmp" "plot.png" $ \tmpPath hd -> do
-              toFile def tmpPath $ do
-                  layout_title .= "Tcp Sequence number"
-                  -- layoutlr_left_axis . laxis_override .= axisGridHide
-                  -- layoutlr_right_axis . laxis_override .= axisGridHide
-                  -- TODO generate for mptcp plot
-                  -- plot (
-                  flip mapM_ destinations plotAttr
-                      -- plot (line "price 1" [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
-                      -- where
-                      --     -- seqData :: [Double]
-                      --     -- seqData = map fromIntegral (toList $ view tcpSeq <$> (ffTcpFrame tcpFrame))
-                      --     timeData = toList $ view relTime <$> (ffTcpFrame tcpFrame)
-                  -- }
+          -- tempPath <- embed $ withTempFileEx opts "/tmp" "plot.png" $ \tmpPath hd -> do
+          embed $ toFile def tempPath $ do
+              layout_title .= "Tcp Sequence number"
+              -- layoutlr_left_axis . laxis_override .= axisGridHide
+              -- layoutlr_right_axis . laxis_override .= axisGridHide
+              -- TODO generate for mptcp plot
+              flip mapM_ destinations plotAttr
 
-
-              return tmpPath
-              -- where
-              --     -- plot
-              --     -- filter by dest
-              --     plotAttr dest = 
-              --         plot (line "price 1" [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
-
+          -- where
+          --     -- plot
+          --     -- filter by dest
+          --     plotAttr dest = 
+          --         plot (line "price 1" [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
               -- plotRight (line "price 2" [ [ (d,v) | (d,_,v) <- prices'] ])
-          _ <- embed $ case plotOut args of
-            -- user specified a file move the file
-            Just x -> renameFile tempPath x
-            Nothing -> return ()
-          let outFilename = fromMaybe tempPath (plotOut args)
+          -- _ <- embed $ case plotOut args of
+          --   -- user specified a file move the file
+          --   Just x -> renameFile tempPath x
+          --   Nothing -> return ()
+          -- let outFilename = fromMaybe tempPath (plotOut args)
 
-          let
-            createProc :: CreateProcess
-            createProc = proc "xdg-open" [ tempPath ]
-          (_, _, mbHerr, ph) <- embed $  createProcess createProc
-          exitCode <- embed $ waitForProcess ph
-          -- TODO launch xdg-open
           return Continue
           where
     -- filter by dest
@@ -234,11 +208,13 @@ cmdPlotTcpAttribute args = do
                   timeData = toList $ view relTime <$> unidirectionalFrame
   return ret
   where
-    -- plot
-
     tcpStreamId = plotStreamId args
     pcapFilename = plotFilename args
     destinations :: [ConnectionRole]
     destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) $ plotDest args)
     opts :: TempFileOptions
     opts = TempFileOptions True
+    cacheId :: CacheId
+    cacheId = CacheId [pcapFilename]  "" ""
+
+-- cmdPlotTcpAttribute _ _ _ = error "unsupported"

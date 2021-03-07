@@ -34,7 +34,14 @@ data CommandArgs = ArgsLoadCsv {
       argsExportFilename :: FilePath
     }
     | ArgsPlotGeneric {
-      plotArgs :: ArgsPlots
+      plotOut :: Maybe String
+  --     -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
+  --     -- , plotDisplay ::
+  --     -- , plotTcpStreamId :: StreamId Tcp
+  --     , plotTitle :: Maybe String
+  --     , plotToClipboard :: Maybe Bool
+      , plotDisplay :: Bool  -- ^Defaults to false
+      , plotArgs :: ArgsPlots
     }
 
     -- ArgsPlotTcpAttr {

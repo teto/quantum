@@ -26,11 +26,11 @@ data ArgsPlots =
       plotFilename :: FilePath
       , plotStreamId :: StreamId Tcp
       , plotDest :: Maybe ConnectionRole
-      , plotOut :: Maybe String
+      -- , plotOut :: Maybe String
       -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
       -- , plotDisplay ::
       -- , plotTcpStreamId :: StreamId Tcp
       , plotTitle :: Maybe String
-      , plotToClipboard :: Maybe Bool
-      , plotDisplay :: Bool
+      -- , plotToClipboard :: Maybe Bool
+      -- , plotDisplay :: Bool
     }
