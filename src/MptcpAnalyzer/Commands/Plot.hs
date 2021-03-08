@@ -161,7 +161,7 @@ cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
   res <- loadPcapIntoFrame defaultTsharkPrefs pcapFilename
   ret <- case res of
     Left err -> do
-        log $ "Not found in a cache" ++ (show cacheId)
+        log $ "Could not load " ++ pcapFilename ++ " because " ++ err
         return CMD.Continue
     Right frame -> do
       case getTcpFrame frame tcpStreamId of
@@ -169,31 +169,16 @@ cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
         Left err -> return $ CMD.Error "error could not get "
 
         -- inCore converts into a producer
-        -- TODO save the file
         Right tcpFrame -> do
-          -- tempPath <- embed $ withTempFileEx opts "/tmp" "plot.png" $ \tmpPath hd -> do
+          embed $ putStrLn $ show frame2
           embed $ toFile def tempPath $ do
               layout_title .= "Tcp Sequence number"
-              -- layoutlr_left_axis . laxis_override .= axisGridHide
-              -- layoutlr_right_axis . laxis_override .= axisGridHide
               -- TODO generate for mptcp plot
               flip mapM_ destinations plotAttr
 
-          -- where
-          --     -- plot
-          --     -- filter by dest
-          --     plotAttr dest = 
-          --         plot (line "price 1" [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
-              -- plotRight (line "price 2" [ [ (d,v) | (d,_,v) <- prices'] ])
-          -- _ <- embed $ case plotOut args of
-          --   -- user specified a file move the file
-          --   Just x -> renameFile tempPath x
-          --   Nothing -> return ()
-          -- let outFilename = fromMaybe tempPath (plotOut args)
-
           return Continue
           where
-    -- filter by dest
+            -- filter by dest
             frame2 = addRole (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
             plotAttr dest =
                 plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])

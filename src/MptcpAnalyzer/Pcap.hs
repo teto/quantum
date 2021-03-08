@@ -299,7 +299,7 @@ defaultTsharkPrefs = TsharkParams {
 getTcpFrame :: SomeFrame -> StreamId Tcp -> Either String FrameFiltered
 getTcpFrame = buildConnectionFromTcpStreamId
 
--- | 
+-- | For now assume the packet is the first syn from client to server
 buildTcpConnectionFromRow :: Packet -> Connection
 buildTcpConnectionFromRow r =
   TcpConnection {
@@ -328,11 +328,11 @@ buildConnectionFromTcpStreamId frame streamId =
       synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
 
 
-type RoleTest = "tcpRole" :-> ConnectionRole
+-- type RoleTest = "tcpRole" :-> ConnectionRole
 
 -- SomeFrameWithRole
 -- append a column with a value role
-addRole :: (IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) => Frame (Record rs) -> Connection -> Frame (Record  ( RoleTest ': rs ))
+addRole :: (IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) => Frame (Record rs) -> Connection -> Frame (Record  ( TcpRole ': rs ))
 addRole frame con =
   fmap addRoleCol frame
   where

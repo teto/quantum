@@ -71,6 +71,7 @@ import MptcpAnalyzer.Pcap ()
 import Pipes hiding (Proxy)
 import System.Process hiding (runCommand)
 import Distribution.Simple.Utils (withTempFileEx)
+import Distribution.Compat.Internal.TempFile (openTempFile)
 
 
 data Severity = TraceS | DebugS | InfoS | ErrorS deriving (Read, Show, Eq)
@@ -310,23 +311,23 @@ runCommand args@ArgsPlotGeneric{} = runPlotCommand args
 -- |Command specific to plots
 -- TODO these should return a file
 runPlotCommand (ArgsPlotGeneric mbOut displayPlot specificArgs ) = do
-    -- file is not removed afterwards
-    (tempPath, hd) <- openTempFile "/tmp" "plot.png"
     -- tempPath <- embed $ withTempFileEx opts "/tmp" "plot.png" $ \tmpPath hd -> do
-        embed $ Plots.cmdPlotTcpAttribute specificArgs tmpPath hd
+    -- file is not removed afterwards
+    (tempPath, handle) <- P.embed $ openTempFile "/tmp" "plot.png"
+    _ <- Plots.cmdPlotTcpAttribute specificArgs tempPath handle
 
-    _ <- embed $ case mbOut of
+    _ <- P.embed $ case mbOut of
             -- user specified a file move the file
             -- outFilename = fromMaybe tempPath mbOut
             Just outFilename -> renameFile tempPath outFilename
             Nothing -> return ()
     if displayPlot then do
-        let 
+        let
           createProc :: CreateProcess
           createProc = proc "xdg-open" [ tempPath ]
 
-        (_, _, mbHerr, ph) <- embed $  createProcess createProc
-        exitCode <- embed $ waitForProcess ph
+        (_, _, mbHerr, ph) <- P.embed $  createProcess createProc
+        exitCode <- P.embed $ waitForProcess ph
         return Continue
         -- TODO launch xdg-open
 
