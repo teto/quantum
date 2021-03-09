@@ -328,26 +328,16 @@ buildConnectionFromTcpStreamId frame streamId =
       synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
 
 
--- type RoleTest = "tcpRole" :-> ConnectionRole
-
 -- SomeFrameWithRole
 -- append a column with a value role
 addRole :: (IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) => Frame (Record rs) -> Connection -> Frame (Record  ( TcpRole ': rs ))
 addRole frame con =
   fmap addRoleCol frame
   where
-    -- TcpRole
-    -- addRoleCol :: Record rs -> rs :& MptcpRole
-    -- addRoleCol :: Record (rs) -> Record (RoleTest ': rs)
-    -- '("tcpRole" :->
     addRoleCol x =   (Col $ findRole x) :& x
-    -- :& RNil
-    -- addRoleCol x = (findRole x) :& x
 
-    -- findRole :: Record rs -> (ConnectionRole)
-    -- TODO filter more
     findRole x = if (rgetField @IpSource x) == (conTcpClientIp con)
-                && (rgetField @IpDest x) == (conTcpClientIp con)
+                && (rgetField @IpDest x) == (conTcpServerIp con)
                 && (rgetField @TcpSrcPort x) == (conTcpClientPort con)
                 && (rgetField @TcpDestPort x) == (conTcpServerPort con)
         then RoleClient else RoleServer

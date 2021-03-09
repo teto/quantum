@@ -36,6 +36,7 @@ common shared-properties
       , co-log-polysemy
       , readable
       , polysemy
+      , hashable
       , bytestring
       , hvega
       , ip
@@ -128,6 +129,7 @@ library libmptcpanalyzer
         , MptcpAnalyzer.Frame
         , MptcpAnalyzer.Types
         , MptcpAnalyzer.Plots.Types
+        , MptcpAnalyzer.Debug
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache
         , MptcpAnalyzer.Plots
@@ -161,6 +163,7 @@ executable mptcpanalyzer
         , MptcpAnalyzer.Loader
         , MptcpAnalyzer.Types
         , MptcpAnalyzer.Plots.Types
+        , MptcpAnalyzer.Debug
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache
         , MptcpAnalyzer.Commands

@@ -1,5 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 module MptcpAnalyzer.Cache
 where
 
@@ -14,13 +16,14 @@ import Polysemy
 import Data.List (intercalate)
 import Frames
 import Frames.CSV
-
+import Data.Hashable
+import GHC.Generics
 
 data CacheId = CacheId {
   cacheDeps :: [FilePath]
   , cachePrefix :: String
   , cacheSuffix :: String
-} deriving (Show, Eq)
+} deriving (Generic, Show, Eq, Hashable)
 
 data CacheConfig = CacheConfig {
   cacheFolder :: FilePath

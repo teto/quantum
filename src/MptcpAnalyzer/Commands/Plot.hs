@@ -2,8 +2,6 @@
 module MptcpAnalyzer.Commands.Plot
 where
 
--- import Graphics.Vega.VegaLite
--- import qualified Graphics.Vega.VegaLite as VL
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Plots.Types
 import MptcpAnalyzer.Commands.Definitions
@@ -11,13 +9,13 @@ import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Loader
+import MptcpAnalyzer.Debug
 
 import Prelude hiding (filter, lookup, repeat, log)
 import Options.Applicative
 import Polysemy
--- import Diagrams.Backend.Rasterific
--- import Diagrams (dims2D, width, height)
 import Frames
+import Frames.CSV
 
 -- import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
 -- import Graphics.Rendering.Chart.Easy
@@ -26,19 +24,14 @@ import Graphics.Rendering.Chart.Easy hiding (argument)
 import Graphics.Rendering.Chart.Backend.Cairo
 import Data.Word (Word8, Word16, Word32, Word64)
 
--- import Prices(prices,mkDate,filterPrices)
--- from package 'time'
--- import Data.Time.LocalTime
-
 import Data.Text (Text)
+import qualified Data.Text as T
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
 import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
 import Colog.Polysemy (Log, log)
--- import Diagrams.Prelude
--- import Diagrams.Backend.SVG.CmdLine
 import System.Process hiding (runCommand)
 import System.Exit
 -- import Data.Time.LocalTime
@@ -47,6 +40,7 @@ import Data.Maybe (fromMaybe)
 import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
 import System.Directory (renameFile)
 import System.IO (Handle)
+import Frames.ShowCSV (showCSV)
 
 
 data PlotTypes = PlotTcpAttribute {
@@ -80,6 +74,7 @@ piPlotParserTcpAttr = PlotTcpAttribute <$> argument str
 -- |Options that are available for all parsers
 -- plotParserGenericOptions 
 
+-- TODO this could be generalized ?
 plotStreamParser :: Parser ArgsPlots
 plotStreamParser = ArgsPlotTcpAttr <$>
       -- this ends up being not optional !
@@ -97,38 +92,12 @@ plotStreamParser = ArgsPlotTcpAttr <$>
         -- <> Options.Applicative.value RoleServer
         <> help ""
       ))
-      -- <*> optional (strOption
-      -- ( long "out" <> short 'o'
-      -- <> help "Name of the output plot."
-      -- <> metavar "OUT" ))
     <*> optional ( strOption
       ( long "title" <> short 't'
       <> help "Overrides the default plot title."
       <> metavar "TITLE" ))
-    -- <*> optional (switch
-    --   ( long "primary"
-    --   <> help "Copy to X clipboard, requires `xsel` to be installed"
-    --   ))
-    -- <*> (switch
-    --   ( long "display"
-    --   <> help "Copy to X clipboard, requires `xsel` to be installed"
-    --   ))
 
 
--- {- TODO a generic version
--- P.State MyState,
--- -}
--- cmdPlot :: Members [Log String,  Cache, Embed IO] m => ArgsPlot -> Sem m RetCode
--- cmdPlot args = do
---   return Continue
-
--- prices' :: [(LocalTime, Double, Double)]
--- prices' = filterPrices prices (mkDate 1 1 2005) (mkDate 31 12 2006)
-prices' :: [(Int, Int)]
--- prices' = zip [1..30] [10,12..40]
-prices' = [ (4, 2), (6, 9)]
-
--- openPicture :: FilePath -> 
 
 -- | A typeclass abstracting the functions we need
 -- to be able to plot against an axis of type a
@@ -170,7 +139,11 @@ cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
 
         -- inCore converts into a producer
         Right tcpFrame -> do
-          embed $ putStrLn $ show frame2
+          -- TODO with frame2
+          -- embed $ putStrLn $ T.unpack $ showCSV frame
+          embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
+          embed $ writeCSV "debug.csv" frame2
+          -- embed $ viewFrame frame2
           embed $ toFile def tempPath $ do
               layout_title .= "Tcp Sequence number"
               -- TODO generate for mptcp plot

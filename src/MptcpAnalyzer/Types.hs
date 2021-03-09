@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE FlexibleInstances                      #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -12,7 +13,7 @@ import Data.Vinyl (Rec(..), ElField(..), rapply, xrec, rmapX)
 import Data.Vinyl.Functor (Compose(..), (:.))
 import Data.Vinyl.Class.Method
 import Net.Tcp (TcpFlag(..), TcpConnection)
-import Net.Bitset (fromBitMask)
+import Net.Bitset (fromBitMask, toBitMask)
 import Net.IP
 
 import Data.Word (Word8, Word16, Word32, Word64)
@@ -93,7 +94,7 @@ type MbMptcpDack = Maybe Word64
 
 
 -- |Filters a connection depending on its role
-data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read)
+data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, ShowCSV)
 
 
 -- artificial types
@@ -415,15 +416,17 @@ instance Frames.ColumnTypeable.Parseable [TcpFlag] where
 -- tcpFlags as a list of flags
 
 
+-- TODO rewrite it as wireshark exposes it, eg, in hexa ?
 instance ShowCSV [TcpFlag] where
   -- showCSV :: a -> Text
-  -- default showCSV :: Show a => a -> Text
-  -- showCSV = T.pack . show
   showCSV flagList = T.concat texts
     where
       texts = map (T.pack . show .fromEnum) flagList
+      res = toBitMask flagList
 
 instance ShowCSV IP where
+  showCSV = encode
+
 instance ShowCSV Word16 where
 instance ShowCSV Word32 where
 instance ShowCSV Word64 where
