@@ -78,6 +78,7 @@ import Data.Vinyl.Class.Method
 import Data.Maybe (fromJust, catMaybes)
 import GHC.Base (Symbol)
 import GHC.TypeLits (KnownSymbol)
+import GHC.List (foldl')
 
 
 -- tableTypes is a Template Haskell function, which means that it is executed at compile time. It generates a data type for our CSV, so we have everything under control with our types.
@@ -328,10 +329,27 @@ buildConnectionFromTcpStreamId frame streamId =
       synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
 
 
--- SomeFrameWithRole
+-- | Sets mptcp role column
+addMptcpDest :: (IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) =>
+      Frame (Record rs)
+      -> Connection
+      -> Frame (Record  ( MptcpDest ': rs ))
+addMptcpDest frame con@MptcpConnection{} = 
+    foldl' (\tframe sf -> addTcpDest tframe sf) frame subflows
+    -- map subflows (addTcpDest frame)
+    where
+  
+      frameWithCol = fmap (Col $ findRole x) :& x
+      addMptcpDestCol x =   (Col $ findRole x) :& x
+      -- order subflows as desired
+      subflows = []
+addMptcpDest frame _ = error "should not happen"
+
+
+-- | Sets TCP role column
 -- append a column with a value role
-addRole :: (IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) => Frame (Record rs) -> Connection -> Frame (Record  ( TcpRole ': rs ))
-addRole frame con =
+addTcpDest :: (IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) => Frame (Record rs) -> Connection -> Frame (Record  ( TcpDest ': rs ))
+addTcpDest frame con =
   fmap addRoleCol frame
   where
     addRoleCol x =   (Col $ findRole x) :& x

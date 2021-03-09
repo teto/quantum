@@ -43,20 +43,20 @@ import System.IO (Handle)
 import Frames.ShowCSV (showCSV)
 
 
-data PlotTypes = PlotTcpAttribute {
-    pltAttrField :: Text
-    -- syndrop => drop syn packets
-    -- Drops first 3 packets of the dataframe assuming they are syn
-  }
+-- data PlotTypes = PlotTcpAttribute {
+--     pltAttrField :: Text
+--     -- syndrop => drop syn packets
+--     -- Drops first 3 packets of the dataframe assuming they are syn
+--   }
 
 -- data PlotSettings =  PlotSettings {
 --   }
 -- Plot MPTCP subflow attributes over time
 
-piPlotParserTcpAttr :: Parser PlotTypes
-piPlotParserTcpAttr = PlotTcpAttribute <$> argument str
-      ( help "Choose an mptcp attribute to plot"
-      <> metavar "FIELD" )
+-- piPlotParserTcpAttr :: Parser PlotTypes
+-- piPlotParserTcpAttr = PlotTcpAttribute <$> argument str
+--       ( help "Choose an mptcp attribute to plot"
+--       <> metavar "FIELD" )
 
 -- piPlotTcpAttr :: ParserInfo CommandArgs
 -- piPlotTcpAttr = info (ArgsPlotGeneric <$> plotStreamParser)
@@ -66,13 +66,17 @@ piPlotParserTcpAttr = PlotTcpAttribute <$> argument str
 -- plotSubparser :: Parser PlotTypes
 -- plotSubparser = 
 
--- piPlot :: ParserInfo CommandArgs
--- piPlot = info (plotStreamParser)
---   ( progDesc "Generate a plot"
---   )
+piPlotStreamParser :: ParserInfo ArgsPlots
+piPlotStreamParser = info (plotStreamParser)
+  ( progDesc "Plot TCP attr"
+  )
 
 -- |Options that are available for all parsers
 -- plotParserGenericOptions 
+-- TODO generate from the list of fields, via TH?
+validTcpAttributes :: [String]
+validTcpAttributes = ["tcpseq"]
+
 
 -- TODO this could be generalized ?
 plotStreamParser :: Parser ArgsPlots
@@ -86,18 +90,18 @@ plotStreamParser = ArgsPlotTcpAttr <$>
           metavar "STREAM_ID"
           <> help "Stream Id (tcp.stream)"
       )
+      -- TODO validate as presented in https://github.com/pcapriotti/optparse-applicative/issues/75
+      --validate :: (a -> Either String a) -> ReadM a -> ReadM a
+      <*> strArgument (
+          metavar "TCP_ATTR"
+          <> help "A TCP attr in the list: "
+      )
       -- TODO ? if nothing prints both directions
       <*> optional (argument readConnectionRole (
           metavar "Destination"
         -- <> Options.Applicative.value RoleServer
         <> help ""
       ))
-    <*> optional ( strOption
-      ( long "title" <> short 't'
-      <> help "Overrides the default plot title."
-      <> metavar "TITLE" ))
-
-
 
 -- | A typeclass abstracting the functions we need
 -- to be able to plot against an axis of type a
@@ -134,16 +138,12 @@ cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
         return CMD.Continue
     Right frame -> do
       case getTcpFrame frame tcpStreamId of
-        -- log "error could not get " >>
         Left err -> return $ CMD.Error "error could not get "
 
         -- inCore converts into a producer
         Right tcpFrame -> do
-          -- TODO with frame2
-          -- embed $ putStrLn $ T.unpack $ showCSV frame
-          embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
-          embed $ writeCSV "debug.csv" frame2
-          -- embed $ viewFrame frame2
+          -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
+          -- embed $ writeCSV "debug.csv" frame2
           embed $ toFile def tempPath $ do
               layout_title .= "Tcp Sequence number"
               -- TODO generate for mptcp plot
@@ -152,7 +152,7 @@ cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
           return Continue
           where
             -- filter by dest
-            frame2 = addRole (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
+            frame2 = addTcpRole (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
             plotAttr dest =
                 plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
                 where
@@ -175,4 +175,54 @@ cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
     cacheId :: CacheId
     cacheId = CacheId [pcapFilename]  "" ""
 
+
 -- cmdPlotTcpAttribute _ _ _ = error "unsupported"
+-- cmdPlotMptcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
+--           ArgsPlots ->
+--           FilePath
+--           -> Handle
+--           -> Sem m RetCode
+-- cmdPlotMptcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
+--   res <- loadPcapIntoFrame defaultTsharkPrefs pcapFilename
+--   ret <- case res of
+--     Left err -> do
+--         log $ "Could not load " ++ pcapFilename ++ " because " ++ err
+--         return CMD.Continue
+--     Right frame -> do
+--       case getTcpFrame frame tcpStreamId of
+--         Left err -> return $ CMD.Error "error could not get "
+
+--         -- inCore converts into a producer
+--         Right tcpFrame -> do
+--           -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
+--           -- embed $ writeCSV "debug.csv" frame2
+--           embed $ toFile def tempPath $ do
+--               layout_title .= "Tcp Sequence number"
+--               -- TODO generate for mptcp plot
+--               flip mapM_ destinations plotAttr
+
+--           return Continue
+--           where
+--             -- filter by dest
+--             frame2 = addRole (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
+--             plotAttr dest =
+--                 plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
+--                 where
+--                   -- frameDest = ffTcpFrame tcpFrame
+--                   frameDest = frame2
+--                   -- frameDest = frame2
+--                   unidirectionalFrame = filterFrame (\x -> x ^. tcpRole == dest) frameDest
+
+--                   seqData :: [Double]
+--                   seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
+--                   timeData = toList $ view relTime <$> unidirectionalFrame
+--   return ret
+--   where
+--     tcpStreamId = plotStreamId args
+--     pcapFilename = plotFilename args
+--     destinations :: [ConnectionRole]
+--     destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) $ plotDest args)
+--     opts :: TempFileOptions
+--     opts = TempFileOptions True
+--     cacheId :: CacheId
+--     cacheId = CacheId [pcapFilename]  "" ""

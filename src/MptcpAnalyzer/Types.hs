@@ -98,8 +98,8 @@ data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, Sh
 
 
 -- artificial types
-declareColumn "tcpRole" ''ConnectionRole
-declareColumn "mptcpRole" ''ConnectionRole
+declareColumn "tcpDest" ''ConnectionRole
+declareColumn "mptcpDest" ''ConnectionRole
 
 -- wireshark types
 declareColumn "frameNumber" ''Word64

@@ -9,9 +9,10 @@ data PlotSettings = PlotSettings {
   , ploLabely :: String
   -- Tshark config ? why
   }
+      -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
 
 
-data ArgsPlots = 
+data ArgsPlots =
   -- ArgsPlots  {
   --     plotOut :: Maybe String
   --     -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
@@ -25,12 +26,13 @@ data ArgsPlots =
     ArgsPlotTcpAttr {
       plotFilename :: FilePath
       , plotStreamId :: StreamId Tcp
+      , plotTcpAttr :: String
       , plotDest :: Maybe ConnectionRole
-      -- , plotOut :: Maybe String
-      -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
-      -- , plotDisplay ::
-      -- , plotTcpStreamId :: StreamId Tcp
-      , plotTitle :: Maybe String
-      -- , plotToClipboard :: Maybe Bool
-      -- , plotDisplay :: Bool
     }
+
+    -- | ArgsPlotTcpAttr {
+    --   plotFilename :: FilePath
+    --   , plotStreamId :: StreamId MpTcp
+    --   , plotAttr :: String
+    --   , plotDest :: Maybe ConnectionRole
+    -- }

@@ -35,45 +35,15 @@ data CommandArgs = ArgsLoadCsv {
     }
     | ArgsPlotGeneric {
       plotOut :: Maybe String
-  --     -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
-  --     -- , plotDisplay ::
-  --     -- , plotTcpStreamId :: StreamId Tcp
-  --     , plotTitle :: Maybe String
   --     , plotToClipboard :: Maybe Bool
+  -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
+      , plotTitle :: Maybe String  -- ^ To override default title of the plot
       , plotDisplay :: Bool  -- ^Defaults to false
       , plotArgs :: ArgsPlots
     }
 
-    -- ArgsPlotTcpAttr {
-    --   plotFilename :: FilePath
-    --   , plotStreamId :: StreamId Tcp
-    --   , plotDest :: Maybe ConnectionRole
-    --   , plotOut :: Maybe String
-    --   -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
-    --   -- , plotDisplay ::
-    --   -- , plotTcpStreamId :: StreamId Tcp
-    --   , plotTitle :: Maybe String
-    --   , plotToClipboard :: Maybe Bool
-    --   , plotDisplay :: Bool
-    -- }
-
-
-
+-- | Return code for user command. Whether to exit program/
 data RetCode = Exit | Error String | Continue
-
--- newtype ArgsLoadPcap = ArgsLoadPcap {
---   loadPcapPath :: FilePath
--- }
-
--- data ParserSummary = ParserSummary {
---   summaryFull :: Bool,
---   summaryTcpStreamId :: StreamId Tcp
--- }
-
--- newtype ParserListSubflows = ParserListSubflows {
---   listTcpDetailed :: Bool
---   -- tcpStreamId :: StreamId Tcp
--- }
 
 -- data Command m a where
 --   LoadCsv :: ArgsLoadPcap -> Command m RetCode

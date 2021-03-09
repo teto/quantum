@@ -126,6 +126,10 @@ plotParserGeneric = ArgsPlotGeneric
       -- ( long "primary"
       -- <> help "Copy to X clipboard, requires `xsel` to be installed"
       -- ))
+    <*> optional ( strOption
+      ( long "title" <> short 't'
+      <> help "Overrides the default plot title."
+      <> metavar "TITLE" ))
     <*> (switch
       ( long "display"
       <> help "Uses xdg-open to display plot"
@@ -138,15 +142,16 @@ plotinfoParserGeneric = info (plotParserGeneric)
   )
 
 -- ArgsPlots
+-- plotStreamParser
 plotParserSpecific :: Parser ArgsPlots
-plotParserSpecific = plotStreamParser
+plotParserSpecific =
+  subparser (
+    command "tcp" piPlotStreamParser
+    <> command "mptcp" piPlotStreamParser
+   )
 
     -- <*> commandGroup "Loader commands"
     -- <> command "load-csv" CL.loadCsvOpts
-
-    -- <*> 
-    -- subparser (
-    -- )
 
 startupParser :: Parser CLIArguments
 startupParser = CLIArguments
@@ -247,6 +252,7 @@ main = do
   putStrLn "Thanks for flying with mptcpanalyzer"
 
 
+-- |Global parser: contains every available command
 -- TODO for some commands we could factorize the preprocessing eg check a file
 -- was pre-loaded
 -- aka check the if loadedFile was loaded
@@ -309,8 +315,8 @@ runCommand args@ArgsPlotGeneric{} = runPlotCommand args
 
 
 -- |Command specific to plots
--- TODO these should return a file
-runPlotCommand (ArgsPlotGeneric mbOut displayPlot specificArgs ) = do
+-- TODO these should return a plot instead of a generated file so that one can overwrite the title
+runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
     -- tempPath <- embed $ withTempFileEx opts "/tmp" "plot.png" $ \tmpPath hd -> do
     -- file is not removed afterwards
     (tempPath, handle) <- P.embed $ openTempFile "/tmp" "plot.png"
