@@ -333,14 +333,23 @@ buildConnectionFromTcpStreamId frame streamId =
 addMptcpDest :: (IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) =>
       Frame (Record rs)
       -> Connection
-      -> Frame (Record  ( MptcpDest ': rs ))
+      -> Frame (Record  ( MptcpDest ': TcpDest ': rs ))
 addMptcpDest frame con@MptcpConnection{} = 
-    foldl' (\tframe sf -> addTcpDest tframe sf) frame subflows
+    foldl' (\tframe sf -> addDests tframe sf) frame subflows
     -- map subflows (addTcpDest frame)
     where
-  
-      frameWithCol = fmap (Col $ findRole x) :& x
-      addMptcpDestCol x =   (Col $ findRole x) :& x
+      addDests frame' sf = addMptcpDest' frameWithTcpDest sf
+        where
+          frameWithTcpDest = addTcpDest frame' sf
+          addMptcpDest' frame'' sf' = consfMptcpDest sf'
+
+      -- COOL
+      -- addMptcpDest x = 
+
+      -- fill with temporary value
+      -- frameWithCol = fmap (Col $ RoleClient) :& x
+      addTcpDestCol = fmap (\x -> Col RoleClient :& x) frame
+      -- addMptcpDestCol x =   (Col $ findRole x) :& x
       -- order subflows as desired
       subflows = []
 addMptcpDest frame _ = error "should not happen"

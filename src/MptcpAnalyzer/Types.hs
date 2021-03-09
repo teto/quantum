@@ -232,6 +232,7 @@ data Connection = TcpConnection {
   }
     | MptcpSubflow {
       consf :: TcpConnection
+      , consfMptcpDest :: ConnectionRole -- ^ Destination
       , consfPriority :: Maybe Word8 -- ^subflow priority
       , consfPocalId :: Word8  -- ^ Convert to AddressFamily
       , consfRemoteId :: Word8
@@ -254,7 +255,7 @@ data Connection = TcpConnection {
       -- , localIds :: Set.Set Word8  -- ^ Announced addresses
       -- , remoteIds :: Set.Set Word8   -- ^ Announced addresses
 
-} deriving (Show, Eq, Ord)
+} deriving (Show, Eq)
 
 -- class Connection where
 --   showConnection  :: Text
