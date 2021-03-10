@@ -11,6 +11,10 @@ cabal run mptcpanalyzer "load-pcap examples/client_2_filtered.pcapng"  -- +RTS
 Install zsh
 --zsh-completion-script
 
+
+# How to use
+`cabal run mptcpanalyzer "plot examples/client_2_filtered.pcapng 0 --display"`
+
 # How to develop
 
 Enter the nix-shell then run your typical cabal commands

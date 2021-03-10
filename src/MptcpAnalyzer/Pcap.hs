@@ -308,6 +308,7 @@ buildTcpConnectionFromRow r =
     , conTcpServerIp = r ^. ipDest
     , conTcpClientPort = r ^. tcpSrcPort
     , conTcpServerPort = r ^. tcpDestPort
+    , conTcpStreamId = r ^. tcpStream
     -- , priority = Nothing  -- for now
     -- , localId = 0
     -- , remoteId = 0
@@ -330,44 +331,58 @@ buildConnectionFromTcpStreamId frame streamId =
 
 
 -- | Sets mptcp role column
-addMptcpDest :: (IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) =>
+-- TODO maybe je devrais juste generer un 
+addMptcpDest :: (TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) =>
       Frame (Record rs)
       -> Connection
       -> Frame (Record  ( MptcpDest ': TcpDest ': rs ))
-addMptcpDest frame con@MptcpConnection{} = 
-    foldl' (\tframe sf -> addDests tframe sf) frame subflows
-    -- map subflows (addTcpDest frame)
+addMptcpDest frame con@MptcpConnection{} =
+    -- foldl' (\tframe sf -> addDestToFrame tframe sf) startingFrame subflows
+    -- map subflows (addTcpDestToFrame frame)
+    mconcat subflowFrames
     where
-      addDests frame' sf = addMptcpDest' frameWithTcpDest sf
-        where
-          frameWithTcpDest = addTcpDest frame' sf
-          addMptcpDest' frame'' sf' = consfMptcpDest sf'
+      filteredFrame = filterFrame  (\x -> x ^. mptcpStream == Just (mptcpStreamId con)) frame
 
-      -- COOL
-      -- addMptcpDest x = 
+      subflowFrames = map addDestsToSubflowFrames subflows
 
-      -- fill with temporary value
-      -- frameWithCol = fmap (Col $ RoleClient) :& x
-      addTcpDestCol = fmap (\x -> Col RoleClient :& x) frame
-      -- addMptcpDestCol x =   (Col $ findRole x) :& x
-      -- order subflows as desired
+      addDestsToSubflowFrames sf = addMptcpDestToFrame (addTcpDestToFrame frame sf) sf
+
+      -- frameWithTcpDest = foldl' (\tframe sf -> addTcpDestToFrame tframe sf) frame subflows
+      -- addDestToFrame = 
+
+      addMptcpDest' role x = (Col $ role) :& x
+
+      addMptcpDestToFrame frame' sf = fmap (addMptcpDest' (consfMptcpDest sf)) frame'
+
+      -- startingFrame = fmap (addMptcpDest' (consfMptcpDest sf)) frameWithTcpDest
+      startingFrame = fmap (\x -> Col RoleClient :& Col RoleClient :& x) frame
+      addMptcpDestToRec x role = (Col $ role) :& x
       subflows = []
 addMptcpDest frame _ = error "should not happen"
 
 
 -- | Sets TCP role column
 -- append a column with a value role
-addTcpDest :: (IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) => Frame (Record rs) -> Connection -> Frame (Record  ( TcpDest ': rs ))
-addTcpDest frame con =
-  fmap addRoleCol frame
-  where
-    addRoleCol x =   (Col $ findRole x) :& x
+-- Todo accept a 'FrameFiltered'
+addTcpDestToFrame :: (TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs)
+    => Frame (Record rs) -> Connection -> Frame (Record  ( TcpDest ': rs ))
+addTcpDestToFrame frame con = fmap (\x -> addTcpDestToRec x (computeTcpDest x con)) streamFrame
+    where
+      streamFrame = filterFrame  (\x -> x ^. tcpStream == conTcpStreamId con) frame
 
-    findRole x = if (rgetField @IpSource x) == (conTcpClientIp con)
+computeTcpDest :: (TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) => Record rs -> Connection -> ConnectionRole
+computeTcpDest x con  = if (rgetField @IpSource x) == (conTcpClientIp con)
                 && (rgetField @IpDest x) == (conTcpServerIp con)
                 && (rgetField @TcpSrcPort x) == (conTcpClientPort con)
                 && (rgetField @TcpDestPort x) == (conTcpServerPort con)
+                && (rgetField @TcpDestPort x) == (conTcpServerPort con)
+                -- TODO should error if not the same streamId
+                -- && (rgetField @TcpStream x) == (conTcpStreamId con)
         then RoleClient else RoleServer
+
+-- append a field with a value role
+addTcpDestToRec :: (TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) => Record rs -> ConnectionRole ->  Record  ( TcpDest ': rs )
+addTcpDestToRec x role = (Col $ role) :& x
 
 
 buildSubflow :: SomeFrame -> StreamId Tcp -> Connection
@@ -388,7 +403,8 @@ buildMptcpConnectionFromStreamId frame streamId = do
       -- if ds.loc[server_id, "abstime"] < ds.loc[client_id, "abstime"]:
       --     log.error("Clocks are not synchronized correctly")
       Right $ MptcpConnection {
-        mptcpServerKey = fromJust $ synAckPacket ^. mptcpSendKey
+        mptcpStreamId = streamId
+        , mptcpServerKey = fromJust $ synAckPacket ^. mptcpSendKey
         , mptcpClientKey = fromJust $ synPacket ^. mptcpSendKey
         , mptcpServerToken = fromJust $ synAckPacket ^. mptcpExpectedToken
         , mptcpClientToken = fromJust $ synPacket ^. mptcpExpectedToken

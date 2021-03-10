@@ -229,6 +229,7 @@ data Connection = TcpConnection {
   , conTcpServerIp :: IP -- ^Server ip
   , conTcpClientPort :: Word16  -- ^ Source port
   , conTcpServerPort :: Word16  -- ^Destination port
+  , conTcpStreamId :: StreamId Tcp  -- ^ @tcp.stream@ in wireshark
   }
     | MptcpSubflow {
       consf :: TcpConnection
@@ -240,7 +241,9 @@ data Connection = TcpConnection {
       , contcpSubflowInterface :: Maybe Word32 -- ^Interface of Maybe ? why a maybe ?
     }
     | MptcpConnection {
-      mptcpServerKey :: Word64
+      -- todo prefix as mpcon
+      mptcpStreamId :: StreamIdMptcp
+      , mptcpServerKey :: Word64
       , mptcpClientKey :: Word64
       , mptcpServerToken :: Word32
       , mptcpClientToken :: Word32
@@ -490,6 +493,7 @@ showConnectionText con@MptcpConnection{} =
 showConnectionText con@TcpConnection{} =
   showIp (conTcpClientIp con) <> ":" <> tshow (conTcpClientPort con) <> " -> "
       <> showIp (conTcpServerIp con) <> ":" <> tshow (conTcpServerPort con)
+      <> "  (tcp.stream: " <> tshow (conTcpStreamId con) <> ")"
   where
     showIp = Net.IP.encode
 --
