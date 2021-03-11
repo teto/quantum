@@ -13,7 +13,8 @@ data PlotSettings = PlotSettings {
       -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
 
 
-data ArgsPlots =
+--
+data ArgsPlots = 
   -- ArgsPlots  {
   --     plotOut :: Maybe String
   --     -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
@@ -26,14 +27,14 @@ data ArgsPlots =
 
     ArgsPlotTcpAttr {
       plotFilename :: FilePath
-      , plotStreamId :: Word32
+      -- try to pattern match on the StreamId
+      , plotStreamId :: StreamId Tcp
       , plotTcpAttr :: String
       , plotDest :: Maybe ConnectionRole
     }
-
-    -- | ArgsPlotMptcpAttr {
-    --     plotAttrMptcpFilename :: FilePath
-    --   , plotAttrMptcpStreamId :: StreamId Mptcp
-    --   , plotAttrMptcpAttr :: String
-    --   , plotAttrMptcpDest :: Maybe ConnectionRole
-    -- }
+    | ArgsPlotMptcpAttr {
+        plotAttrMptcpFilename :: FilePath
+      , plotAttrMptcpStreamId :: StreamId Mptcp
+      , plotAttrMptcpAttr :: String
+      , plotAttrMptcpDest :: Maybe ConnectionRole
+    }

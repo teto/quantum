@@ -112,7 +112,7 @@ listTcpConnectionsCmd args = do
     where
       describeFrame = \case
         Left msg -> msg
-        Right ff -> showConnection (ffTcpCon ff)
+        Right ff -> showConnection (ffCon ff)
 
 {-| Display statistics for the connection:
 throughput/goodput
@@ -126,7 +126,7 @@ tcpSummary args = do
       Just frame -> do
         let _tcpstreams = getTcpStreams frame
         log $ "Number of rows " ++ show (frameLength frame)
-        case showConnection <$> ffTcpCon <$> filteredFrame of
+        case showConnection <$> ffCon <$> filteredFrame of
           Left err -> log $ "error happened:" ++ err
           Right desc -> log desc
         -- log $ "Number of SYN packets " ++ (fmap  )

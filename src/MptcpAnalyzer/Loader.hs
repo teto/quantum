@@ -54,3 +54,28 @@ loadPcapIntoFrame params path = do
       opts :: TempFileOptions
       opts = TempFileOptions True
 
+
+-- buildTcpFrameFromFrame
+
+-- \
+buildAFrameFromStreamIdTcp :: Members [Cache, Log String, Embed IO ] m
+    => TsharkParams
+    -> FilePath
+    -> StreamId Tcp
+    -> Sem m (Either String FrameFiltered)
+buildAFrameFromStreamIdTcp params pcapFilename streamId = do
+    res <- loadPcapIntoFrame params pcapFilename
+    return $ case res of
+      Left err -> Left err
+      Right frame -> buildConnectionFromTcpStreamId frame streamId
+
+buildAFrameFromStreamIdMptcp :: Members [Cache, Log String, Embed IO ] m
+    => TsharkParams
+    -> FilePath
+    -> StreamId Mptcp
+    -> Sem m (Either String FrameFiltered)
+buildAFrameFromStreamIdMptcp params pcapFilename streamId = do
+    res <- loadPcapIntoFrame params pcapFilename
+    return $ case res of
+      Left err -> Left err
+      Right frame -> buildMptcpConnectionFromStreamId frame streamId

@@ -319,7 +319,15 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
     -- file is not removed afterwards
     (tempPath, handle) <- P.embed $ openTempFile "/tmp" "plot.png"
     case specificArgs of
-      _ <- Plots.cmdPlotTcpAttribute specificArgs tempPath handle
+      (ArgsPlotTcpAttr pcapFilename streamId attr mbDest) -> do
+        let destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) mbDest)
+        res <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcapFilename streamId
+        fmap Plots.cmdPlotTcpAttribute specificArgs tempPath handle res
+
+      (ArgsPlotMptcpAttr filePath streamId attr mbDest) -> do
+        let destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) mbDest)
+        buildAFrameFromStreamIdMptcp
+        Plots.cmdPlotTcpAttribute specificArgs tempPath handle
 
     _ <- P.embed $ case mbOut of
             -- user specified a file move the file
@@ -334,13 +342,9 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
         (_, _, mbHerr, ph) <- P.embed $  createProcess createProc
         exitCode <- P.embed $ waitForProcess ph
         return Continue
-        -- TODO launch xdg-open
 
     else
       return Continue
-    -- where
-    --     createProc :: CreateProcess
-    --     createProc = proc "xdg-open" [ tempPath ]
 runPlotCommand _ = error "Should not happen, file a bug report"
 
 

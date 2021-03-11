@@ -74,9 +74,9 @@ data TsharkFieldDesc = TsharkFieldDesc {
     }
 
 -- Phantom types
--- data Mptcp
--- data Tcp
-data Protocol = Tcp | Mptcp
+data Mptcp
+data Tcp
+-- data Protocol = Tcp | Mptcp
 
 type TcpFlagList = [TcpFlag]
 
@@ -197,7 +197,7 @@ type ManColumnsTshark = '[
     ]
 
 -- |Can load stream ids from CSV files
-readStreamId :: ReadM (StreamId Tcp)
+readStreamId :: ReadM (StreamId a)
 readStreamId = eitherReader $ \arg -> case reads arg of
   [(r, "")] -> return $ StreamId r
   _ -> Left $ "readStreamId: cannot parse value `" ++ arg ++ "`"
@@ -211,6 +211,8 @@ readConnectionRole = eitherReader $ \arg -> case reads arg of
 
 -- row / ManRow
 type Packet = Record ManColumnsTshark
+type PacketWithTcpDest = Record (TcpDest ': ManColumnsTshark)
+type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': ManColumnsTshark)
 
 -- type SomeSomeFrame = Frame Packet
 
@@ -263,28 +265,27 @@ data Connection = TcpConnection {
 -- Ord to be able to use fromList
 } deriving (Show, Eq, Ord)
 
--- class Connection where
+-- class Connection a where
 --   showConnection  :: Text
+--   buildFromStreamId :: Text
+--   list :: Connection
 
 
-data SStreamId (a :: Protocol) where
-  StreamIdTcp :: SStreamId 'Tcp
-  StreamIdMptcp :: SStreamId 'Mptcp
+-- data SStreamId (a :: Protocol) where
+--   StreamIdTcp :: SStreamId 'Tcp
+--   StreamIdMptcp :: SStreamId 'Mptcp
 
 -- | TODO adapt / rename to AFrame ? AdvancedFrames ?
 -- GADT ?
-data FrameFiltered = FrameTcp {
-    ffTcpCon :: !Connection
-    , ffTcpFrame :: PcapFrame Tcp
-  }
-  | FrameMptcp {
-    -- ffTcpCon :: !MptcpConnection
-    ffMptcpFrame :: PcapFrame Mptcp
+data FrameFiltered a = FrameTcp {
+    ffCon :: !Connection
+    -- Frame of sthg maybe even bigger with TcpDest / MptcpDest
+    , ffFrame :: Frame a
   }
 
--- https://stackoverflow.com/questions/52299478/pattern-match-phantom-type
-data AFrame (p :: Protocol) where
-  AFrame :: SStreamId p -> Word32 -> AFrame p
+-- -- https://stackoverflow.com/questions/52299478/pattern-match-phantom-type
+-- data AFrame (p :: Protocol) where
+--   AFrame :: SStreamId p -> Word32 -> AFrame p
 
 
 -- |Helper to pass information across functions
