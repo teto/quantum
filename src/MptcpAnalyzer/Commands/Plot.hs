@@ -152,14 +152,14 @@ cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
           return Continue
           where
             -- filter by dest
-            frame2 = addTcpRole (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
+            frame2 = addTcpDestToFrame (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
             plotAttr dest =
                 plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
                 where
                   -- frameDest = ffTcpFrame tcpFrame
                   frameDest = frame2
                   -- frameDest = frame2
-                  unidirectionalFrame = filterFrame (\x -> x ^. tcpRole == dest) frameDest
+                  unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) frameDest
 
                   seqData :: [Double]
                   seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)

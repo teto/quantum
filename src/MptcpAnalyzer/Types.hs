@@ -94,7 +94,7 @@ type MbMptcpDack = Maybe Word64
 
 
 -- |Filters a connection depending on its role
-data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, ShowCSV)
+data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, ShowCSV, Ord)
 
 
 -- artificial types
@@ -258,7 +258,8 @@ data Connection = TcpConnection {
       -- , localIds :: Set.Set Word8  -- ^ Announced addresses
       -- , remoteIds :: Set.Set Word8   -- ^ Announced addresses
 
-} deriving (Show, Eq)
+-- Ord to be able to use fromList
+} deriving (Show, Eq, Ord)
 
 -- class Connection where
 --   showConnection  :: Text
