@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE FlexibleInstances                      #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE GADTs                      #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module MptcpAnalyzer.Types
 where
@@ -73,8 +74,9 @@ data TsharkFieldDesc = TsharkFieldDesc {
     }
 
 -- Phantom types
-data Mptcp
-data Tcp
+-- data Mptcp
+-- data Tcp
+data Protocol = Tcp | Mptcp
 
 type TcpFlagList = [TcpFlag]
 
@@ -264,7 +266,13 @@ data Connection = TcpConnection {
 -- class Connection where
 --   showConnection  :: Text
 
--- | TODO adapt
+
+data SStreamId (a :: Protocol) where
+  StreamIdTcp :: SStreamId 'Tcp
+  StreamIdMptcp :: SStreamId 'Mptcp
+
+-- | TODO adapt / rename to AFrame ? AdvancedFrames ?
+-- GADT ?
 data FrameFiltered = FrameTcp {
     ffTcpCon :: !Connection
     , ffTcpFrame :: PcapFrame Tcp
@@ -273,6 +281,11 @@ data FrameFiltered = FrameTcp {
     -- ffTcpCon :: !MptcpConnection
     ffMptcpFrame :: PcapFrame Mptcp
   }
+
+-- https://stackoverflow.com/questions/52299478/pattern-match-phantom-type
+data AFrame (p :: Protocol) where
+  AFrame :: SStreamId p -> Word32 -> AFrame p
+
 
 -- |Helper to pass information across functions
 data MyState = MyState {
@@ -331,17 +344,6 @@ baseFields = [
     , ("mptcpDsn", TsharkFieldDesc "mptcp.dsn" [t|Word64|] Nothing False)
 
     ]
-
-
--- parseIntish t =
---   Definitely <$> fromText (fromMaybe t (T.stripSuffix (T.pack ".0") t))
-
--- customWordParser :: Read a => T.Text -> Parsed (Maybe a)
--- customWordParser txt = case T.null txt of
---     True -> Definitely Nothing
---     False -> Definitely $ Just w64
---     where
---         w64 = read (T.unpack txt) :: a
 
 
 -- Used to parse tokens

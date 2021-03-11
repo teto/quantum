@@ -141,13 +141,11 @@ plotinfoParserGeneric = info (plotParserGeneric)
   ( progDesc "Generate a plot"
   )
 
--- ArgsPlots
--- plotStreamParser
 plotParserSpecific :: Parser ArgsPlots
 plotParserSpecific =
   subparser (
-    command "tcp" piPlotStreamParser
-    <> command "mptcp" piPlotStreamParser
+    command "tcp" (piPlotStreamParser ["tcpseq"])
+    <> command "mptcp" (piPlotStreamParser ["tcpseq"])
    )
 
     -- <*> commandGroup "Loader commands"
@@ -320,7 +318,8 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
     -- tempPath <- embed $ withTempFileEx opts "/tmp" "plot.png" $ \tmpPath hd -> do
     -- file is not removed afterwards
     (tempPath, handle) <- P.embed $ openTempFile "/tmp" "plot.png"
-    _ <- Plots.cmdPlotTcpAttribute specificArgs tempPath handle
+    case specificArgs of
+      _ <- Plots.cmdPlotTcpAttribute specificArgs tempPath handle
 
     _ <- P.embed $ case mbOut of
             -- user specified a file move the file

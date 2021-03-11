@@ -2,6 +2,7 @@ module MptcpAnalyzer.Plots.Types
 where
 
 import MptcpAnalyzer.Types
+import Data.Word (Word32)
 
 data PlotSettings = PlotSettings {
   ploTitle :: String
@@ -25,14 +26,14 @@ data ArgsPlots =
 
     ArgsPlotTcpAttr {
       plotFilename :: FilePath
-      , plotStreamId :: StreamId Tcp
+      , plotStreamId :: Word32
       , plotTcpAttr :: String
       , plotDest :: Maybe ConnectionRole
     }
 
-    -- | ArgsPlotTcpAttr {
-    --   plotFilename :: FilePath
-    --   , plotStreamId :: StreamId MpTcp
-    --   , plotAttr :: String
-    --   , plotDest :: Maybe ConnectionRole
+    -- | ArgsPlotMptcpAttr {
+    --     plotAttrMptcpFilename :: FilePath
+    --   , plotAttrMptcpStreamId :: StreamId Mptcp
+    --   , plotAttrMptcpAttr :: String
+    --   , plotAttrMptcpDest :: Maybe ConnectionRole
     -- }

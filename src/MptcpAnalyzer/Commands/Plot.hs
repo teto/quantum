@@ -66,8 +66,10 @@ import Frames.ShowCSV (showCSV)
 -- plotSubparser :: Parser PlotTypes
 -- plotSubparser = 
 
-piPlotStreamParser :: ParserInfo ArgsPlots
-piPlotStreamParser = info (plotStreamParser)
+-- |
+-- @param 
+piPlotStreamParser :: [String] -> ParserInfo ArgsPlots
+piPlotStreamParser validAttributes = info (plotStreamParser validAttributes)
   ( progDesc "Plot TCP attr"
   )
 
@@ -77,16 +79,18 @@ piPlotStreamParser = info (plotStreamParser)
 validTcpAttributes :: [String]
 validTcpAttributes = ["tcpseq"]
 
+-- type ValidAttributes = [String]
 
--- TODO this could be generalized ?
-plotStreamParser :: Parser ArgsPlots
-plotStreamParser = ArgsPlotTcpAttr <$>
+-- TODO pass the list of accepted attributes (so that it works for TCP/MPTCP)
+plotStreamParser :: [String] -> Parser ArgsPlots
+plotStreamParser _validAttributes = ArgsPlotTcpAttr <$>
       -- this ends up being not optional !
       strArgument (
           metavar "PCAP"
           <> help "File to analyze"
       )
-      <*> argument readStreamId (
+      -- readStreamId
+      <*> argument auto (
           metavar "STREAM_ID"
           <> help "Stream Id (tcp.stream)"
       )
@@ -126,11 +130,12 @@ instance PlotValue Word32 where
 
 -- destinations is an array of destination
 cmdPlotTcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
-          ArgsPlots ->
-          FilePath
+          ArgsPlots
+          -> StreamId a
+          -> FilePath
           -> Handle
           -> Sem m RetCode
-cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
+cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} streamId tempPath _ = do
   res <- loadPcapIntoFrame defaultTsharkPrefs pcapFilename
   ret <- case res of
     Left err -> do
@@ -166,7 +171,7 @@ cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
                   timeData = toList $ view relTime <$> unidirectionalFrame
   return ret
   where
-    tcpStreamId = plotStreamId args
+    -- tcpStreamId = plotStreamId args
     pcapFilename = plotFilename args
     destinations :: [ConnectionRole]
     destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) $ plotDest args)
@@ -176,7 +181,8 @@ cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
     cacheId = CacheId [pcapFilename]  "" ""
 
 
--- cmdPlotTcpAttribute _ _ _ = error "unsupported"
+-- cmdPlotTcpAttribute _ _ _ _ = error "unsupported args"
+
 -- cmdPlotMptcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
 --           ArgsPlots ->
 --           FilePath
@@ -189,7 +195,7 @@ cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
 --         log $ "Could not load " ++ pcapFilename ++ " because " ++ err
 --         return CMD.Continue
 --     Right frame -> do
---       case getTcpFrame frame tcpStreamId of
+--       case getTcpFrame frame streamId of
 --         Left err -> return $ CMD.Error "error could not get "
 
 --         -- inCore converts into a producer
@@ -204,21 +210,22 @@ cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
 --           return Continue
 --           where
 --             -- filter by dest
---             frame2 = addRole (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
+--             frame2 = addTcpDestToFrame (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
 --             plotAttr dest =
 --                 plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
 --                 where
 --                   -- frameDest = ffTcpFrame tcpFrame
 --                   frameDest = frame2
 --                   -- frameDest = frame2
---                   unidirectionalFrame = filterFrame (\x -> x ^. tcpRole == dest) frameDest
+--                   unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) frameDest
 
 --                   seqData :: [Double]
 --                   seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
 --                   timeData = toList $ view relTime <$> unidirectionalFrame
 --   return ret
 --   where
---     tcpStreamId = plotStreamId args
+--     mptcpFrame = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
+--     streamId = plotAttrMptcpStreamId
 --     pcapFilename = plotFilename args
 --     destinations :: [ConnectionRole]
 --     destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) $ plotDest args)
@@ -226,3 +233,7 @@ cmdPlotTcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
 --     opts = TempFileOptions True
 --     cacheId :: CacheId
 --     cacheId = CacheId [pcapFilename]  "" ""
+
+
+-- cmdPlotMptcpAttribute _ _ _ = error "unsupported args"
+

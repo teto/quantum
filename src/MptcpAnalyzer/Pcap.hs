@@ -296,6 +296,13 @@ defaultTsharkPrefs = TsharkParams {
       tsharkReadFilter = Just "mptcp or tcp and not icmp"
     }
 
+-- buildAFrameFromConnection :: Frame -> StreamId a -> SomeFrame
+-- buildAFrameFromConnection streamId@StreamIdTcp = getTcp
+
+-- @(StreamId Tcp)
+-- return AFrame a
+buildAFrameFromStreamId :: SomeFrame -> StreamId a -> SomeFrame
+buildAFrameFromStreamId frame (SStreamId 'Tcp)streamId = getTcpFrame frame streamId
 
 {- 
 -}
@@ -435,7 +442,6 @@ buildMptcpConnectionFromStreamId frame streamId = do
       synAckPacket = frameRow synAckPackets 0
 
       masterTcpstreamId = synPacket ^. tcpStream
-      -- buildConnectionFromTcpStreamId frame masterTcpstreamId
 
       clientMptcpVersion = synPacket ^. mptcpVersion
 

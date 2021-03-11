@@ -13,7 +13,8 @@ Install zsh
 
 
 # How to use
-`cabal run mptcpanalyzer "plot examples/client_2_filtered.pcapng 0 --display"`
+`cabal run mptcpanalyzer`
+`plot --display tcp examples/client_2_filtered.pcapng 0 tcpseq`
 
 # How to develop
 
@@ -24,7 +25,7 @@ $ cabal build
 ```
 ## Dependencies
 
-- [Diagrams](diagrams) with the svg backend
+- [haskell-chart](haskell-chart) with the svg backend
 
 ## Debug splices
 
