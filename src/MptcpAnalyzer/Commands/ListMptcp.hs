@@ -116,7 +116,7 @@ listMpTcpConnectionsCmd _args = do
         return CMD.Continue
         where
           mptcpConnections :: [Either String Connection]
-          mptcpConnections = map (buildMptcpConnectionFromStreamId frame) mptcpStreams
+          mptcpConnections = map (\x -> fmap ffCon ( buildMptcpConnectionFromStreamId frame x)) mptcpStreams
 
           showEitherCon :: Either String Connection -> String
           showEitherCon (Left msg) = msg ++ "\n"

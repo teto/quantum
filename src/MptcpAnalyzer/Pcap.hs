@@ -341,21 +341,23 @@ buildConnectionFromTcpStreamId frame streamId =
 
 -- | Sets mptcp role column
 -- TODO maybe je devrais juste generer un 
-addMptcpDest :: (
-      Frames.InCore.RecVec rs,
-      ManColumnsTshark ⊆ rs
+addMptcpDest ::
+    (
+      -- Frames.InCore.RecVec rs,
+      -- ManColumnsTshark ⊆ rs
       -- MptcpStream ∈ rs, TcpStream  ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs
+      -- rs = ManColumnsTshark
       ) =>
-      Frame (Record rs)
+      Frame (Record ManColumnsTshark)
       -> Connection
-      -> Frame (Record  ( MptcpDest ': TcpDest ': rs ))
+      -> Frame (Record  ( MptcpDest ': TcpDest ': ManColumnsTshark ))
 addMptcpDest frame con@MptcpConnection{} =
     -- foldl' (\tframe sf -> addDestToFrame tframe sf) startingFrame subflows
     -- map subflows (addTcpDestToFrame frame)
     mconcat subflowFrames
     where
       -- filteredFrame = filterFrame  (\x -> x ^. mptcpStream == Just (mptcpStreamId con)) frame
-      filteredFrame = filterFrame  (\x -> (rgetField @MptcpStream x) == Just (mptcpStreamId con)) frame
+      -- filteredFrame = filterFrame  (\x -> (rgetField @MptcpStream x) == Just (mptcpStreamId con)) frame
 
       subflowFrames = map addDestsToSubflowFrames subflows
 
@@ -370,7 +372,7 @@ addMptcpDest frame con@MptcpConnection{} =
 
       -- startingFrame = fmap (addMptcpDest' (consfMptcpDest sf)) frameWithTcpDest
       startingFrame = fmap setTempDests frame
-      -- setTempDests :: Record rs2 -> Record ( MptcpDest ': TcpDest ': rs2)
+      setTempDests :: Record rs -> Record ( MptcpDest ': TcpDest ': rs)
       setTempDests x = (Col RoleClient) :& (Col RoleClient) :& x
       addMptcpDestToRec x role = (Col $ role) :& x
       subflows = []
@@ -382,15 +384,21 @@ addMptcpDest frame _ = error "should not happen"
 -- Todo accept a 'FrameFiltered'
 -- (Frames.InCore.)
 -- I want to check it is included
-addTcpDestToFrame :: 
-  -- (Frames.InCore.RecVec rs, TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs)
-  (Frames.InCore.RecVec rs, ManColumnsTshark ⊆ rs
-  -- , IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs
+addTcpDestToFrame ::
+  -- (Frames.InCore.RecVec rs, TcpStream ∈ rs, IpSource ∈ rs,
+  -- TcpSrcPort ∈ rs, TcpDestPort ∈ rs)
+  (
+  -- Frames.InCore.RecVec rs
+  -- , ManColumnsTshark ⊆ rs
+  -- , ManColumnsTshark <: rs
+  -- , ManColumnsTshark ∈ rs
+  -- ,IpSource ∈ rs, IpDest ∈ rs
+  -- ,  IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs
   )
-    => Frame (Record rs) -> Connection -> Frame (Record  ( TcpDest ': rs ))
+    => Frame (Record ManColumnsTshark) -> Connection -> Frame (Record  ( TcpDest ': ManColumnsTshark ))
 addTcpDestToFrame frame con = fmap (\x -> addTcpDestToRec x (computeTcpDest x con)) streamFrame
     where
-      streamFrame = filterFrame  (\x -> x ^. tcpStream == conTcpStreamId con) frame
+      streamFrame = filterFrame  (\x -> rgetField @TcpStream x == conTcpStreamId con) frame
 
 computeTcpDest :: (TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) => Record rs -> Connection -> ConnectionRole
 computeTcpDest x con  = if (rgetField @IpSource x) == (conTcpClientIp con)

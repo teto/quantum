@@ -67,11 +67,18 @@ import Control.Lens ((^.), view)
 -- Repline is a wrapper (suppposedly more advanced) around haskeline
 -- for now we focus on the simple usecase with repline
 -- import System.Console.Repline
-import MptcpAnalyzer.Pcap ()
+
+-- Repline is a wrapper (suppposedly more advanced) around haskeline
+-- for now we focus on the simple usecase with repline
+-- import System.Console.Repline
+import MptcpAnalyzer.Pcap (defaultTsharkPrefs)
 import Pipes hiding (Proxy)
 import System.Process hiding (runCommand)
 import Distribution.Simple.Utils (withTempFileEx)
 import Distribution.Compat.Internal.TempFile (openTempFile)
+import MptcpAnalyzer.Loader
+import Data.Maybe (fromMaybe)
+import Data.Either (fromLeft)
 
 
 data Severity = TraceS | DebugS | InfoS | ErrorS deriving (Read, Show, Eq)
@@ -144,8 +151,8 @@ plotinfoParserGeneric = info (plotParserGeneric)
 plotParserSpecific :: Parser ArgsPlots
 plotParserSpecific =
   subparser (
-    command "tcp" (piPlotStreamParser ["tcpseq"])
-    <> command "mptcp" (piPlotStreamParser ["tcpseq"])
+    command "tcp" (piPlotTcpAttrParser)
+    <> command "mptcp" (piPlotMptcpAttrParser)
    )
 
     -- <*> commandGroup "Loader commands"
@@ -318,16 +325,31 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
     -- tempPath <- embed $ withTempFileEx opts "/tmp" "plot.png" $ \tmpPath hd -> do
     -- file is not removed afterwards
     (tempPath, handle) <- P.embed $ openTempFile "/tmp" "plot.png"
-    case specificArgs of
-      (ArgsPlotTcpAttr pcapFilename streamId attr mbDest) -> do
+    _ <- case specificArgs of
+      (ArgsPlotTcpAttr pcapFilename streamId attr mbDest mptcp) -> do
         let destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) mbDest)
-        res <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcapFilename streamId
-        fmap Plots.cmdPlotTcpAttribute specificArgs tempPath handle res
+        log $ "MPTCP plot" ++ show (plotMptcp specificArgs)
 
-      (ArgsPlotMptcpAttr filePath streamId attr mbDest) -> do
-        let destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) mbDest)
-        buildAFrameFromStreamIdMptcp
-        Plots.cmdPlotTcpAttribute specificArgs tempPath handle
+        res <- if plotMptcp specificArgs then do
+              eFrame <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcapFilename (StreamId streamId)
+              case eFrame of
+                Left err -> return $ CMD.Error err
+                Right frame -> Plots.cmdPlotMptcpAttribute tempPath handle destinations frame
+
+            else do
+              eFrame <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcapFilename (StreamId streamId)
+              case eFrame of
+                Left err -> return $ CMD.Error err
+                Right frame -> Plots.cmdPlotTcpAttribute tempPath handle destinations frame
+        return res
+        -- case res of
+        --   Left err -> return $ CMD.Error "test"
+        --   Right frame -> return CMD.Continue
+
+      -- (ArgsPlotMptcpAttr filePath streamId attr mbDest) -> do
+      --   let destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) mbDest)
+      --   buildAFrameFromStreamIdMptcp
+      --   Plots.cmdPlotTcpAttribute specificArgs tempPath handle
 
     _ <- P.embed $ case mbOut of
             -- user specified a file move the file

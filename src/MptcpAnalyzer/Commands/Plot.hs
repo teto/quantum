@@ -67,13 +67,15 @@ import Frames.ShowCSV (showCSV)
 -- |
 -- @param 
 piPlotTcpAttrParser ::  ParserInfo ArgsPlots
-piPlotTcpAttrParser = info (plotStreamParser validTcpAttributes)
+piPlotTcpAttrParser = info (plotStreamParser validTcpAttributes False)
   ( progDesc "Plot TCP attr"
   )
 -- |
 -- @param 
 piPlotMptcpAttrParser ::  ParserInfo ArgsPlots
-piPlotMptcpAttrParser = info (plotStreamParser validMptcpAttributes)
+piPlotMptcpAttrParser = info (
+  plotStreamParser validMptcpAttributes True
+  )
   ( progDesc "Plot MPTCP attr"
   )
 
@@ -90,8 +92,11 @@ validTcpAttributes = ["tcpseq"]
 -- type ValidAttributes = [String]
 
 -- TODO pass the list of accepted attributes (so that it works for TCP/MPTCP)
-plotStreamParser :: [String] -> Parser ArgsPlots
-plotStreamParser _validAttributes = ArgsPlotTcpAttr <$>
+plotStreamParser :: 
+    [String]
+    -> Bool -- ^ for mptcp yes or no
+    -> Parser ArgsPlots
+plotStreamParser _validAttributes mptcpPlot = ArgsPlotTcpAttr <$>
       -- this ends up being not optional !
       strArgument (
           metavar "PCAP"
@@ -114,6 +119,13 @@ plotStreamParser _validAttributes = ArgsPlotTcpAttr <$>
         -- <> Options.Applicative.value RoleServer
         <> help ""
       ))
+      <*> option auto (
+          metavar "MPTCP"
+        -- internal is stronger than --belive, hides from all descriptions
+        <> internal
+        <> Options.Applicative.value mptcpPlot
+        <> help ""
+      )
 
 -- | A typeclass abstracting the functions we need
 -- to be able to plot against an axis of type a
@@ -140,91 +152,63 @@ instance PlotValue Word32 where
 cmdPlotTcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
           FilePath -- ^ temporary file to save plot to
           -> Handle
-          -> FrameFiltered
+          -> [ConnectionRole]
+          -> FrameFiltered Packet
           -> Sem m RetCode
-cmdPlotTcpAttribute tempPath _ aFrame = do
+cmdPlotTcpAttribute tempPath _ destinations aFrame = do
 
 -- inCore converts into a producer
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
   -- embed $ writeCSV "debug.csv" frame2
   embed $ toFile def tempPath $ do
-      layout_title .= "Tcp Sequence number"
+      layout_title .= "TCP Sequence number"
       -- TODO generate for mptcp plot
       flip mapM_ destinations plotAttr
 
   return Continue
   where
     -- filter by dest
-    frame2 = addDestinationsToFrame aFrame
+    frame2 = addTcpDestinationsToFrame aFrame
     plotAttr dest =
         plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
         where
           -- frameDest = ffTcpFrame tcpFrame
           frameDest = frame2
           -- frameDest = frame2
+          unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) (ffFrame frameDest)
+
+          seqData :: [Double]
+          seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
+          timeData = toList $ view relTime <$> unidirectionalFrame
+
+cmdPlotMptcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
+          FilePath -- ^ temporary file to save plot to
+          -> Handle
+          -> [ConnectionRole]
+          -> FrameFiltered Packet
+          -> Sem m RetCode
+cmdPlotMptcpAttribute tempPath _ destinations aFrame = do
+
+-- inCore converts into a producer
+  -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
+  -- embed $ writeCSV "debug.csv" frame2
+  embed $ toFile def tempPath $ do
+      layout_title .= "MPTCP Sequence number"
+      -- TODO generate for mptcp plot
+      flip mapM_ destinations plotAttr
+
+  return Continue
+  where
+    -- filter by dest
+    frameDest = addMptcpDest (ffFrame aFrame) (ffCon aFrame)
+    plotAttr dest =
+        plot (line ("MPTCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
+        where
+          -- frameDest = frame2
           unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) frameDest
 
           seqData :: [Double]
           seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
           timeData = toList $ view relTime <$> unidirectionalFrame
-    -- tcpStreamId = plotStreamId args
-    -- pcapFilename = plotFilename args
-    opts :: TempFileOptions
-    opts = TempFileOptions True
 
--- cmdPlotTcpAttribute _ _ _ _ = error "unsupported args"
-
--- cmdPlotMptcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
---           ArgsPlots ->
---           FilePath
---           -> Handle
---           -> Sem m RetCode
--- cmdPlotMptcpAttribute args@ArgsPlotTcpAttr{} tempPath _ = do
---   res <- loadPcapIntoFrame defaultTsharkPrefs pcapFilename
---   ret <- case res of
---     Left err -> do
---         log $ "Could not load " ++ pcapFilename ++ " because " ++ err
---         return CMD.Continue
---     Right frame -> do
---       case getTcpFrame frame streamId of
---         Left err -> return $ CMD.Error "error could not get "
-
---         -- inCore converts into a producer
---         Right tcpFrame -> do
---           -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
---           -- embed $ writeCSV "debug.csv" frame2
---           embed $ toFile def tempPath $ do
---               layout_title .= "Tcp Sequence number"
---               -- TODO generate for mptcp plot
---               flip mapM_ destinations plotAttr
-
---           return Continue
---           where
---             -- filter by dest
---             frame2 = addTcpDestToFrame (ffTcpFrame tcpFrame) (ffTcpCon tcpFrame)
---             plotAttr dest =
---                 plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
---                 where
---                   -- frameDest = ffTcpFrame tcpFrame
---                   frameDest = frame2
---                   -- frameDest = frame2
---                   unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) frameDest
-
---                   seqData :: [Double]
---                   seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
---                   timeData = toList $ view relTime <$> unidirectionalFrame
---   return ret
---   where
---     mptcpFrame = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
---     streamId = plotAttrMptcpStreamId
---     pcapFilename = plotFilename args
---     destinations :: [ConnectionRole]
---     destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) $ plotDest args)
---     opts :: TempFileOptions
---     opts = TempFileOptions True
---     cacheId :: CacheId
---     cacheId = CacheId [pcapFilename]  "" ""
-
-
--- cmdPlotMptcpAttribute _ _ _ = error "unsupported args"
 

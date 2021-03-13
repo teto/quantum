@@ -28,13 +28,14 @@ data ArgsPlots =
     ArgsPlotTcpAttr {
       plotFilename :: FilePath
       -- try to pattern match on the StreamId
-      , plotStreamId :: StreamId Tcp
+      , plotStreamId :: Word32
       , plotTcpAttr :: String
       , plotDest :: Maybe ConnectionRole
+      , plotMptcp :: Bool -- ^ hidden option
     }
-    | ArgsPlotMptcpAttr {
-        plotAttrMptcpFilename :: FilePath
-      , plotAttrMptcpStreamId :: StreamId Mptcp
-      , plotAttrMptcpAttr :: String
-      , plotAttrMptcpDest :: Maybe ConnectionRole
-    }
+    -- | ArgsPlotMptcpAttr {
+    --     plotAttrMptcpFilename :: FilePath
+    --   , plotAttrMptcpStreamId :: StreamId Mptcp
+    --   , plotAttrMptcpAttr :: String
+    --   , plotAttrMptcpDest :: Maybe ConnectionRole
+    -- }
