@@ -42,6 +42,7 @@ import System.Directory (renameFile)
 import System.IO (Handle)
 import Frames.ShowCSV (showCSV)
 import qualified Data.Set as Set
+import Debug.Trace
 
 
 -- data PlotTypes = PlotTcpAttribute {
@@ -193,7 +194,9 @@ cmdPlotMptcpAttribute tempPath _ destinations aFrame = do
 -- inCore converts into a producer
   log $ "show con " ++ show (ffCon aFrame)
   embed $ putStrLn $ showConnection (ffCon aFrame)
-  embed $ writeCSV "debug.csv" frameDest
+  log $ "number of packets" ++ show (frameLength (ffFrame aFrame))
+  embed $ writeCSV "debug.csv" (ffFrame aFrame)
+  embed $ writeCSV "dest.csv" (frameDest)
   embed $ toFile def tempPath $ do
       layout_title .= "MPTCP Sequence number"
       -- TODO generate for mptcp plot
@@ -206,16 +209,17 @@ cmdPlotMptcpAttribute tempPath _ destinations aFrame = do
     -- add dest to the whole frame
     frameDest = addMptcpDest (ffFrame aFrame) (ffCon aFrame)
     plotAttr (dest, sf) =
-        plot (line lineLabel [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
+      plot (line lineLabel [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
 
         where
-          lineLabel = "subflow " ++ show sf  ++ " seq (" ++ show dest ++ ")"
+          -- show sf
+          lineLabel = "subflow " ++ show (conTcpStreamId (sfConn sf))  ++ " seq (" ++ show dest ++ ")"
           -- frameDest = frame2
-          unidirectionalFrame = filterFrame (\x -> x ^. mptcpDest == dest 
+          unidirectionalFrame = filterFrame (\x -> x ^. mptcpDest == dest
                     && x ^. tcpStream == conTcpStreamId (sfConn sf) ) frameDest
 
           seqData :: [Double]
           seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
-          timeData = toList $ view relTime <$> unidirectionalFrame
+          timeData = traceShow ("timedata" ++ show (frameLength unidirectionalFrame)) toList $ view relTime <$> unidirectionalFrame
 
 

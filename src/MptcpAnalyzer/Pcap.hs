@@ -380,9 +380,6 @@ addMptcpDest frame con@MptcpConnection{} =
 
       addDestsToSubflowFrames sf = addMptcpDestToFrame (addTcpDestToFrame frame (sfConn sf)) sf
 
-      -- frameWithTcpDest = foldl' (\tframe sf -> addTcpDestToFrame tframe sf) frame subflows
-      -- addDestToFrame = 
-
       addMptcpDest' role x = (Col role) :& x
 
       addMptcpDestToFrame frame' sf = fmap (addMptcpDest' (sfMptcpDest sf)) frame'
@@ -391,7 +388,7 @@ addMptcpDest frame con@MptcpConnection{} =
       setTempDests :: Record rs -> Record ( MptcpDest ': TcpDest ': rs)
       setTempDests x = (Col RoleClient) :& (Col RoleClient) :& x
       addMptcpDestToRec x role = (Col $ role) :& x
-      subflows = []
+      subflows = Set.toList $ mpconSubflows con
 
 addMptcpDest frame _ = error "should not happen"
 
