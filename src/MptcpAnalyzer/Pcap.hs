@@ -310,8 +310,8 @@ getTcpFrame :: SomeFrame -> StreamId Tcp -> Either String (FrameFiltered Packet)
 getTcpFrame = buildConnectionFromTcpStreamId
 
 -- | For now assume the packet is the first syn from client to server
-buildTcpConnectionFromRow :: Packet -> Connection
-buildTcpConnectionFromRow r =
+buildTcpConnectionFromRecord :: Packet -> Connection
+buildTcpConnectionFromRecord r =
   TcpConnection {
     conTcpClientIp = r ^. ipSource
     , conTcpServerIp = r ^. ipDest
@@ -328,22 +328,34 @@ buildConnectionFromTcpStreamId frame streamId =
       Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
     else
       -- TODO check who is client
-      Right $ FrameTcp (buildTcpConnectionFromRow $ frameRow synPackets 0) streamPackets
+      Right $ FrameTcp (buildTcpConnectionFromRecord $ frameRow synPackets 0) streamPackets
     where
       streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
       synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
 
 -- | Builds
-buildSubflowFromTcpStreamId :: SomeFrame -> StreamId Tcp -> Either String (FrameFiltered Packet)
-buildSubflowFromTcpStreamId frame streamId =
+-- should expect a filteredFrame with MPTCP
+buildSubflowFromTcpStreamId :: FrameFiltered Packet -> StreamId Tcp -> Either String (FrameFiltered Packet)
+buildSubflowFromTcpStreamId aframe streamId =
     if frameLength synPackets < 1 then
       Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
     else
       -- TODO check who is client
-      Right $ FrameTcp (buildTcpConnectionFromRow $ frameRow synPackets 0) streamPackets
+      Right $ FrameTcp sfCon streamPackets
     where
-      streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
+      syn0 = frameRow synPackets 0
+      streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) (ffFrame aframe)
       synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
+      sfCon = buildTcpConnectionFromRecord syn0
+      sf = MptcpSubflow {
+        sfConn = sfCon
+        -- TODO fix
+        , sfMptcpDest = RoleServer 
+        , sfPriority = Nothing
+        , sfLocalId = 0
+        , sfRemoteId = 0
+        , sfInterface = "unknown"
+      }
 
 -- | Sets mptcp role column
 -- TODO maybe je devrais juste generer un 
@@ -432,6 +444,8 @@ addTcpDestToRec :: (TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort
 addTcpDestToRec x role = (Col $ role) :& x
 
 
+-- | should expect a 
+-- buildSubflowFromTcpStreamId
 buildSubflow :: SomeFrame -> StreamId Tcp -> MptcpSubflow
 buildSubflow frame (StreamId sfId) = case buildConnectionFromTcpStreamId frame (StreamId sfId) of
   Right con@FrameTcp{} -> MptcpSubflow {
@@ -457,8 +471,21 @@ buildMptcpConnectionFromStreamId frame streamId = do
       -- TODO now add a check on abstime
       -- if ds.loc[server_id, "abstime"] < ds.loc[client_id, "abstime"]:
       --     log.error("Clocks are not synchronized correctly")
-      Right $ FrameTcp {
-          ffCon = MptcpConnection {
+      -- update temporary fframe with the computed subflows
+      Right tempFframe  {
+          ffCon = (ffCon tempFframe) { mpconSubflows = Set.fromList subflows }
+      }
+      --  $ frameRow synPackets 0
+    where
+      streamPackets :: SomeFrame
+      streamPackets = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
+      --
+      tempFframe = FrameTcp {
+          ffCon = tempMptcpConn
+        , ffFrame = streamPackets
+      }
+      -- |Just for the time
+      tempMptcpConn = MptcpConnection {
           mptcpStreamId = streamId
           , mptcpServerKey = fromJust $ synAckPacket ^. mptcpSendKey
           , mptcpClientKey = fromJust $ synPacket ^. mptcpSendKey
@@ -466,14 +493,8 @@ buildMptcpConnectionFromStreamId frame streamId = do
           , mptcpClientToken = fromJust $ synPacket ^. mptcpExpectedToken
           , mptcpNegotiatedVersion = fromIntegral $ fromJust clientMptcpVersion :: Word8
 
-          , mpconSubflows = Set.fromList subflows
+          , mpconSubflows = mempty
         }
-        , ffFrame = streamPackets
-      }
-      --  $ frameRow synPackets 0
-    where
-      streamPackets :: SomeFrame
-      streamPackets = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
       -- suppose tcpflags is a list of flags, check if it is in the list
       -- of type FrameRec [(Symbol, *)]
       -- Looking for synack packets

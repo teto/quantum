@@ -193,7 +193,7 @@ cmdPlotMptcpAttribute tempPath _ destinations aFrame = do
 -- inCore converts into a producer
   log $ "show con " ++ show (ffCon aFrame)
   embed $ putStrLn $ showConnection (ffCon aFrame)
-  -- embed $ writeCSV "debug.csv" frame2
+  embed $ writeCSV "debug.csv" frameDest
   embed $ toFile def tempPath $ do
       layout_title .= "MPTCP Sequence number"
       -- TODO generate for mptcp plot

@@ -243,15 +243,8 @@ data Connection = TcpConnection {
       , mptcpServerToken :: Word32
       , mptcpClientToken :: Word32
       , mptcpNegotiatedVersion :: Word8
-
-      -- master subflow
-      -- use SubflowWithMetrics instead ?!
-      -- , subflows :: Set.Set [TcpConnection]
-      -- should be a MptcpSubflow instead ?
       -- should be a subflow
       , mpconSubflows :: Set.Set MptcpSubflow
-      -- , localIds :: Set.Set Word8  -- ^ Announced addresses
-      -- , remoteIds :: Set.Set Word8   -- ^ Announced addresses
 
 -- Ord to be able to use fromList
 } deriving (Show, Eq, Ord)
@@ -286,11 +279,17 @@ class StreamConnection a where
 
 -- | TODO adapt / rename to AFrame ? AdvancedFrames ?
 -- GADT ?
-data FrameFiltered a = FrameTcp {
+data FrameFiltered rs = FrameTcp {
     ffCon :: !Connection
+    -- StreamConnection b => b
     -- Frame of sthg maybe even bigger with TcpDest / MptcpDest
-    , ffFrame :: Frame a
+    , ffFrame :: Frame rs
   }
+  -- | FrameSubflow {
+  --   ffCon :: !MptcpSubflow
+  --   , ffFrame :: Frame a
+
+  -- }
 
 -- -- https://stackoverflow.com/questions/52299478/pattern-match-phantom-type
 -- data AFrame (p :: Protocol) where
