@@ -318,17 +318,12 @@ buildTcpConnectionFromRow r =
     , conTcpClientPort = r ^. tcpSrcPort
     , conTcpServerPort = r ^. tcpDestPort
     , conTcpStreamId = r ^. tcpStream
-    -- , priority = Nothing  -- for now
-    -- , localId = 0
-    -- , remoteId = 0
-    -- , subflowInterface = Nothing
   }
 
 {- Builds a Tcp connection from a non filtered frame
 -}
 buildConnectionFromTcpStreamId :: SomeFrame -> StreamId Tcp -> Either String (FrameFiltered Packet)
 buildConnectionFromTcpStreamId frame streamId =
-    -- Right $ frameLength synPackets
     if frameLength synPackets < 1 then
       Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
     else
@@ -338,6 +333,17 @@ buildConnectionFromTcpStreamId frame streamId =
       streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
       synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
 
+-- | Builds
+buildSubflowFromTcpStreamId :: SomeFrame -> StreamId Tcp -> Either String (FrameFiltered Packet)
+buildSubflowFromTcpStreamId frame streamId =
+    if frameLength synPackets < 1 then
+      Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
+    else
+      -- TODO check who is client
+      Right $ FrameTcp (buildTcpConnectionFromRow $ frameRow synPackets 0) streamPackets
+    where
+      streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
+      synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
 
 -- | Sets mptcp role column
 -- TODO maybe je devrais juste generer un 
@@ -353,7 +359,6 @@ addMptcpDest ::
       -> Frame (Record  ( MptcpDest ': TcpDest ': ManColumnsTshark ))
 addMptcpDest frame con@MptcpConnection{} =
     -- foldl' (\tframe sf -> addDestToFrame tframe sf) startingFrame subflows
-    -- map subflows (addTcpDestToFrame frame)
     mconcat subflowFrames
     where
       -- filteredFrame = filterFrame  (\x -> x ^. mptcpStream == Just (mptcpStreamId con)) frame
@@ -361,21 +366,21 @@ addMptcpDest frame con@MptcpConnection{} =
 
       subflowFrames = map addDestsToSubflowFrames subflows
 
-      addDestsToSubflowFrames sf = addMptcpDestToFrame (addTcpDestToFrame frame sf) sf
+      addDestsToSubflowFrames sf = addMptcpDestToFrame (addTcpDestToFrame frame (sfConn sf)) sf
 
       -- frameWithTcpDest = foldl' (\tframe sf -> addTcpDestToFrame tframe sf) frame subflows
       -- addDestToFrame = 
 
-      addMptcpDest' role x = (Col $ role) :& x
+      addMptcpDest' role x = (Col role) :& x
 
-      addMptcpDestToFrame frame' sf = fmap (addMptcpDest' (consfMptcpDest sf)) frame'
+      addMptcpDestToFrame frame' sf = fmap (addMptcpDest' (sfMptcpDest sf)) frame'
 
-      -- startingFrame = fmap (addMptcpDest' (consfMptcpDest sf)) frameWithTcpDest
       startingFrame = fmap setTempDests frame
       setTempDests :: Record rs -> Record ( MptcpDest ': TcpDest ': rs)
       setTempDests x = (Col RoleClient) :& (Col RoleClient) :& x
       addMptcpDestToRec x role = (Col $ role) :& x
       subflows = []
+
 addMptcpDest frame _ = error "should not happen"
 
 
@@ -427,9 +432,17 @@ addTcpDestToRec :: (TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort
 addTcpDestToRec x role = (Col $ role) :& x
 
 
-buildSubflow :: SomeFrame -> StreamId Tcp -> Connection
+buildSubflow :: SomeFrame -> StreamId Tcp -> MptcpSubflow
 buildSubflow frame (StreamId sfId) = case buildConnectionFromTcpStreamId frame (StreamId sfId) of
-  Right con@FrameTcp{} -> ffCon con
+  Right con@FrameTcp{} -> MptcpSubflow {
+        sfConn = ffCon con
+        -- TODO fix
+        , sfMptcpDest = RoleServer 
+        , sfPriority = Nothing
+        , sfLocalId = 0
+        , sfRemoteId = 0
+        , sfInterface = "unknown"
+      }
   _ -> error "should not happen"
 
 buildMptcpConnectionFromStreamId :: SomeFrame -> StreamId Mptcp -> Either String (FrameFiltered Packet)
@@ -454,8 +467,6 @@ buildMptcpConnectionFromStreamId frame streamId = do
           , mptcpNegotiatedVersion = fromIntegral $ fromJust clientMptcpVersion :: Word8
 
           , mpconSubflows = Set.fromList subflows
-          -- , localIds = Set.empty
-          -- , remoteIds = Set.empty
         }
         , ffFrame = streamPackets
       }

@@ -13,7 +13,7 @@ import Data.Monoid (First(..))
 import Data.Vinyl (Rec(..), ElField(..), rapply, xrec, rmapX)
 import Data.Vinyl.Functor (Compose(..), (:.))
 import Data.Vinyl.Class.Method
-import Net.Tcp (TcpFlag(..), TcpConnection)
+import Net.Tcp (TcpFlag(..))
 import Net.Bitset (fromBitMask, toBitMask)
 import Net.IP
 
@@ -235,15 +235,6 @@ data Connection = TcpConnection {
   , conTcpServerPort :: Word16  -- ^Destination port
   , conTcpStreamId :: StreamId Tcp  -- ^ @tcp.stream@ in wireshark
   }
-    | MptcpSubflow {
-      consf :: TcpConnection
-      , consfMptcpDest :: ConnectionRole -- ^ Destination
-      , consfPriority :: Maybe Word8 -- ^subflow priority
-      , consfPocalId :: Word8  -- ^ Convert to AddressFamily
-      , consfRemoteId :: Word8
-      --conTcp TODO remove could be deduced from srcIp / dstIp ?
-      , contcpSubflowInterface :: Maybe Word32 -- ^Interface of Maybe ? why a maybe ?
-    }
     | MptcpConnection {
       -- todo prefix as mpcon
       mptcpStreamId :: StreamIdMptcp
@@ -258,17 +249,35 @@ data Connection = TcpConnection {
       -- , subflows :: Set.Set [TcpConnection]
       -- should be a MptcpSubflow instead ?
       -- should be a subflow
-      , mpconSubflows :: Set.Set Connection
+      , mpconSubflows :: Set.Set MptcpSubflow
       -- , localIds :: Set.Set Word8  -- ^ Announced addresses
       -- , remoteIds :: Set.Set Word8   -- ^ Announced addresses
 
 -- Ord to be able to use fromList
 } deriving (Show, Eq, Ord)
 
--- class Connection a where
---   showConnection  :: Text
---   buildFromStreamId :: Text
---   list :: Connection
+data MptcpSubflow = MptcpSubflow {
+      sfConn :: Connection
+      , sfMptcpDest :: ConnectionRole -- ^ Destination
+      , sfPriority :: Maybe Word8 -- ^subflow priority
+      , sfLocalId :: Word8  -- ^ Convert to AddressFamily
+      , sfRemoteId :: Word8
+      --conTcp TODO remove could be deduced from srcIp / dstIp ?
+      , sfInterface :: Text -- ^Interface of Maybe ? why a maybe ?
+    } deriving (Show, Eq, Ord)
+
+
+-- TODO rename to connection later
+{- Common interface to work with TCP and MPTCP connections
+-}
+class StreamConnection a where
+  describeConnection :: a -> Text
+  -- buildFromStreamId :: a -> FrameFiltered (Record rs)
+  -- list :: Connection
+
+
+-- instance StreamConnection MptcpConnection where
+--   describeConnection = showMptcpConnectionText
 
 
 -- data SStreamId (a :: Protocol) where
@@ -398,20 +407,11 @@ instance Readable (StreamId a) where
       Nothing -> mzero
 
 
--- forall a.  parseIntish => (Readable a, MonadPlus f)
--- TODO unify
--- instance (Typeable (StreamId a )) => Frames.ColumnTypeable.Parseable (StreamId a) where
---   parse = parseIntish 
-
 instance Frames.ColumnTypeable.Parseable (StreamId Mptcp) where
   parse = parseIntish
 
 instance Frames.ColumnTypeable.Parseable (StreamId Tcp) where
   parse = parseIntish
-
--- instance (Typeable (StreamId a )) => Frames.ColumnTypeable.Parseable (StreamId a) where
---   parse = parseIntish
-
 
 -- could not parse 0x00000002
 -- strip leading 0x
@@ -420,9 +420,6 @@ instance Frames.ColumnTypeable.Parseable [TcpFlag] where
     -- TODO generate
     [(n, "")] -> return $ Definitely $ fromBitMask n
     _ -> error $ "TcpFlags: could not parse " ++ T.unpack text
-
--- tcpFlags as a list of flags
-
 
 -- TODO rewrite it as wireshark exposes it, eg, in hexa ?
 instance ShowCSV [TcpFlag] where
@@ -485,7 +482,7 @@ showConnection = TS.unpack . showConnectionText
 showConnectionText :: Connection -> Text
 showConnectionText con@MptcpConnection{} =
   -- showIp (srcIp con) <> ":" <> tshow (srcPort con) <> " -> " <> showIp (dstIp con) <> ":" <> tshow (dstPort con)
-  tpl <> "\n" <> TS.unlines (map showConnectionText (Set.toList $ mpconSubflows con))
+  tpl <> "\n" <> TS.unlines (map (showConnectionText . sfConn) (Set.toList $ mpconSubflows con))
   where
     -- showIp = Net.IP.encode
     -- tshowSubflow = tshow . showSubflow
@@ -501,9 +498,8 @@ showConnectionText con@TcpConnection{} =
   where
     showIp = Net.IP.encode
 --
-showConnectionText con@MptcpSubflow{} = tshow (consf con)
+-- showConnectionText con@MptcpSubflow{} = tshow (consf con)
 
 
 -- showMptcpConnection :: MptcpConnection -> String
 -- showMptcpConnection = TS.unpack . showMptcpConnectionText
-
