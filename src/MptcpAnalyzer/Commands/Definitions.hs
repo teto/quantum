@@ -25,6 +25,9 @@ data CommandArgs = ArgsLoadCsv {
     | ArgsListSubflows {
       _listSubflowsDetailed :: Bool
     }
+    | ArgsListReinjections {
+      injStream :: StreamId Mptcp
+    }
     | ArgsParserSummary {
       summaryFull :: Bool,
       summaryTcpStreamId :: StreamId Tcp

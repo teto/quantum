@@ -89,7 +89,20 @@ filterMptcpConnection frame streamId =
 
 cmdListReinjections :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
 cmdListReinjections args = do
-  return CMD.Continue
+  state <- P.get
+  let loadedPcap = view loadedFile state
+  res <- case loadedPcap of
+    Nothing -> do
+      log ( "please load a pcap first" :: String)
+      return CMD.Continue
+    Just frame -> do
+      -- log $ "Number of rows " ++ show (frameLength frame)
+      -- P.embed $ putStrLn $ "Number of MPTCP connections " ++ show (length mptcpStreams)
+      -- P.embed $ putStrLn $ show mptcpStreams
+      return CMD.Continue
+      -- where
+      --   reinjections = filterFrame (
+  return res
 
 listSubflowsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
 listSubflowsCmd _args = do

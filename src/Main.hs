@@ -313,6 +313,7 @@ runCommand args@ArgsLoadPcap{} = CL.loadPcap args
 runCommand args@ArgsLoadCsv{} = CL.loadCsv args
 runCommand args@ArgsParserSummary{} = CLI.tcpSummary args
 runCommand args@ArgsListSubflows{} = CLI.listSubflowsCmd args
+runCommand args@ArgsListReinjections{} = CLI.cmdListReinjections args
 runCommand args@ArgsListTcpConnections{} = CLI.listTcpConnectionsCmd args
 runCommand args@ArgsListMpTcpConnections{} = CLI.listMpTcpConnectionsCmd args
 runCommand args@ArgsExport{} = CLI.cmdExport args

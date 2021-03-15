@@ -4,6 +4,8 @@ where
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Frame
+import qualified Control.Foldl as L
+import Control.Lens hiding (argument)
 
 type Byte = Int
 
@@ -11,7 +13,7 @@ type Byte = Int
 data TcpUnidirectionalStats = TcpUnidirectionalStats {
     -- sum of tcplen / should be the same for tcp/mptcp
     -- Include redundant packets contrary to '''
-    tusThroughputBytes :: Byte
+    tusThroughput :: Byte
 
     -- duration
     , tusDuration :: Double
@@ -20,16 +22,37 @@ data TcpUnidirectionalStats = TcpUnidirectionalStats {
     , tusByteRange :: Int
 
     -- application data = goodput = useful bytes '''
-    -- TODO move to its own ?
-    , mptcp_application_bytes :: Byte
+    -- TODO move to its own ? / Maybe
+    -- , mptcp_application_bytes :: Byte
+    -- , tusThroughputContribution :: Double
+    -- , tusGoodputContribution :: Double
 
     -- TODO this should be updated
-    , throughput_contribution :: Double
-    , goodput_contribution :: Double
     -- For now = max(tcpseq) - minx(tcpseq). Should add the size of packets'''
-    , tcp_goodput :: Byte
+    , tusGoodput :: Byte
     }
 
+data MptcpUnidirectionalStats = MptcpUnidirectionalStats {
+    musThroughputContribution :: Double
+    , musGoodputContribution :: Double
+}
+
+
+-- TODO should be able to update an initial one
+--
+getTcpStats :: FrameFiltered Packet -> ConnectionRole -> TcpUnidirectionalStats
+getTcpStats aframe dest = 
+  TcpUnidirectionalStats {
+    tusThroughput = 0
+    , tusDuration = 0
+    , tusByteRange = 0
+    , tusGoodput = 0
+  }
+  where
+    frame = ffFrame aframe
+    -- No instance for (Ord (Frames.Frame.Frame GHC.Word.Word32))
+    minSeq = min $ view tcpSeq <$> frame
+    maxSeq = min $ view tcpSeq <$> frame
 
 -- def transmitted_seq_range(df, seq_name):
 --     '''
@@ -58,8 +81,8 @@ data TcpUnidirectionalStats = TcpUnidirectionalStats {
 -- getTcpUnidirectionalStats :: SomeFrameF Tcp ConnectionRole ->  -> TcpUnidirectionalStats
 -- getTcpUnidirectionalStats frame streamId = do
 
-getTcpUnidirectionalStats :: SomeFrame -> StreamIdTcp -> ConnectionRole -> TcpUnidirectionalStats
-getTcpUnidirectionalStats frame streamId role = TcpUnidirectionalStats 0 0 0 0 0 0 0
+-- getTcpUnidirectionalStats :: SomeFrame -> StreamIdTcp -> ConnectionRole -> TcpUnidirectionalStats
+-- getTcpUnidirectionalStats frame streamId role = TcpUnidirectionalStats 0 0 0 0 0 0 0
 
   -- where
   --   packetStreams = filterStreamPackets frame streamId (Just role)
