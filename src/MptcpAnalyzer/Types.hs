@@ -1,28 +1,34 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE DerivingVia         #-}
 {-# LANGUAGE FlexibleInstances                      #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module MptcpAnalyzer.Types
 where
 
 -- Inspired by Frames/demo/missingData
 import Frames
+import Net.Tcp (TcpFlag(..))
+import Net.Bitset (fromBitMask, toBitMask)
+import Net.IP
+import Net.IPv6 (IPv6(..))
+
+import Data.Hashable
 import Data.Monoid (First(..))
 import Data.Vinyl (Rec(..), ElField(..), rapply, xrec, rmapX)
 import Data.Vinyl.Functor (Compose(..), (:.))
 import Data.Vinyl.Class.Method
-import Net.Tcp (TcpFlag(..))
-import Net.Bitset (fromBitMask, toBitMask)
-import Net.IP
-
 import Data.Word (Word8, Word16, Word32, Word64)
+import Data.WideWord.Word128
 import Data.Text (Text)
 import Frames.ShowCSV
 import Frames.CSV (QuotingMode(..), ParserOptions(..))
 import Frames.ColumnTypeable (Parseable(..), parseIntish, Parsed(..))
-import Data.Word (Word16, Word32, Word64)
 import qualified Data.Text as T
 import qualified Text.Read as T
 import Frames.InCore (VectorFor)
@@ -38,6 +44,8 @@ import Frames (CommonColumns, Readable(..))
 import qualified Data.Set as Set
 import qualified Data.Text as TS
 import Options.Applicative
+import GHC.Generics
+import GHC.TypeLits (KnownSymbol)
 
 -- An en passant Default class
 -- class Default a where
@@ -81,7 +89,7 @@ data Tcp
 type TcpFlagList = [TcpFlag]
 
 -- TODO use Word instead
-newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord)
+newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord ) deriving Hashable via Word32
 type StreamIdTcp = StreamId Tcp
 type StreamIdMptcp = StreamId Mptcp
 
@@ -102,6 +110,7 @@ data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, Sh
 -- artificial types
 declareColumn "tcpDest" ''ConnectionRole
 declareColumn "mptcpDest" ''ConnectionRole
+declareColumn "packetHash" ''ConnectionRole
 
 -- wireshark types
 declareColumn "frameNumber" ''Word64
@@ -146,7 +155,7 @@ declareColumn "mptcpDack" ''MbMptcpDack
 type ManColumnsTshark = '[
     "packetId" :-> Word64
     , "interfaceName" :-> Text
-    -- Load it as a Float
+    -- Load it as a Float / Time
     , "absTime" :-> Text
     , "relTime" :-> Double
     , "ipSource" :-> IP
@@ -196,6 +205,24 @@ type ManColumnsTshark = '[
     -- , "mptcpReinjectedIn" :-> Maybe OptionList
     ]
 
+-- subset of ManColumnsTshark
+type HashablePart = '[
+    "ipSource" :-> IP
+    , "ipDest" :-> IP
+    , "ipSrcHost" :-> Text
+    , "ipDstHost" :-> Text
+    -- TODO pass as a StreamIdTcp
+    , "tcpStream" :-> StreamId Tcp
+    , "tcpSrcPort" :-> Word16
+    , "tcpDestPort" :-> Word16
+    , "rwnd" :-> Word32
+    , "tcpFlags" :-> TcpFlagList
+    , "tcpOptionKinds" :-> Text
+    , "tcpSeq"  :-> Word32
+    , "tcpLen"  :-> Word16
+    , "tcpAck"  :-> Word32
+    ]
+
 -- |Can load stream ids from CSV files
 readStreamId :: ReadM (StreamId a)
 readStreamId = eitherReader $ \arg -> case reads arg of
@@ -214,6 +241,23 @@ type Packet = Record ManColumnsTshark
 type PacketWithTcpDest = Record (TcpDest ': ManColumnsTshark)
 type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': ManColumnsTshark)
 
+
+deriving instance (KnownSymbol s, Hashable a) => Hashable( ElField '(s, a))
+
+-- deriving instance Hashable (Record HashablePart)
+
+deriving instance Hashable IP
+
+-- IPv6 is Word128
+deriving instance Generic IPv6
+
+deriving instance Hashable Word128
+deriving instance Hashable IPv6
+-- instance Hashable IPv6 where
+
+--   -- hashWithSalt :: Int -> a -> Int
+--   hashWithSalt salt rs = hashWithSalt
+      -- hashWithSalt
 -- type SomeSomeFrame = Frame Packet
 
 -- shadow param
@@ -285,21 +329,18 @@ data FrameFiltered rs = FrameTcp {
     -- Frame of sthg maybe even bigger with TcpDest / MptcpDest
     , ffFrame :: Frame rs
   }
-  -- | FrameSubflow {
+  -- FrameSubflow {
   --   ffCon :: !MptcpSubflow
   --   , ffFrame :: Frame a
 
-  -- }
-
--- -- https://stackoverflow.com/questions/52299478/pattern-match-phantom-type
+-- https://stackoverflow.com/questions/52299478/pattern-match-phantom-type
 -- data AFrame (p :: Protocol) where
---   AFrame :: SStreamId p -> Word32 -> AFrame p
+-- AFrame :: SStreamId p -> Word32 -> AFrame p
 
 
--- |Helper to pass information across functions
+-- Helper to pass information across functions
 data MyState = MyState {
   _stateCacheFolder :: FilePath
-
   , _loadedFile   :: Maybe SomeFrame  -- ^ cached loaded pcap
   , _prompt   :: String  -- ^ cached loaded pcap
 }

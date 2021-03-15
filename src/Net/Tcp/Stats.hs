@@ -54,6 +54,8 @@ getTcpStats aframe dest =
     minSeq = min $ view tcpSeq <$> frame
     maxSeq = min $ view tcpSeq <$> frame
 
+-- No instance for (Ord (Frames.Frame.Frame GHC.Word.Word32))
+instance Ord a => Ord (Frame a)
 -- def transmitted_seq_range(df, seq_name):
 --     '''
 --     test

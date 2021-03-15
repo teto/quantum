@@ -80,6 +80,7 @@ common shared-properties
        , Chart >= 1.5
        -- , Chart-diagrams >= 1.5
        , Chart-cairo
+       , wide-word
        -- diagrams-cairo
        -- , diagrams-rasterific >= 1.3
        -- , diagrams-lib >= 1.3
