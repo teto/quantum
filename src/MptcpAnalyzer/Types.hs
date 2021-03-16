@@ -329,6 +329,11 @@ data FrameFiltered rs = FrameTcp {
     -- Frame of sthg maybe even bigger with TcpDest / MptcpDest
     , ffFrame :: Frame rs
   }
+
+-- data FrameMerged = FrameMerged {
+--     ffCon :: !Connection
+
+--   }
   -- FrameSubflow {
   --   ffCon :: !MptcpSubflow
   --   , ffFrame :: Frame a

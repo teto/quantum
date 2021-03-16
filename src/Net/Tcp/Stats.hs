@@ -4,8 +4,13 @@ where
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Frame
+
 import qualified Control.Foldl as L
 import Control.Lens hiding (argument)
+import Data.Word (Word32)
+import Data.Maybe (fromJust)
+import qualified Frames as F
+import qualified Data.Foldable as F
 
 type Byte = Int
 
@@ -16,10 +21,13 @@ data TcpUnidirectionalStats = TcpUnidirectionalStats {
     tusThroughput :: Byte
 
     -- duration
-    , tusDuration :: Double
+    -- , tusDuration :: Double
+    , tusStart :: Double
+    , tusEnd :: Double
 
     -- For now = max(tcpseq) - minx(tcpseq). Should add the size of packets'''
-    , tusByteRange :: Int
+    , tusMinSeq :: Word32
+    , tusMaxSeq :: Word32
 
     -- application data = goodput = useful bytes '''
     -- TODO move to its own ? / Maybe
@@ -44,18 +52,26 @@ getTcpStats :: FrameFiltered Packet -> ConnectionRole -> TcpUnidirectionalStats
 getTcpStats aframe dest = 
   TcpUnidirectionalStats {
     tusThroughput = 0
-    , tusDuration = 0
-    , tusByteRange = 0
+    , tusStart = minTime
+    , tusEnd = maxTime
+    , tusMinSeq = minSeq
+    , tusMaxSeq = maxSeq
     , tusGoodput = 0
+    -- , tusGoodput = (fromIntegral $ maxSeq-minSeq)/(tusEnd - tusStart)
   }
   where
     frame = ffFrame aframe
-    -- No instance for (Ord (Frames.Frame.Frame GHC.Word.Word32))
-    minSeq = min $ view tcpSeq <$> frame
-    maxSeq = min $ view tcpSeq <$> frame
+    -- these return Maybes
+    minSeq = minimum (F.toList $ view tcpSeq <$> frame)
+    maxSeq = maximum $ F.toList $ view tcpSeq <$> frame
+
+    maxTime = fromJust (error "should not happen") (L.fold L.maximum $ view relTime <$> frame)
+    minTime = fromJust (error "should not happen") (L.fold L.minimum $ view relTime <$> frame)
+
+    -- duration = maxTime - minTime
 
 -- No instance for (Ord (Frames.Frame.Frame GHC.Word.Word32))
-instance Ord a => Ord (Frame a)
+-- instance Ord a => Ord (Frame a)
 -- def transmitted_seq_range(df, seq_name):
 --     '''
 --     test
