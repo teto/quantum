@@ -35,6 +35,7 @@ import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.List as CLI
 import MptcpAnalyzer.Commands.ListMptcp as CLI
 import MptcpAnalyzer.Commands.Export as CLI
+import MptcpAnalyzer.Commands.Map as CLI
 import MptcpAnalyzer.Commands.Plot as Plots
 import MptcpAnalyzer.Plots.Types
 import qualified MptcpAnalyzer.Commands.Load as CL
@@ -270,6 +271,7 @@ mainParser = subparser (
     <> commandGroup "TCP commands"
     <> command "tcp-summary" CLI.tcpSummaryOpts
     <> command "list-tcp" CLI.listTcpOpts
+    <> command "map-tcp" CLI.mapTcpOpts
     <> commandGroup "MPTCP commands"
     <> command "list-mptcp" CLI.listMpTcpOpts
     <> command "export" CLI.parseExportOpts

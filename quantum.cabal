@@ -133,6 +133,8 @@ library libmptcpanalyzer
         , MptcpAnalyzer.Debug
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache
+        , MptcpAnalyzer.Map
+        , MptcpAnalyzer.Merge
         , MptcpAnalyzer.Plots
         , MptcpAnalyzer.Plots.Stream
         -- TODO remove les commandes ?

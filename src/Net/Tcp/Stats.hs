@@ -65,8 +65,8 @@ getTcpStats aframe dest =
     minSeq = minimum (F.toList $ view tcpSeq <$> frame)
     maxSeq = maximum $ F.toList $ view tcpSeq <$> frame
 
-    maxTime = fromJust (error "should not happen") (L.fold L.maximum $ view relTime <$> frame)
-    minTime = fromJust (error "should not happen") (L.fold L.minimum $ view relTime <$> frame)
+    maxTime = maximum $ F.toList $ view relTime <$> frame
+    minTime = minimum $ F.toList $ view relTime <$> frame
 
     -- duration = maxTime - minTime
 

@@ -22,6 +22,11 @@ data CommandArgs = ArgsLoadCsv {
     | ArgsListMpTcpConnections {
       _listMpTcpDetailed :: Bool
     }
+    | ArgsMapTcpConnections {
+      argsMapPcap1 :: FilePath
+      , argsMapPcap2 :: FilePath
+      , argsMapTcpStream :: StreamId Tcp
+    }
     | ArgsListSubflows {
       _listSubflowsDetailed :: Bool
     }

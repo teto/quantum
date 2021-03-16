@@ -56,8 +56,7 @@ loadPcapIntoFrame params path = do
 
 
 -- buildTcpFrameFromFrame
-
--- \
+-- \ Build a frame with only packets belonging to @streamId@
 buildAFrameFromStreamIdTcp :: Members [Cache, Log String, Embed IO ] m
     => TsharkParams
     -> FilePath
