@@ -39,13 +39,8 @@ scoreTcpCon con1@TcpConnection{} con2@TcpConnection{} =
   --     and self.client_port == other.client_port
   --     and self.server_port == other.server_port):
   --     return float('inf')
-  -- score += 10 if self.tcpserver_ip == other.tcpserver_ip else 0
-  -- score += 10 if self.tcpclient_ip == other.tcpclient_ip else 0
-  -- score += 10 if self.client_port == other.client_port else 0
-  -- score += 10 if self.server_port == other.server_port else 0
-  -- return score
 
-  foldl' (+10) (0 :: Int) [
+  foldl (\acc toAdd -> acc + 10 * fromEnum toAdd) (0 :: Int) [
     conTcpClientIp con1 == conTcpClientIp con2
     , conTcpClientPort con1 == conTcpClientPort con2
     , conTcpServerIp con1 == conTcpServerIp con2
@@ -58,20 +53,22 @@ scoreTcpCon _ _ = undefined
 
 -- prefix 
 -- type PacketMerged = 
+toHashablePacket :: Record ManColumnsTshark -> Record HashablePart
+toHashablePacket = rcast
 
-addHash :: FrameFiltered Packet -> FrameFiltered (Record (PacketHash ': ManColumnsTshark))
+-- TODO should generate a column and add it back to ManColumnsTshark
+addHash :: FrameFiltered Packet -> Frame (Record (PacketHash ': HashablePart))
 addHash aframe =
-  fmap addHash'  (rcast @HashablePart frame)
+  fmap (addHash')  ( frame)
   where
-    frame = ffFrame aframe
+    frame = fmap toHashablePacket (ffFrame aframe)
     addHash' row = Col (hashWithSalt 0 row) :& row
 
 
-mergeTcpConnectionsFromKnownStreams :: FrameFiltered Packet -> FrameFiltered Packet -> FrameFiltered (Record rs)
-mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
-  FrameTcp (ffCon aframe1) mergedFrame
-  where
-    mergedFrame = innerJoin hframe1 hframe2
-
-    FrameTcp con1 hframe1 = addHash aframe1
-    FrameTcp con2 hframe2 = addHash aframe2
+-- mergeTcpConnectionsFromKnownStreams ::  FrameFiltered Packet -> FrameFiltered Packet -> FrameFiltered (Record rs)
+-- mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
+--   FrameTcp (ffCon aframe1) mergedFrame
+--   where
+--     mergedFrame = innerJoin hframe1 hframe2
+    -- FrameTcp con1 hframe1 = addHash aframe1
+    -- FrameTcp con2 hframe2 = addHash aframe2

@@ -110,7 +110,7 @@ data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, Sh
 -- artificial types
 declareColumn "tcpDest" ''ConnectionRole
 declareColumn "mptcpDest" ''ConnectionRole
-declareColumn "packetHash" ''ConnectionRole
+declareColumn "packetHash" ''Int
 
 -- wireshark types
 declareColumn "frameNumber" ''Word64
@@ -242,7 +242,9 @@ type PacketWithTcpDest = Record (TcpDest ': ManColumnsTshark)
 type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': ManColumnsTshark)
 
 
-deriving instance (KnownSymbol s, Hashable a) => Hashable( ElField '(s, a))
+deriving instance (KnownSymbol s, Hashable a) => Hashable( Rec ElField ['(s, a)])
+
+-- deriving instance (KnownSymbol s, Hashable a) => Hashable( ElField '(s, a))
 
 -- deriving instance Hashable (Record HashablePart)
 
@@ -253,7 +255,6 @@ deriving instance Generic IPv6
 
 deriving instance Hashable Word128
 deriving instance Hashable IPv6
--- instance Hashable IPv6 where
 
 --   -- hashWithSalt :: Int -> a -> Int
 --   hashWithSalt salt rs = hashWithSalt
