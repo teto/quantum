@@ -206,9 +206,7 @@ type ManColumnsTshark = '[
     ]
 
 -- subset of ManColumnsTshark
-type HashablePart = '[
-    "ipSource" :-> IP
-    , "ipDest" :-> IP
+type HashablePart = '[ "ipSource" :-> IP , "ipDest" :-> IP
     , "ipSrcHost" :-> Text
     , "ipDstHost" :-> Text
     -- TODO pass as a StreamIdTcp
@@ -241,9 +239,17 @@ type Packet = Record ManColumnsTshark
 type PacketWithTcpDest = Record (TcpDest ': ManColumnsTshark)
 type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': ManColumnsTshark)
 
+-- https://stackoverflow.com/questions/14020491/is-there-a-way-of-deriving-binary-instances-for-vinyl-record-types-using-derive?rq=1
+-- forall t s a rs. (t ~ '(s,a)
+-- comparable to Storable
+deriving instance  (KnownSymbol s, Hashable a) => Hashable(ElField '(s, a))
+-- deriving instance  (Hashable (Rec '[]))
+-- deriving instance  forall s a . (Hashable Rec '[]) => Hashable(ElField '[ '(s, a)])
 
-deriving instance (KnownSymbol s, Hashable a) => Hashable( Rec ElField ['(s, a)])
-
+-- generalisation existe
+-- Generic (Rec f rs) => Generic (Rec f (r ': rs))
+-- deriving instance  (t ~ ElField '(s,a),  Hashable a) => Hashable(Rec t)
+-- No instance for (Hashable (Rec ElField HashablePart))
 -- deriving instance (KnownSymbol s, Hashable a) => Hashable( ElField '(s, a))
 
 -- deriving instance Hashable (Record HashablePart)

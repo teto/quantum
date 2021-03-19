@@ -51,12 +51,15 @@ scoreTcpCon con1@MptcpConnection{} con2@MptcpConnection{} = error "not implement
 
 scoreTcpCon _ _ = undefined
 
--- prefix 
--- type PacketMerged = 
+-- prefix
+-- type PacketMerged =
 toHashablePacket :: Record ManColumnsTshark -> Record HashablePart
 toHashablePacket = rcast
 
+instance Hashable (Rec ElField a) where
+
 -- TODO should generate a column and add it back to ManColumnsTshark
+-- type FieldRec = Rec ElField
 addHash :: FrameFiltered Packet -> Frame (Record (PacketHash ': HashablePart))
 addHash aframe =
   fmap (addHash')  ( frame)
