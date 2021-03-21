@@ -1,6 +1,8 @@
 {- Merge 2 dataframes
 
 -}
+{-# LANGUAGE TypeApplications             #-}
+
 module MptcpAnalyzer.Merge
 where
 
@@ -58,20 +60,31 @@ toHashablePacket = rcast
 
 -- instance Hashable (Rec ElField a) where
 
--- TODO should generate a column and add it back to ManColumnsTshark
--- type FieldRec = Rec ElField
-addHash :: FrameFiltered Packet -> Frame (Record (PacketHash ': HashablePart))
+-- -- TODO should generate a column and add it back to ManColumnsTshark
+-- -- type FieldRec = Rec ElField
+-- addHash :: FrameFiltered Packet -> Frame (Record (PacketHash ': HashablePart))
+-- addHash aframe =
+--   fmap (addHash')  ( frame)
+--   where
+--     frame = fmap toHashablePacket (ffFrame aframe)
+--     addHash' row = Col (hashWithSalt 0 row) :& row
+
+-- generate a column and add it back to ManColumnsTshark
+addHash :: FrameFiltered Packet -> Frame (Record '[PacketHash] )
 addHash aframe =
-  fmap (addHash')  ( frame)
+  fmap (addHash')  (frame)
   where
     frame = fmap toHashablePacket (ffFrame aframe)
-    addHash' row = Col (hashWithSalt 0 row) :& row
+    addHash' row = Col (hashWithSalt 0 row) :& RNil
 
 
--- mergeTcpConnectionsFromKnownStreams ::  FrameFiltered Packet -> FrameFiltered Packet -> FrameFiltered (Record rs)
--- mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
---   FrameTcp (ffCon aframe1) mergedFrame
---   where
---     mergedFrame = innerJoin hframe1 hframe2
-    -- FrameTcp con1 hframe1 = addHash aframe1
-    -- FrameTcp con2 hframe2 = addHash aframe2
+-- use zipFrames
+
+mergeTcpConnectionsFromKnownStreams :: FrameFiltered Packet -> FrameFiltered Packet -> Frame (Record rs)
+mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
+  -- FrameTcp (ffCon aframe1) 
+  mergedFrame
+  where
+    mergedFrame = innerJoin @'[PacketHash] hframe1 hframe2
+    hframe1 = zipFrames (addHash aframe1) (ffFrame aframe1)
+    hframe2 = zipFrames (addHash aframe1) (ffFrame aframe2)

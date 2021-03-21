@@ -169,11 +169,13 @@ executable mptcpanalyzer
         , MptcpAnalyzer.Debug
         , MptcpAnalyzer.Pcap
         , MptcpAnalyzer.Cache
+        , MptcpAnalyzer.Merge
         , MptcpAnalyzer.Commands
         , MptcpAnalyzer.Commands.Definitions
         , MptcpAnalyzer.Commands.Load
         , MptcpAnalyzer.Commands.Export
         , MptcpAnalyzer.Commands.Plot
+        , MptcpAnalyzer.Commands.Map
         , Columns
         , MptcpAnalyzer.Commands.Utils
         , MptcpAnalyzer.Commands.List, MptcpAnalyzer.Types, Connection

@@ -36,7 +36,7 @@ in
       pkg-config
       zlib
 
-      pkgs.llvm_11  # for llvm-symbolizer
+      # pkgs.llvm_11  # for llvm-symbolizer
     ];
 
     # see https://discourse.nixos.org/t/shared-libraries-error-with-cabal-repl-in-nix-shell/8921/9
@@ -51,12 +51,6 @@ in
   #   ]);
 
   # # export HIE_HOOGLE_DATABASE=$NIX_GHC_DOCDIR as DOCDIR doesn't exist it won't work
-  # # shellHook = "eval $(grep export ${ghc}/bin/ghc)";
-  # # export PATH="${my_nvim}/bin:$PATH"
-  # # --package-db /home/teto/netlink-hs/dist/package.conf.inplace
-  # # --package-db /home/teto/mptcppm/dist/package.conf.inplace
-  #     export HIE_HOOGLE_DATABASE="$NIX_GHC_LIBDIR/../../share/doc/hoogle/index.html"
-
   # ASAN_OPTIONS=abort_on_error=1
   # halt_on_error=0"
   shellHook = ''
