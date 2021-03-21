@@ -5,6 +5,7 @@
 {-# LANGUAGE DerivingVia         #-}
 {-# LANGUAGE FlexibleInstances                      #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -19,10 +20,14 @@ import Net.IP
 import Net.IPv6 (IPv6(..))
 
 import Data.Hashable
+import qualified Data.Hashable as Hash
 import Data.Monoid (First(..))
 import Data.Vinyl (Rec(..), ElField(..), rapply, xrec, rmapX)
+import qualified Data.Vinyl.TypeLevel as V
 import Data.Vinyl.Functor (Compose(..), (:.))
 import Data.Vinyl.Class.Method
+
+import qualified Data.Vinyl as V
 import Data.Word (Word8, Word16, Word32, Word64)
 import Data.WideWord.Word128
 import Data.Text (Text)
@@ -41,6 +46,7 @@ import Data.Typeable (Typeable)
 import Control.Lens
 import Control.Monad (MonadPlus, mzero)
 import Frames (CommonColumns, Readable(..))
+import qualified Frames as F
 import qualified Data.Set as Set
 import qualified Data.Text as TS
 import Options.Applicative
@@ -243,6 +249,25 @@ type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': ManColumnsTshark)
 -- forall t s a rs. (t ~ '(s,a)
 -- comparable to Storable
 deriving instance  (KnownSymbol s, Hashable a) => Hashable(ElField '(s, a))
+deriving instance Hashable( TcpFlag)
+-- deriving instance Hashable(Rec f '[])
+-- deriving instance (Generic(Rec f rs))
+-- deriving instance (Generic(Rec f rs), Hashable (f r), Hashable (Rec f rs)) => Hashable (Rec f (r ': rs))
+-- instance (Hashable (rs)) => Hashable (Rec f rs ) where
+  -- hashWithSalt
+-- deriving instance Hashable (a) => Hashable(Rec f a)
+-- deriving instance (Hashable (f r), Generic (Rec f rs), Hashable (Rec f rs)) => Hashable(Rec f (r ': rs))
+
+-- | This is only here so we can use hash maps for the grouping step.  This should properly be in Vinyl itself.
+instance Hashable (F.Record '[]) where
+  hash = const 0
+  {-# INLINABLE hash #-}
+  hashWithSalt s = const s
+  {-# INLINABLE hashWithSalt #-}
+instance (V.KnownField t, Hashable (V.Snd t), Hashable (F.Record rs), rs F.⊆ (t ': rs)) => Hashable (F.Record (t ': rs)) where
+  hashWithSalt s r = s `Hash.hashWithSalt` (F.rgetField @t r) `Hash.hashWithSalt` (F.rcast @rs r)
+  {-# INLINABLE hashWithSalt #-}
+
 -- deriving instance  (Hashable (Rec '[]))
 -- deriving instance  forall s a . (Hashable Rec '[]) => Hashable(ElField '[ '(s, a)])
 

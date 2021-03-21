@@ -56,7 +56,7 @@ scoreTcpCon _ _ = undefined
 toHashablePacket :: Record ManColumnsTshark -> Record HashablePart
 toHashablePacket = rcast
 
-instance Hashable (Rec ElField a) where
+-- instance Hashable (Rec ElField a) where
 
 -- TODO should generate a column and add it back to ManColumnsTshark
 -- type FieldRec = Rec ElField
