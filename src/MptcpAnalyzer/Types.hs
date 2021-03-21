@@ -264,6 +264,7 @@ instance Hashable (F.Record '[]) where
   {-# INLINABLE hash #-}
   hashWithSalt s = const s
   {-# INLINABLE hashWithSalt #-}
+
 instance (V.KnownField t, Hashable (V.Snd t), Hashable (F.Record rs), rs F.⊆ (t ': rs)) => Hashable (F.Record (t ': rs)) where
   hashWithSalt s r = s `Hash.hashWithSalt` (F.rgetField @t r) `Hash.hashWithSalt` (F.rcast @rs r)
   {-# INLINABLE hashWithSalt #-}

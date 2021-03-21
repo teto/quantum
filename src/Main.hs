@@ -320,6 +320,7 @@ runCommand args@ArgsListTcpConnections{} = CLI.listTcpConnectionsCmd args
 runCommand args@ArgsListMpTcpConnections{} = CLI.listMpTcpConnectionsCmd args
 runCommand args@ArgsExport{} = CLI.cmdExport args
 runCommand args@ArgsPlotGeneric{} = runPlotCommand args
+runCommand args@ArgsMapTcpConnections{} = CLI.cmdMapTcpConnection args
 
 
 -- |Command specific to plots

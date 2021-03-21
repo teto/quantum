@@ -122,6 +122,7 @@ library libmptcpanalyzer
     Exposed-Modules:
         Tshark.TH
         , Tshark.TH2
+        , MptcpAnalyzer.Frames.Utils
         , Net.Mptcp.Types
         , Net.Tcp.Stats
         -- reexport the rest
@@ -137,6 +138,7 @@ library libmptcpanalyzer
         , MptcpAnalyzer.Merge
         , MptcpAnalyzer.Plots
         , MptcpAnalyzer.Plots.Stream
+        , MptcpAnalyzer.Plots.Owd
         -- TODO remove les commandes ?
         , MptcpAnalyzer.Commands
         , MptcpAnalyzer.Commands.Definitions
@@ -162,6 +164,7 @@ executable mptcpanalyzer
         , Tshark.TH2
         , Net.Mptcp.Types
         -- reexport the rest
+        , Frames.Utils
         , MptcpAnalyzer
         , MptcpAnalyzer.Loader
         , MptcpAnalyzer.Types

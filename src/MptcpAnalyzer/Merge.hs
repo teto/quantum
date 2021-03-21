@@ -12,6 +12,8 @@ import Frames
 import Frames.Joins
 import Data.Vinyl
 import Data.Hashable
+import GHC.TypeLits (KnownSymbol)
+import qualified Data.Vinyl as V
 
 -- convert_to_sender_receiver
 -- merge_tcp_dataframes_known_streams(
@@ -79,12 +81,31 @@ addHash aframe =
 
 
 -- use zipFrames
+-- just for testing
+type Age = "age" :-> Int
+type Weight = "weight" :-> Double
+type Name = "name" :-> String
 
-mergeTcpConnectionsFromKnownStreams :: FrameFiltered Packet -> FrameFiltered Packet -> Frame (Record rs)
+-- | Add a column to the head of a row.
+-- frameCons :: (Functor f, KnownSymbol s)
+--           => f a -> Rec f rs -> Rec f (s :-> a ': rs)
+-- frameCons = (V.:&) . fmap Col
+-- {-# INLINE frameCons #-}
+
+testRec1 :: Record '[PacketHash, Name]
+testRec1 = (Col 42) :& (Col "bob") :& RNil
+-- :& (col 23) :&  (pure 75.2 )
+
+-- mergeTcpConnectionsFromKnownStreams :: 
+--   FrameFiltered Packet -> FrameFiltered Packet
+--   -> Frame (Record (PacketHash ': ManColumnsTshark))
+  -- -> Frame (Record '[Packet
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
   -- FrameTcp (ffCon aframe1) 
   mergedFrame
   where
-    mergedFrame = innerJoin @'[PacketHash] hframe1 hframe2
+    mergedFrame = innerJoin @'[PacketHash] ( hframe1) ( hframe2)
+    -- mergedFrame = hframe1
     hframe1 = zipFrames (addHash aframe1) (ffFrame aframe1)
     hframe2 = zipFrames (addHash aframe1) (ffFrame aframe2)
+    hframe3 = toFrame [testRec1]

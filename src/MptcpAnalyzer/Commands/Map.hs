@@ -51,7 +51,10 @@ cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId) = do
     (Right aframe, Right frame) -> do
       -- TODO sort results and print them
       let scores = map (evalScore (ffCon aframe) frame) (getTcpStreams frame)
-      _ <- mapM displayScore (sortBy (compare `on` snd) scores)
+      let sortedScores = (sortBy (compare `on` snd) scores)
+      -- TODO only display X first take 5
+      _ <- mapM displayScore sortedScores
+      log $ "Best match for " ++ show (ffCon aframe) ++ " is "
       return CMD.Continue
     _ -> return $ CMD.Error "An error happened"
 
@@ -60,7 +63,7 @@ cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId) = do
       Left err -> (con1, 0)
       Right (FrameTcp con2 _) -> (con2, scoreTcpCon con1 con2)
 
-    displayScore (con, score) = log $ "Score for connection " ++ showConnection con ++ ":\n" ++ show score
+    displayScore (con, score) = log $ "Score for connection " ++ showConnection con ++ ": " ++ show score
 
 cmdMapTcpConnection _ = error "undefined "
     -- streamId = argsMapTcpStream args

@@ -25,6 +25,7 @@ data ArgsPlots =
   --     , plotDisplay :: Bool
   -- }
 
+    -- actually valid for MPTCP too
     ArgsPlotTcpAttr {
       plotFilename :: FilePath
       -- try to pattern match on the StreamId
@@ -33,7 +34,18 @@ data ArgsPlots =
       , plotDest :: Maybe ConnectionRole
       , plotMptcp :: Bool -- ^ hidden option
     }
-    -- | ArgsPlotMptcpAttr {
+    | ArgsPlotOwd {
+      plotOwdPcap1 :: FilePath
+      , plotOwdPcap2 :: FilePath
+      -- try to pattern match on the StreamId
+      , plotStreamId :: Word32
+      , plotTcpAttr :: String
+      , plotDest :: Maybe ConnectionRole
+      -- , plotMptcp :: Bool -- ^ hidden option
+    }
+    --
+    --
+    -- ArgsPlotMptcpAttr {
     --     plotAttrMptcpFilename :: FilePath
     --   , plotAttrMptcpStreamId :: StreamId Mptcp
     --   , plotAttrMptcpAttr :: String
