@@ -6,6 +6,8 @@ import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Plots.Types
 
+import Data.Word (Word32)
+
 -- import Polysemy (Sem, Members, makeSem, interpret, Effect)
 
 -- | Registered commands
@@ -25,7 +27,10 @@ data CommandArgs = ArgsLoadCsv {
     | ArgsMapTcpConnections {
       argsMapPcap1 :: FilePath
       , argsMapPcap2 :: FilePath
-      , argsMapTcpStream :: StreamId Tcp
+      , argsMapStream :: Word32
+      , argsMapVerbose :: Bool
+      , argsMapLimit :: Int -- ^Number of comparisons to show
+      , argsMptcp :: Bool -- ^Wether it's an MPTCP
     }
     | ArgsListSubflows {
       _listSubflowsDetailed :: Bool

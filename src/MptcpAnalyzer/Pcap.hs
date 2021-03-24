@@ -129,9 +129,12 @@ defaultParserOptions = ParserOptions Nothing (T.pack [csvDelimiter defaultTshark
 -- nub => remove duplicates
 -- or just get the column
 getTcpStreams :: SomeFrame -> [StreamIdTcp]
-getTcpStreams ps =
-    L.fold L.nub (view tcpStream <$> ps)
+getTcpStreams ps = L.fold L.nub (view tcpStream <$> ps)
 
+-- | to list
+getMptcpStreams :: SomeFrame -> [StreamId Mptcp]
+getMptcpStreams ps = L.fold L.nub (view mptcpStream <$> ps)
+-- filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
 
 -- |Generate the tshark command to export a pcap into a csv
 generateCsvCommand :: [T.Text] -- ^Fields to exports e.g., "mptcp.stream"

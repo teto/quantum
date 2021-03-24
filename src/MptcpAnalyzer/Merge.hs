@@ -50,7 +50,81 @@ scoreTcpCon con1@TcpConnection{} con2@TcpConnection{} =
     , conTcpServerIp con1 == conTcpServerIp con2
     , conTcpServerPort con1 == conTcpServerPort con2
   ]
-scoreTcpCon con1@MptcpConnection{} con2@MptcpConnection{} = error "not implemented yet"
+-- scoreTcpCon con1@MptcpConnection{} con2@MptcpConnection{} = error "not implemented yet"
+scoreTcpCon con1@MptcpConnection{} con2@MptcpConnection{} =
+  let keyScore = if (mptcpServerKey con1 == mptcpServerKey con2 && mptcpClientKey con1 == mptcpClientKey con2) then
+        200
+      else
+        0
+
+    -- TODO compare subflow scores
+    -- scoreSubflow = sum . map score
+  in
+    keyScore
+--     def score(self, other: 'MpTcpConnection') -> float:
+        -- """
+        -- ALREADY FILTERED dataframes
+
+        -- Returns:
+        --     a score
+        --     - '-inf' means it's not possible those 2 matched
+        --     - '+inf' means
+        -- """
+
+        -- score = 0
+        -- if len(self.subflows()) != len(other.subflows()):
+        --     log.warn("Fishy ?! Datasets contain a different number of subflows (d vs d)" % ())
+        --     score -= 5
+
+        -- common_sf = []
+
+        -- if (self.keys[ConnectionRoles.Server] == other.keys[ConnectionRoles.Server]
+        --     and self.keys[ConnectionRoles.Client] == other.keys[ConnectionRoles.Client]):
+        --     log.debug("matching keys => same")
+        --     return float('inf')
+
+        -- # TODO check there is at least the master
+        -- # with nat, ips don't mean a thing ?
+        -- for sf in self.subflows():
+        --     if sf in other.subflows() or sf.reversed() in other.subflows():
+        --         log.debug("Subflow %s in common", sf)
+        --         score += 10
+        --         common_sf.append(sf)
+        --     else:
+        --         log.debug("subflows %s doesn't seem to exist in other ", sf)
+
+        -- # TODO compare start times supposing cloak are insync ?
+        -- return score
+
+-- def map_mptcp_connection_from_known_streams(
+--     main: MpTcpConnection,
+--     other: MpTcpConnection
+-- ) -> MpTcpMapping:
+--     """
+--     Attempts to map subflows only if score is high enough
+--     """
+--     def _map_subflows(main: MpTcpConnection, mapped: MpTcpConnection):
+--         """
+--         """
+--         mapped_subflows = []
+--         for sf in main.subflows():
+
+--             # generates a list (subflow, score)
+--             scores = list(map(lambda x: TcpMapping(x, sf.score(x)), mapped.subflows()))
+--             scores.sort(key=lambda x: x.score, reverse=True)
+--             log.log(mp.TRACE, "sorted scores when mapping %s:\n %r" % (sf, scores))
+--             mapped_subflows.append((sf, scores[0]))
+--         return mapped_subflows
+
+--     mptcpscore = main.score(other)
+--     mapped_subflows = None
+--     if mptcpscore > float('-inf'):
+--         # (other, score)
+--         mapped_subflows = _map_subflows(main, other)
+
+--     mapping = MpTcpMapping(mapped=other, score=mptcpscore, subflow_mappings=mapped_subflows)
+--     log.log(mp.TRACE, "mptcp mapping %s", mapping)
+--     return mapping
 
 
 scoreTcpCon _ _ = undefined
