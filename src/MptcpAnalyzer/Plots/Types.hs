@@ -39,7 +39,6 @@ data ArgsPlots =
       , plotOwdPcap2 :: FilePath
       -- try to pattern match on the StreamId
       , plotStreamId :: Word32
-      , plotTcpAttr :: String
       , plotDest :: Maybe ConnectionRole
       -- , plotMptcp :: Bool -- ^ hidden option
     }

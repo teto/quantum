@@ -35,24 +35,12 @@ in
       hsEnv
       pkg-config
       zlib
-
-      # pkgs.llvm_11  # for llvm-symbolizer
     ];
 
     # see https://discourse.nixos.org/t/shared-libraries-error-with-cabal-repl-in-nix-shell/8921/9
     LD_LIBRARY_PATH = nixpkgs.lib.makeLibraryPath buildInputs;
 
-  # (my_pkg.envFunc { withHoogle = true; }).overrideAttrs (oa: {
-  #   nativeBuildInputs = oa.nativeBuildInputs ++ (with pkgs; [
-  #     haskellPackages.cabal-install
-  #     haskellPackages.hasktags
-  #     haskellPackages.hlint
-  #     # haskellPackages.nvim-hs-ghcid # too old, won't support nvim-hs-contrib 2
-  #   ]);
-
   # # export HIE_HOOGLE_DATABASE=$NIX_GHC_DOCDIR as DOCDIR doesn't exist it won't work
-  # ASAN_OPTIONS=abort_on_error=1
-  # halt_on_error=0"
   shellHook = ''
     # check if it's still needed ?
     export NVIM_LOG_FILE=/tmp/log

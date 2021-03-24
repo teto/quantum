@@ -346,6 +346,10 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
                 Left err -> return $ CMD.Error err
                 Right frame -> Plots.cmdPlotTcpAttribute tempPath handle destinations frame
         return res
+      (ArgsPlotOwd pcap1 pcap2 streamId dest) -> do
+        log $ "owd plot" ++ show (plotMptcp specificArgs)
+        return CMD.Continue
+
         -- case res of
         --   Left err -> return $ CMD.Error "test"
         --   Right frame -> return CMD.Continue

@@ -17,7 +17,8 @@ import qualified Polysemy as P
 import Polysemy.State as P
 import Colog.Polysemy (Log, log)
 import Data.Function (on)
-import Data.List (sortBy)
+import Data.List (sortBy, sortOn)
+import Data.Either (rights, lefts)
 
 mapTcpOpts :: ParserInfo CommandArgs
 mapTcpOpts = info (
@@ -42,6 +43,7 @@ parserMapTcp =
       )
 
 -- |
+-- todo pass an exhaistove flag ?
 cmdMapTcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
 cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId) = do
   log $ "Mapping tcp connections"
@@ -49,21 +51,29 @@ cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId) = do
   res2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
   case (res, res2) of
     (Right aframe, Right frame) -> do
-      -- TODO sort results and print them
-      let scores = map (evalScore (ffCon aframe) frame) (getTcpStreams frame)
-      let sortedScores = (sortBy (compare `on` snd) scores)
-      -- TODO only display X first take 5
-      _ <- mapM displayScore sortedScores
+      let streamsToCompare = (getTcpStreams frame)
+      let consToCompare = map (buildConnectionFromTcpStreamId frame) (getTcpStreams frame)
       log $ "Best match for " ++ show (ffCon aframe) ++ " is "
+      log $ "Comparing with stream " ++ show streamsToCompare
+      -- TODO sort results and print them
+      let scores = map (evalScore (ffCon aframe)) (rights consToCompare)
+      -- let sortedScores = (sortBy (compare `on` snd) scores)
+      let sortedScores = (sortOn snd scores)
+      -- TODO only display X first take 5
+      mapM_ displayScore sortedScores
+      -- display failures
+      mapM_ displayFailure (lefts consToCompare)
       return CMD.Continue
     _ -> return $ CMD.Error "An error happened"
+      -- Left err -> error $ "error happened for tcp.stream " ++ show streamId'
+
 
   where
-    evalScore con1 frame streamId' = case buildConnectionFromTcpStreamId frame streamId' of
-      Left err -> (con1, 0)
-      Right (FrameTcp con2 _) -> (con2, scoreTcpCon con1 con2)
+    -- evalScore con1 frame streamId' = case buildConnectionFromTcpStreamId frame streamId' of
+    evalScore con1 (FrameTcp con2 _) = (con2, scoreTcpCon con1 con2)
 
     displayScore (con, score) = log $ "Score for connection " ++ showConnection con ++ ": " ++ show score
+    displayFailure err = log $ "Couldn't compute score for streamId  " ++ show err
 
 cmdMapTcpConnection _ = error "undefined "
     -- streamId = argsMapTcpStream args

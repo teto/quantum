@@ -113,13 +113,13 @@ plotParserOwd mptcpPlot = ArgsPlotOwd <$>
         -- <> Options.Applicative.value RoleServer
         <> help ""
       ))
-      <*> option auto (
-          metavar "MPTCP"
-        -- internal is stronger than --belive, hides from all descriptions
-        <> internal
-        <> Options.Applicative.value mptcpPlot
-        <> help ""
-      )
+      -- <*> option auto (
+      --     metavar "MPTCP"
+      --   -- internal is stronger than --belive, hides from all descriptions
+      --   <> internal
+      --   <> Options.Applicative.value mptcpPlot
+      --   <> help ""
+      -- )
 
 -- | A typeclass abstracting the functions we need
 -- to be able to plot against an axis of type a
@@ -143,37 +143,37 @@ instance PlotValue Word32 where
 -- TODO filter according to destination
 
 -- destinations is an array of destination
-cmdPlotTcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
-          FilePath -- ^ temporary file to save plot to
-          -> Handle
-          -> [ConnectionRole]
-          -> FrameFiltered Packet
-          -> Sem m RetCode
-cmdPlotTcpAttribute tempPath _ destinations aFrame = do
+-- cmdPlotTcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
+--           FilePath -- ^ temporary file to save plot to
+--           -> Handle
+--           -> [ConnectionRole]
+--           -> FrameFiltered Packet
+--           -> Sem m RetCode
+-- cmdPlotTcpAttribute tempPath _ destinations aFrame = do
 
--- inCore converts into a producer
-  -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
-  -- embed $ writeCSV "debug.csv" frame2
-  embed $ toFile def tempPath $ do
-      layout_title .= "TCP Sequence number"
-      -- TODO generate for mptcp plot
-      flip mapM_ destinations plotAttr
+-- -- inCore converts into a producer
+--   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
+--   -- embed $ writeCSV "debug.csv" frame2
+--   embed $ toFile def tempPath $ do
+--       layout_title .= "TCP Sequence number"
+--       -- TODO generate for mptcp plot
+--       flip mapM_ destinations plotAttr
 
-  return Continue
-  where
-    -- filter by dest
-    frame2 = addTcpDestinationsToFrame aFrame
-    plotAttr dest =
-        plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
-        where
-          -- frameDest = ffTcpFrame tcpFrame
-          frameDest = frame2
-          -- frameDest = frame2
-          unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) (ffFrame frameDest)
+--   return Continue
+--   where
+--     -- filter by dest
+--     frame2 = addTcpDestinationsToFrame aFrame
+--     plotAttr dest =
+--         plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
+--         where
+--           -- frameDest = ffTcpFrame tcpFrame
+--           frameDest = frame2
+--           -- frameDest = frame2
+--           unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) (ffFrame frameDest)
 
-          seqData :: [Double]
-          seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
-          timeData = toList $ view relTime <$> unidirectionalFrame
+--           seqData :: [Double]
+--           seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
+--           timeData = toList $ view relTime <$> unidirectionalFrame
 
 
 cmdPlotTcpOwd :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>

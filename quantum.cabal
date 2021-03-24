@@ -1,4 +1,4 @@
-cabal-version: 3.0
+cabal-version: 3.4
 name: quantum
 version: 0.0.1
 license: GPL-3.0-only
@@ -158,13 +158,13 @@ library libmptcpanalyzer
 -- monitor new mptcp connections
 executable mptcpanalyzer
     import: shared-properties
-    build-depends: libmptcpanalyzer
+    build-depends: quantum:libmptcpanalyzer
     Other-modules:
         Tshark.TH
         , Tshark.TH2
         , Net.Mptcp.Types
         -- reexport the rest
-        , Frames.Utils
+        , MptcpAnalyzer.Frames.Utils
         , MptcpAnalyzer
         , MptcpAnalyzer.Loader
         , MptcpAnalyzer.Types

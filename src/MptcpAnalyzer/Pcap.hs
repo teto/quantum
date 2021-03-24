@@ -81,6 +81,7 @@ import GHC.Base (Symbol)
 import GHC.TypeLits (KnownSymbol)
 import GHC.List (foldl')
 import qualified Frames.InCore
+import Debug.Trace
 
 
 -- tableTypes is a Template Haskell function, which means that it is executed at compile time. It generates a data type for our CSV, so we have everything under control with our types.
@@ -311,7 +312,7 @@ getTcpFrame = buildConnectionFromTcpStreamId
 
 -- | For now assume the packet is the first syn from client to server
 buildTcpConnectionFromRecord :: Packet -> Connection
-buildTcpConnectionFromRecord r =
+buildTcpConnectionFromRecord r = 
   TcpConnection {
     conTcpClientIp = r ^. ipSource
     , conTcpServerIp = r ^. ipDest
@@ -350,7 +351,7 @@ buildSubflowFromTcpStreamId aframe streamId =
       sf = MptcpSubflow {
         sfConn = sfCon
         -- TODO fix
-        , sfMptcpDest = RoleServer 
+        , sfMptcpDest = RoleServer
         , sfPriority = Nothing
         , sfLocalId = 0
         , sfRemoteId = 0
@@ -358,7 +359,7 @@ buildSubflowFromTcpStreamId aframe streamId =
       }
 
 -- | Sets mptcp role column
--- TODO maybe je devrais juste generer un 
+-- TODO maybe je devrais juste generer un
 addMptcpDest ::
     (
       -- Frames.InCore.RecVec rs,
