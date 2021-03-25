@@ -49,7 +49,7 @@ data MptcpUnidirectionalStats = MptcpUnidirectionalStats {
 -- TODO should be able to update an initial one
 --
 getTcpStats :: FrameFiltered Packet -> ConnectionRole -> TcpUnidirectionalStats
-getTcpStats aframe dest = 
+getTcpStats aframe dest =
   TcpUnidirectionalStats {
     tusThroughput = 0
     , tusStart = minTime

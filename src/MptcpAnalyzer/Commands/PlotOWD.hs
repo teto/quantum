@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module MptcpAnalyzer.Commands.Plot
+module MptcpAnalyzer.Commands.PlotOWD
 where
 
 import MptcpAnalyzer.Types
@@ -10,6 +10,7 @@ import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Loader
 import MptcpAnalyzer.Debug
+import MptcpAnalyzer.Merge
 
 import Prelude hiding (filter, lookup, repeat, log)
 import Options.Applicative
@@ -123,4 +124,58 @@ plotParserOwd mptcpPlot = ArgsPlotOwd <$>
       --   <> Options.Applicative.value mptcpPlot
       --   <> help ""
       -- )
+
+-- called PlotTcpAttribute in mptcpanalyzer
+-- todo pass --filterSyn Args fields
+-- TODO filter according to destination
+
+-- destinations is an array of destination
+-- cmdPlotTcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
+--           FilePath -- ^ temporary file to save plot to
+--           -> Handle
+--           -> [ConnectionRole]
+--           -> FrameFiltered Packet
+--           -> Sem m RetCode
+-- cmdPlotTcpAttribute tempPath _ destinations aFrame = do
+
+-- -- inCore converts into a producer
+--   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
+--   -- embed $ writeCSV "debug.csv" frame2
+--   embed $ toFile def tempPath $ do
+--       layout_title .= "TCP Sequence number"
+--       -- TODO generate for mptcp plot
+--       flip mapM_ destinations plotAttr
+
+--   return Continue
+--   where
+--     -- filter by dest
+--     frame2 = addTcpDestinationsToFrame aFrame
+--     plotAttr dest =
+--         plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
+--         where
+--           -- frameDest = ffTcpFrame tcpFrame
+--           frameDest = frame2
+--           -- frameDest = frame2
+--           unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) (ffFrame frameDest)
+
+--           seqData :: [Double]
+--           seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
+--           timeData = toList $ view relTime <$> unidirectionalFrame
+
+
+cmdPlotTcpOwd :: Members [Log String, P.State MyState, Cache, Embed IO] m =>
+          FilePath -- ^ temporary file to save plot to
+          -> Handle
+          -> [ConnectionRole]
+          -> FrameFiltered Packet
+          -> FrameFiltered Packet
+          -> Sem m RetCode
+cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
+  log $ "plotting OWDs "
+  let mframe = mergeTcpConnectionsFromKnownStreams aFrame1 aFrame2
+  -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
+  embed $ writeCSV "debug.csv" mframe
+  -- so for now we assume an innerJoin (but fix it later)
+
+  return CMD.Continue
 

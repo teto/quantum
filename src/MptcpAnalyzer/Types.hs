@@ -113,6 +113,11 @@ type MbMptcpDack = Maybe Word64
 data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, ShowCSV, Ord)
 
 
+-- declarePrefixedColumn expects prefix as second argument
+-- declarePrefixedColumn :: T.Text -> T.Text -> Name -> DecsQ
+-- declarePrefixedColumn
+-- Now I want to automate this
+
 -- artificial types
 declareColumn "tcpDest" ''ConnectionRole
 declareColumn "mptcpDest" ''ConnectionRole
@@ -122,6 +127,7 @@ declareColumn "packetHash" ''Int
 declareColumn "frameNumber" ''Word64
 declareColumn "interfaceName" ''Text
 declareColumn "absTime" ''Text
+declarePrefixedColumn "absTime" "sender" ''Text
 declareColumn "relTime" ''Double
 declareColumn "ipSource" ''IP
 declareColumn "ipDest" ''IP

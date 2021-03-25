@@ -178,8 +178,18 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
   -- FrameTcp (ffCon aframe1) 
   mergedFrame
   where
+    -- we want an outerJoin , maybe with a status column like in panda
+    -- outerJoin returns a list of [Rec (Maybe :. ElField) ors]
+    -- mergedFrame = outerJoin @'[PacketHash] ( hframe1) ( hframe2)
     mergedFrame = innerJoin @'[PacketHash] ( hframe1) ( hframe2)
     -- mergedFrame = hframe1
     hframe1 = zipFrames (addHash aframe1) (ffFrame aframe1)
     hframe2 = zipFrames (addHash aframe1) (ffFrame aframe2)
     hframe3 = toFrame [testRec1]
+
+-- TODO we need to reorder from host1 / host2 to client server
+
+
+-- FrameMergedOriented
+-- convert_to_sender_receiver
+convertToSenderReceiver :: FrameMerged ->

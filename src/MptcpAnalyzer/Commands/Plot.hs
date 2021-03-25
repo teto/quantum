@@ -196,6 +196,7 @@ cmdPlotMptcpAttribute tempPath _ destinations aFrame = do
   log $ "show con " ++ show (ffCon aFrame)
   embed $ putStrLn $ showConnection (ffCon aFrame)
   log $ "number of packets" ++ show (frameLength (ffFrame aFrame))
+  -- TODO remove
   embed $ writeCSV "debug.csv" (ffFrame aFrame)
   embed $ writeCSV "dest.csv" (frameDest)
   embed $ toFile def tempPath $ do
