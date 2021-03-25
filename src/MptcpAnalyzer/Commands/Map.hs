@@ -3,7 +3,6 @@ where
 
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
--- import MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands.List as CMD
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
@@ -26,10 +25,10 @@ mapTcpOpts = info (
   ( progDesc "Attempts to map a TCP connection to another one"
   )
 
-mapMpTcpOpts :: ParserInfo CommandArgs
-mapMpTcpOpts = info (
-    (parserMapConnection False)<**> helper)
-  ( progDesc "Attempts to map a TCP connection to another one"
+mapMptcpOpts :: ParserInfo CommandArgs
+mapMptcpOpts = info (
+    (parserMapConnection True)<**> helper)
+  ( progDesc "Maps a MPTCP connection to another one"
   )
 
 parserMapConnection :: Bool -> Parser CommandArgs
@@ -69,7 +68,15 @@ parserMapConnection forMptcp =
 -- |
 -- todo pass an exhaistove flag ?
 cmdMapTcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
-cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _) = do
+cmdMapTcpConnection args@ArgsMapTcpConnections{} = do
+  if argsMapMptcp args then
+    mapTcpConnection args
+  else
+    mapMptcpConnection args
+cmdMapTcpConnection _ = undefined
+
+mapTcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
+mapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _) = do
   log $ "Mapping tcp connections"
   res <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId)
   res2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
@@ -99,10 +106,11 @@ cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _)
     displayScore (con, score) = log $ "Score for connection " ++ showConnection con ++ ": " ++ show score
     displayFailure err = log $ "Couldn't compute score for streamId  " ++ show err
 
-cmdMapTcpConnection _ = error "undefined "
+mapTcpConnection _ = error "undefined "
 
-cmdMapMptcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
-cmdMapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _) = do
+
+mapMptcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
+mapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit True) = do
   log $ "Mapping mptcp connections"
   res <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap1 (StreamId streamId)
   res2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
@@ -132,6 +140,6 @@ cmdMapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit 
     displayScore (con, score) = log $ "Score for connection " ++ showConnection con ++ ": " ++ show score
     displayFailure err = log $ "Couldn't compute score for streamId  " ++ show err
 
-cmdMapMptcpConnection _ = error "undefined "
+mapMptcpConnection _ = error "undefined "
     -- streamId = argsMapTcpStream args
 -- mapTcpConnection :: Connection -> Connection

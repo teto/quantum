@@ -5,7 +5,6 @@ where
 
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
--- import MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands.List as CMD
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types

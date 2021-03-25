@@ -38,9 +38,10 @@ data ArgsPlots =
       plotOwdPcap1 :: FilePath
       , plotOwdPcap2 :: FilePath
       -- try to pattern match on the StreamId
-      , plotStreamId :: Word32
-      , plotDest :: Maybe ConnectionRole
-      -- , plotMptcp :: Bool -- ^ hidden option
+      , plotOwdStreamId1 :: Word32
+      , plotOwdStreamId2 :: Word32
+      , plotOwdDest :: Maybe ConnectionRole
+      -- , plotOwdMptcp :: Bool -- ^ hidden option
     }
     --
     --

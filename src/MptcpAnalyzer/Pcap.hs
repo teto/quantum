@@ -39,6 +39,8 @@ where
 
 import Tshark.TH
 import Tshark.TH2
+import Net.Tcp ( TcpFlag(..))
+import MptcpAnalyzer.Types
 
 import Data.Monoid (First(..))
 import qualified Data.Vector as V
@@ -69,8 +71,7 @@ import qualified Control.Foldl as L
 import Control.Lens
 import Data.Word (Word8, Word16, Word32, Word64)
 import Numeric (readHex)
-import Net.Tcp ( TcpFlag(..))
-import MptcpAnalyzer.Types
+import qualified Data.Foldable as F
 import qualified Pipes.Prelude as P
 import Pipes (cat, Producer, (>->))
 import Data.Vinyl (Rec(..), ElField(..), rapply, xrec, rmapX)
@@ -133,7 +134,7 @@ getTcpStreams ps = L.fold L.nub (view tcpStream <$> ps)
 
 -- | to list
 getMptcpStreams :: SomeFrame -> [StreamId Mptcp]
-getMptcpStreams ps = L.fold L.nub (view mptcpStream <$> ps)
+getMptcpStreams ps = L.fold L.nub $ catMaybes $ F.toList (view mptcpStream <$> ps)
 -- filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
 
 -- |Generate the tshark command to export a pcap into a csv

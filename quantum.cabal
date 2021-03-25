@@ -122,7 +122,6 @@ library libmptcpanalyzer
     Exposed-Modules:
         Tshark.TH
         , Tshark.TH2
-        , MptcpAnalyzer.Frames.Utils
         , Net.Mptcp.Types
         , Net.Tcp.Stats
         -- reexport the rest
@@ -140,14 +139,15 @@ library libmptcpanalyzer
         , MptcpAnalyzer.Plots.Stream
         , MptcpAnalyzer.Plots.Owd
         -- TODO remove les commandes ?
-        , MptcpAnalyzer.Commands
+        -- , MptcpAnalyzer.Commands
         , MptcpAnalyzer.Commands.Definitions
-        , MptcpAnalyzer.Commands.Load
-        , MptcpAnalyzer.Commands.Export
-        , MptcpAnalyzer.Commands.Utils
-        , MptcpAnalyzer.Commands.List
-        , MptcpAnalyzer.Commands.ListMptcp
-        , MptcpAnalyzer.Commands.Plot
+        -- , MptcpAnalyzer.Commands.Load
+        -- , MptcpAnalyzer.Commands.Export
+        -- , MptcpAnalyzer.Commands.Utils
+        -- , MptcpAnalyzer.Commands.List
+        -- , MptcpAnalyzer.Commands.ListMptcp
+        -- , MptcpAnalyzer.Commands.Plot
+        , MptcpAnalyzer.Frames.Utils
         , Columns
         , Connection
     build-depends:
@@ -160,28 +160,29 @@ executable mptcpanalyzer
     import: shared-properties
     build-depends: quantum:libmptcpanalyzer
     Other-modules:
-        Tshark.TH
-        , Tshark.TH2
-        , Net.Mptcp.Types
+        -- Tshark.TH
+        -- , Tshark.TH2
+        -- , Net.Mptcp.Types
         -- reexport the rest
-        , MptcpAnalyzer.Frames.Utils
-        , MptcpAnalyzer
-        , MptcpAnalyzer.Loader
-        , MptcpAnalyzer.Types
-        , MptcpAnalyzer.Plots.Types
-        , MptcpAnalyzer.Debug
-        , MptcpAnalyzer.Pcap
-        , MptcpAnalyzer.Cache
-        , MptcpAnalyzer.Merge
+        -- , MptcpAnalyzer
+        -- , MptcpAnalyzer.Loader
+        -- , MptcpAnalyzer.Types
+        -- , MptcpAnalyzer.Plots.Types
+        -- , MptcpAnalyzer.Debug
+        -- , MptcpAnalyzer.Pcap
+        -- , MptcpAnalyzer.Cache
+        -- , MptcpAnalyzer.Merge
         , MptcpAnalyzer.Commands
         , MptcpAnalyzer.Commands.Definitions
         , MptcpAnalyzer.Commands.Load
         , MptcpAnalyzer.Commands.Export
         , MptcpAnalyzer.Commands.Plot
+        , MptcpAnalyzer.Commands.PlotOWD
         , MptcpAnalyzer.Commands.Map
         , Columns
-        , MptcpAnalyzer.Commands.Utils
-        , MptcpAnalyzer.Commands.List, MptcpAnalyzer.Types, Connection
+        , MptcpAnalyzer.Commands.List
+        , MptcpAnalyzer.Types
+        , Connection
         , MptcpAnalyzer.Commands.ListMptcp
         , MptcpAnalyzer.Commands.Plot
         , MptcpAnalyzer.Plots.Stream

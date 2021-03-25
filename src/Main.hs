@@ -29,15 +29,16 @@ module Main where
 -- import qualified Data.Map         as HM
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Types
--- import qualified MptcpAnalyzer.Commands.Utils as CMD
 import MptcpAnalyzer.Commands
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.List as CLI
 import MptcpAnalyzer.Commands.ListMptcp as CLI
 import MptcpAnalyzer.Commands.Export as CLI
 import MptcpAnalyzer.Commands.Map as CLI
-import MptcpAnalyzer.Commands.Plot as Plots
+import qualified MptcpAnalyzer.Commands.Plot as Plots
+import qualified MptcpAnalyzer.Commands.PlotOWD as Plots
 import MptcpAnalyzer.Plots.Types
+import qualified MptcpAnalyzer.Plots.Owd as Plots
 import qualified MptcpAnalyzer.Commands.Load as CL
 -- import Control.Monad (void)
 
@@ -272,6 +273,7 @@ mainParser = subparser (
     <> command "tcp-summary" CLI.tcpSummaryOpts
     <> command "list-tcp" CLI.listTcpOpts
     <> command "map-tcp" CLI.mapTcpOpts
+    <> command "map-mptcp" CLI.mapMptcpOpts
     <> commandGroup "MPTCP commands"
     <> command "list-mptcp" CLI.listMpTcpOpts
     <> command "export" CLI.parseExportOpts
@@ -331,7 +333,7 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
     (tempPath, handle) <- P.embed $ openTempFile "/tmp" "plot.png"
     _ <- case specificArgs of
       (ArgsPlotTcpAttr pcapFilename streamId attr mbDest mptcp) -> do
-        let destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) mbDest)
+        let destinations = getDests mbDest
         log $ "MPTCP plot" ++ show (plotMptcp specificArgs)
 
         res <- if plotMptcp specificArgs then do
@@ -346,9 +348,20 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
                 Left err -> return $ CMD.Error err
                 Right frame -> Plots.cmdPlotTcpAttribute tempPath handle destinations frame
         return res
-      (ArgsPlotOwd pcap1 pcap2 streamId dest) -> do
+      (ArgsPlotOwd pcap1 pcap2 streamId1 streamId2 dest) -> do
         log $ "owd plot" ++ show (plotMptcp specificArgs)
-        return CMD.Continue
+        -- if plotOwdMptcp specificArgs then do
+        --       eFrame <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcapFilename (StreamId streamId)
+        --       case eFrame of
+        --         Left err -> return $ CMD.Error err
+        --         Right frame -> Plots.cmdPlotMptcpAttribute tempPath handle destinations frame
+        eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId1)
+        eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 (StreamId streamId2)
+        res <- case (eframe1, eframe2) of
+          (Right aframe1, Right aframe2) -> Plots.cmdPlotTcpOwd tempPath handle (getDests dest) aframe1 aframe2
+          (Left err, _) -> return $ CMD.Error err
+          (_, Left err) -> return $ CMD.Error err
+        return res
 
         -- case res of
         --   Left err -> return $ CMD.Error "test"
@@ -375,6 +388,9 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
 
     else
       return Continue
+    where
+      getDests mbDest =          fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) mbDest)
+
 runPlotCommand _ = error "Should not happen, file a bug report"
 
 

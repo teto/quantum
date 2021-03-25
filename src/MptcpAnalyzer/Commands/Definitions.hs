@@ -1,6 +1,5 @@
 module MptcpAnalyzer.Commands.Definitions
 where
-import MptcpAnalyzer.Commands.Utils ()
 import MptcpAnalyzer.Types ()
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
@@ -30,7 +29,7 @@ data CommandArgs = ArgsLoadCsv {
       , argsMapStream :: Word32
       , argsMapVerbose :: Bool
       , argsMapLimit :: Int -- ^Number of comparisons to show
-      , argsMptcp :: Bool -- ^Wether it's an MPTCP
+      , argsMapMptcp :: Bool -- ^Wether it's an MPTCP
     }
     | ArgsListSubflows {
       _listSubflowsDetailed :: Bool

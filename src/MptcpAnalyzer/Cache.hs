@@ -33,6 +33,16 @@ data CacheConfig = CacheConfig {
 -- type CachePlaceHolder = Int
 type CachePlaceHolder = SomeFrame
 
+-- TODO add a cacheConfig ?
+-- TODO this should be an effect
+data Cache m a where
+    -- should maybe be a filepath
+    PutCache :: CacheId -> CachePlaceHolder -> Cache m Bool
+    GetCache :: CacheId -> Cache m (Either String CachePlaceHolder)
+    IsValid :: CacheId -> Cache m Bool
+
+makeSem ''Cache
+
 filenameFromCacheId :: CacheId -> FilePath
 filenameFromCacheId cid =
     cachePrefix cid ++ intercalate "_" basenames ++ myHash ++ cacheSuffix cid
@@ -46,15 +56,6 @@ filenameFromCacheId cid =
 getFullPath :: CacheConfig -> CacheId -> FilePath
 getFullPath config cid = cacheFolder config ++ "/" ++ filenameFromCacheId cid
 
--- TODO add a cacheConfig ?
--- TODO this should be an effect
-data Cache m a where
-    -- should maybe be a filepath
-    PutCache :: CacheId -> CachePlaceHolder -> Cache m Bool
-    GetCache :: CacheId -> Cache m (Either String CachePlaceHolder)
-    IsValid :: CacheId -> Cache m Bool
-
-makeSem ''Cache
 
 -- TODO pass cache config
 runCache :: Members '[Embed IO] r => CacheConfig -> Sem (Cache : r) a -> Sem r a

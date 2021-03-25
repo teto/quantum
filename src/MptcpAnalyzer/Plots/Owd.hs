@@ -45,81 +45,6 @@ import qualified Data.Set as Set
 import Debug.Trace
 
 
--- data PlotTypes = PlotTcpAttribute {
---     pltAttrField :: Text
---     -- syndrop => drop syn packets
---     -- Drops first 3 packets of the dataframe assuming they are syn
---   }
-
--- data PlotSettings =  PlotSettings {
---   }
--- Plot MPTCP subflow attributes over time
-
--- piPlotParserTcpAttr :: Parser PlotTypes
--- piPlotParserTcpAttr = PlotTcpAttribute <$> argument str
---       ( help "Choose an mptcp attribute to plot"
---       <> metavar "FIELD" )
-
--- piPlotTcpAttr :: ParserInfo CommandArgs
--- piPlotTcpAttr = info (ArgsPlotGeneric <$> plotParserOwd)
---   ( progDesc "Generate a plot"
---   )
-
-
--- |
--- @param 
-piPlotTcpOwd ::  ParserInfo ArgsPlots
-piPlotTcpOwd = info (plotParserOwd False)
-  ( progDesc "Plot TCP attr"
-  )
-
--- |
--- @param 
--- piPlotMptcpAttrParser ::  ParserInfo ArgsPlots
--- piPlotMptcpAttrParser = info (
---   plotParserOwd True
---   )
---   ( progDesc "Plot MPTCP attr"
---   )
-
-
--- type ValidAttributes = [String]
-
--- TODO pass the list of accepted attributes (so that it works for TCP/MPTCP)
-plotParserOwd :: 
-    -- [String]
-    Bool -- ^ for mptcp yes or no
-    -> Parser ArgsPlots
-plotParserOwd mptcpPlot = ArgsPlotOwd <$>
-      -- this ends up being not optional !
-      strArgument (
-          metavar "PCAP1"
-          <> help "File to analyze"
-      )
-      <*> strArgument (
-          metavar "PCAP2"
-          <> help "File to analyze"
-      )
-      -- auto readStreamId
-      <*> argument auto (
-          metavar "STREAM_ID"
-          <> help "Stream Id (tcp.stream)"
-      )
-      -- TODO validate as presented in https://github.com/pcapriotti/optparse-applicative/issues/75
-      --validate :: (a -> Either String a) -> ReadM a -> ReadM a
-      -- TODO ? if nothing prints both directions
-      <*> optional (argument readConnectionRole (
-          metavar "Destination"
-        -- <> Options.Applicative.value RoleServer
-        <> help ""
-      ))
-      -- <*> option auto (
-      --     metavar "MPTCP"
-      --   -- internal is stronger than --belive, hides from all descriptions
-      --   <> internal
-      --   <> Options.Applicative.value mptcpPlot
-      --   <> help ""
-      -- )
 
 -- | A typeclass abstracting the functions we need
 -- to be able to plot against an axis of type a
@@ -176,13 +101,14 @@ instance PlotValue Word32 where
 --           timeData = toList $ view relTime <$> unidirectionalFrame
 
 
-cmdPlotTcpOwd :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
+cmdPlotTcpOwd :: Members [Log String, P.State MyState, Cache, Embed IO] m =>
           FilePath -- ^ temporary file to save plot to
           -> Handle
           -> [ConnectionRole]
           -> FrameFiltered Packet
+          -> FrameFiltered Packet
           -> Sem m RetCode
-cmdPlotTcpOwd tempPath _ destinations aFrame = do
+cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
   log $ "plotting OWDs "
   return CMD.Continue
 
