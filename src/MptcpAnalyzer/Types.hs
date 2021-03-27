@@ -32,6 +32,7 @@ import Data.Word (Word8, Word16, Word32, Word64)
 import Data.WideWord.Word128
 import Data.Text (Text)
 import Frames.ShowCSV
+import Frames.TH
 import Frames.CSV (QuotingMode(..), ParserOptions(..))
 import Frames.ColumnTypeable (Parseable(..), parseIntish, Parsed(..))
 import qualified Data.Text as T
@@ -80,11 +81,12 @@ import GHC.TypeLits (KnownSymbol)
 data TsharkFieldDesc = TsharkFieldDesc {
         fullname :: T.Text
         -- ^Test
-        , colType :: Q Type
-        -- ^How to reference it in plot
+        , colType ::  Name
+        -- , colType :: Q Type
         , label :: Maybe T.Text
-        -- ^Wether to take into account this field when creating a hash of a packet
+        -- ^How to reference it in plot
         , hash :: Bool
+        -- ^Wether to take into account this field when creating a hash of a packet
     }
 
 -- Phantom types
@@ -401,44 +403,44 @@ type FieldDescriptions = [(T.Text, TsharkFieldDesc)]
 -- MUST BE KEPT IN SYNC WITH  Pcap.hs ManColumnsTshark
 -- ORDER INCLUDED !
 -- until we can automate this
+-- get Name
 baseFields :: FieldDescriptions
 baseFields = [
-    ("packetid", TsharkFieldDesc "frame.number" [t|Word64|] Nothing False)
-    , ("ifname", TsharkFieldDesc "frame.interface_name" [t|Text|] Nothing False)
-    , ("abstime", TsharkFieldDesc "frame.time_epoch" [t|Text|] Nothing False)
-    , ("reltime", TsharkFieldDesc "frame.time_relative" [t|Text|] Nothing False)
-    , ("ipsrc", TsharkFieldDesc "_ws.col.ipsrc" [t|IP|] (Just "source ip") False)
-    , ("ipdst", TsharkFieldDesc "_ws.col.ipdst" [t|IP|] (Just "destination ip") False)
-    , ("ipsrcHost", TsharkFieldDesc "ip.src_host" [t|Text|] (Just "source ip hostname") False)
-    , ("ipdstHost", TsharkFieldDesc "ip.dst_host" [t|Text|] (Just "destination ip hostname") False)
-    , ("tcpstream", TsharkFieldDesc "tcp.stream" [t|Word32|] Nothing False)
-    , ("sport", TsharkFieldDesc "tcp.srcport" [t|Word16|] Nothing False)
-    , ("dport", TsharkFieldDesc "tcp.dstport" [t|Word16|] Nothing False)
-    , ("rwnd", TsharkFieldDesc "tcp.window_size" [t|Word32|] Nothing False)
+    ("packetid", TsharkFieldDesc "frame.number" ''Word64 Nothing False)
+    , ("ifname", TsharkFieldDesc "frame.interface_name" ''Text Nothing False)
+    , ("abstime", TsharkFieldDesc "frame.time_epoch" ''Text Nothing False)
+    , ("reltime", TsharkFieldDesc "frame.time_relative" ''Text Nothing False)
+    , ("ipsrc", TsharkFieldDesc "_ws.col.ipsrc" ''IP (Just "source ip") False)
+    , ("ipdst", TsharkFieldDesc "_ws.col.ipdst" ''IP (Just "destination ip") False)
+    , ("ipsrcHost", TsharkFieldDesc "ip.src_host" ''Text (Just "source ip hostname") False)
+    , ("ipdstHost", TsharkFieldDesc "ip.dst_host" ''Text (Just "destination ip hostname") False)
+    , ("tcpstream", TsharkFieldDesc "tcp.stream" ''Word32 Nothing False)
+    , ("sport", TsharkFieldDesc "tcp.srcport" ''Word16 Nothing False)
+    , ("dport", TsharkFieldDesc "tcp.dstport" ''Word16 Nothing False)
+    , ("rwnd", TsharkFieldDesc "tcp.window_size" ''Word32 Nothing False)
     -- -- TODO use Word32 instead
     -- -- TODO read as a list TcpFlagList
-    , ("tcpflags", TsharkFieldDesc "tcp.flags" [t|TcpFlagList|] Nothing False)
-    , ("tcpoptionkind", TsharkFieldDesc "tcp.option_kind" [t|Text|] Nothing False)
-    , ("tcpseq", TsharkFieldDesc "tcp.seq" [t|Word32|] (Just "Sequence number") False)
-    , ("tcplen", TsharkFieldDesc "tcp.len" [t|Word32|] (Just "Acknowledgement") False)
-    , ("tcpack", TsharkFieldDesc "tcp.ack" [t|Word32|] (Just "Acknowledgement") False)
+    , ("tcpflags", TsharkFieldDesc "tcp.flags" ''TcpFlagList Nothing False)
+    , ("tcpoptionkind", TsharkFieldDesc "tcp.option_kind" ''Text Nothing False)
+    , ("tcpseq", TsharkFieldDesc "tcp.seq" ''Word32 (Just "Sequence number") False)
+    , ("tcplen", TsharkFieldDesc "tcp.len" ''Word32 (Just "Acknowledgement") False)
+    , ("tcpack", TsharkFieldDesc "tcp.ack" ''Word32 (Just "Acknowledgement") False)
 
-    , ("tsval", TsharkFieldDesc "tcp.options.timestamp.tsval" [t|Word32|] (Just "Acknowledgement") False)
-    , ("tsecr", TsharkFieldDesc "tcp.options.timestamp.tsecr" [t|Word32|] (Just "Acknowledgement") False)
-    , ("expectedToken", TsharkFieldDesc "mptcp.expected_token" [t|MbMptcpExpectedToken|] (Just "Acknowledgement") False)
+    , ("tsval", TsharkFieldDesc "tcp.options.timestamp.tsval" ''Word32 (Just "Acknowledgement") False)
+    , ("tsecr", TsharkFieldDesc "tcp.options.timestamp.tsecr" ''Word32 (Just "Acknowledgement") False)
+    , ("expectedToken", TsharkFieldDesc "mptcp.expected_token" ''MbMptcpExpectedToken (Just "Acknowledgement") False)
 
-    , ("mptcpStream", TsharkFieldDesc "mptcp.stream" [t|MbMptcpStream|] Nothing False)
-    , ("mptcpSendKey", TsharkFieldDesc "tcp.options.mptcp.sendkey" [t|Word64|] Nothing False)
-    , ("mptcpRecvKey", TsharkFieldDesc "tcp.options.mptcp.recvkey" [t|Word64|] Nothing False)
-    , ("mptcpRecvToken", TsharkFieldDesc "tcp.options.mptcp.recvtok" [t|Word64|] Nothing False)
+    , ("mptcpStream", TsharkFieldDesc "mptcp.stream" ''MbMptcpStream Nothing False)
+    , ("mptcpSendKey", TsharkFieldDesc "tcp.options.mptcp.sendkey" ''Word64 Nothing False)
+    , ("mptcpRecvKey", TsharkFieldDesc "tcp.options.mptcp.recvkey" ''Word64 Nothing False)
+    , ("mptcpRecvToken", TsharkFieldDesc "tcp.options.mptcp.recvtok" ''Word64 Nothing False)
     -- bool ?
-    , ("mptcpDataFin", TsharkFieldDesc "tcp.options.mptcp.datafin.flag" [t|Word64|] Nothing False)
-    , ("mptcpVersion", TsharkFieldDesc "tcp.options.mptcp.version" [t|Maybe Int|] Nothing False)
-    , ("mptcpDack", TsharkFieldDesc "mptcp.ack" [t|Word64|] Nothing False)
-    , ("mptcpDsn", TsharkFieldDesc "mptcp.dsn" [t|Word64|] Nothing False)
+    , ("mptcpDataFin", TsharkFieldDesc "tcp.options.mptcp.datafin.flag" ''Word64 Nothing False)
+    , ("mptcpVersion", TsharkFieldDesc "tcp.options.mptcp.version" ''MbMptcpVersion Nothing False)
+    , ("mptcpDack", TsharkFieldDesc "mptcp.ack" ''Word64 Nothing False)
+    , ("mptcpDsn", TsharkFieldDesc "mptcp.dsn" ''Word64 Nothing False)
 
     ]
-
 
 -- Used to parse tokens
 instance (Read a, Typeable a, Frames.ColumnTypeable.Parseable a) => Frames.ColumnTypeable.Parseable (Maybe a) where
@@ -548,12 +550,12 @@ type instance VectorFor MbMptcpStream = V.Vector
 type instance VectorFor ConnectionRole = V.Vector
 -- type instance VectorFor MbTcpStream = V.Vector
 
-getHeaders :: [(T.Text, TsharkFieldDesc)] -> [(T.Text, Q Type)]
-getHeaders = map (\(name, x) -> (name, colType x))
+-- getHeaders :: [(T.Text, TsharkFieldDesc)] -> [(T.Text, Q Type)]
+-- getHeaders = map (\(name, x) -> (name, colType x))
 
-headersFromFields :: [(T.Text, TsharkFieldDesc)] -> Q [(T.Text, Q Type)]
-headersFromFields fields = do
-  pure (getHeaders fields)
+-- headersFromFields :: [(T.Text, TsharkFieldDesc)] -> Q [(T.Text, Q Type)]
+-- headersFromFields fields = do
+--   pure (getHeaders fields)
 
 
 tshow :: Show a => a -> TS.Text

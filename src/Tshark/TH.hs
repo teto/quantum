@@ -13,7 +13,8 @@ import Data.Word (Word16, Word32, Word64)
 -- import Language.Haskell.TH.Syntax
 import Data.Vinyl ()
 -- sequenceQ
-import Language.Haskell.TH.Syntax (sequenceQ)
+-- sequenceQ
+import Language.Haskell.TH.Syntax (sequenceQ, Q)
 -- for ( (:->)())
 import Frames.Col ()
 -- ((:->))
@@ -58,9 +59,16 @@ import MptcpAnalyzer.Types
 --             "TCP timestamp tsecr" True
 --     ]
 
+declareColumns :: FieldDescriptions -> DecsQ
+declareColumns fields = do
+  foldl toto ([] ) fields
+  where
+    -- acc ++
+    toto acc (name, field) =  (declareColumn  (fullname field) (colType field))
+
 -- "user id" :-> Int
-getTypes :: [(T.Text, TsharkFieldDesc)] -> [Q Type]
-getTypes = map (\(_, x) -> colType x)
+-- getTypes :: [(T.Text, TsharkFieldDesc)] -> [Q Type]
+-- getTypes = map (\(_, x) -> colType x)
 
 
 -- headersFromFields :: [(T.Text, TsharkFieldDesc)] -> Q [(T.Text, Q Type)]
