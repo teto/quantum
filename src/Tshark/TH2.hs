@@ -36,8 +36,8 @@ myRow = (RowGen {
 -- getHeaders = map (\(name, x) -> (name, colType x))
 
 -- headersFromFields :: [(T.Text, TsharkFieldDesc)] -> Q [(T.Text, Q Type)]
-myHeaders :: [(Text, Q Type)]
-myHeaders = getHeaders baseFields
+-- myHeaders :: [(Text, Q Type)]
+-- myHeaders = getHeaders baseFields
 -- myHeaders = headersFromFields baseFields
 -- headersFromFields :: [(T.Text, TsharkFieldDesc)] -> Q [(T.Text, Q Type)]
 -- headersFromFields fields = do

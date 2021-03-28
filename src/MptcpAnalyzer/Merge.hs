@@ -192,4 +192,4 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
 
 -- FrameMergedOriented
 -- convert_to_sender_receiver
-convertToSenderReceiver :: FrameMerged ->
+-- convertToSenderReceiver :: FrameMerged ->

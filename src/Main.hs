@@ -153,8 +153,8 @@ plotinfoParserGeneric = info (plotParserGeneric)
 plotParserSpecific :: Parser ArgsPlots
 plotParserSpecific =
   subparser (
-    command "tcp" (piPlotTcpAttrParser)
-    <> command "mptcp" (piPlotMptcpAttrParser)
+    command "tcp" (Plots.piPlotTcpAttrParser)
+    <> command "mptcp" (Plots.piPlotMptcpAttrParser)
    )
 
     -- <*> commandGroup "Loader commands"

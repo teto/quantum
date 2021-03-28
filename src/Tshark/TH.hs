@@ -24,6 +24,7 @@ import Frames.TH hiding (tablePrefix, rowTypeName)
 import Frames.Utils
 import Data.Proxy (Proxy(..))
 import MptcpAnalyzer.Types
+import Control.Monad (foldM)
 
 -- for symbol
 -- import GHC.Types
@@ -61,7 +62,7 @@ import MptcpAnalyzer.Types
 
 declareColumns :: FieldDescriptions -> DecsQ
 declareColumns fields = do
-  foldl toto ([] ) fields
+  foldM toto [] fields
   where
     -- acc ++
     toto acc (name, field) =  (declareColumn  (fullname field) (colType field))
@@ -125,17 +126,16 @@ mkColDecs colNm colTy = do
 -- type CommonColumns = [Bool, Int, Double, T.Text]
 -- rowGen :: FilePath -> RowGen CommonColumns
 
-myColumnUniverse :: String -> FieldDescriptions -> Q [Dec]
-myColumnUniverse rowTypeName fields = do
-    let colTys = map (\(_name, x) -> colType x) fields
-    colTypes <- tySynD (mkName rowTypeName) [] (promotedTypeList colTys)
-
-    -- colTypes <- sequenceQ colTys
-    -- f <- sequenceA (colTypes)
-    return [colTypes]
-    -- return $ tySynD colTys
-    -- where
-    --   colTypes :: Q Type
+-- myColumnUniverse :: String -> FieldDescriptions -> Q [Dec]
+-- myColumnUniverse rowTypeName fields = do
+--     let colTys = map (\(_name, x) -> colType x) fields
+--     colTypes <- tySynD (mkName rowTypeName) [] (promotedTypeList colTys)
+--     -- colTypes <- sequenceQ colTys
+--     -- f <- sequenceA (colTypes)
+--     return [colTypes]
+--     -- return $ tySynD colTys
+--     -- where
+--     --   colTypes :: Q Type
 
 
 promotedTypeList :: [Q Type] -> Q Type
