@@ -4,8 +4,12 @@
 module Tshark.TH
 where
 
+import Tshark.Fields
+import MptcpAnalyzer.Types
+
 import qualified Data.Text as T
 import Language.Haskell.TH
+import Language.Haskell.TH.Syntax (Q)
 import GHC.TypeLits
 import Net.IP
 import Control.Arrow (second)
@@ -23,7 +27,6 @@ import Frames.TH hiding (tablePrefix, rowTypeName)
 -- import Frames
 import Frames.Utils
 import Data.Proxy (Proxy(..))
-import MptcpAnalyzer.Types
 import Control.Monad (foldM)
 
 -- for symbol
@@ -62,10 +65,12 @@ import Control.Monad (foldM)
 
 declareColumns :: FieldDescriptions -> DecsQ
 declareColumns fields = do
-  foldM toto [] fields
+  foldM toto ([]) fields
   where
     -- acc ++
-    toto acc (name, field) =  (declareColumn  (fullname field) (colType field))
+    toto acc (name, field) = do
+      t <- declareColumn name (colType field)
+      return $ acc ++ t
 
 -- "user id" :-> Int
 -- getTypes :: [(T.Text, TsharkFieldDesc)] -> [Q Type]

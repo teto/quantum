@@ -3,6 +3,7 @@ where
 import MptcpAnalyzer.Types ()
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
+import MptcpAnalyzer.Stream
 import MptcpAnalyzer.Plots.Types
 
 import Data.Word (Word32)

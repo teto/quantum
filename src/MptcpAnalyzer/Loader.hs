@@ -3,6 +3,7 @@ where
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Pcap
+import MptcpAnalyzer.Stream
 
 import Prelude hiding (log)
 import Control.Monad.Trans (liftIO)

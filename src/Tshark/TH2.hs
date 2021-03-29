@@ -1,12 +1,13 @@
 module Tshark.TH2
 where
-import Tshark.TH
+import Tshark.Fields
 import Language.Haskell.TH
 import Frames.TH
 import Frames.CSV
 import Data.Text hiding (map)
 import Data.Proxy (Proxy(..))
 import MptcpAnalyzer.Types
+import Tshark.TH
 
 -- myColumnUniverse :: FieldDescriptions -> Q Type
 -- myColumnUniverse fields = do
@@ -31,6 +32,8 @@ myRow = (RowGen {
     , columnUniverse = Proxy
     , lineReader =  produceTokens ""
     })
+
+declareColumns baseFields
 
 -- getHeaders :: [(T.Text, TsharkFieldDesc)] -> [(T.Text, Q Type)]
 -- getHeaders = map (\(name, x) -> (name, colType x))

@@ -8,6 +8,7 @@ import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Loader
 import MptcpAnalyzer.Merge
+import MptcpAnalyzer.Stream
 
 import Prelude hiding (log)
 import Options.Applicative

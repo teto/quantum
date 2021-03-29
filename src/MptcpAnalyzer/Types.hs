@@ -13,7 +13,8 @@ module MptcpAnalyzer.Types
 where
 
 -- Inspired by Frames/demo/missingData
-import Frames
+import MptcpAnalyzer.Stream
+import Tshark.Fields
 import Net.Tcp (TcpFlag(..))
 import Net.Bitset (fromBitMask, toBitMask)
 import Net.IP
@@ -31,6 +32,7 @@ import qualified Data.Vinyl as V
 import Data.Word (Word8, Word16, Word32, Word64)
 import Data.WideWord.Word128
 import Data.Text (Text)
+import Frames
 import Frames.ShowCSV
 import Frames.TH
 import Frames.CSV (QuotingMode(..), ParserOptions(..))
@@ -78,38 +80,6 @@ import GHC.TypeLits (KnownSymbol)
 -- } deriving (Show, Generic, Ord)
 
 
-data TsharkFieldDesc = TsharkFieldDesc {
-        fullname :: T.Text
-        -- ^Test
-        , colType ::  Name
-        -- , colType :: Q Type
-        , label :: Maybe T.Text
-        -- ^How to reference it in plot
-        , hash :: Bool
-        -- ^Wether to take into account this field when creating a hash of a packet
-    }
-
--- Phantom types
-data Mptcp
-data Tcp
--- data Protocol = Tcp | Mptcp
-
-type TcpFlagList = [TcpFlag]
-
--- TODO use Word instead
-newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord ) deriving Hashable via Word32
-type StreamIdTcp = StreamId Tcp
-type StreamIdMptcp = StreamId Mptcp
-
--- type MbMptcpStream = Maybe Word32
-type MbMptcpStream = Maybe (StreamId Mptcp)
-type MbMptcpSendKey = Maybe Word64
-type MbMptcpVersion = Maybe Int
-type MbMptcpExpectedToken = Maybe Word32
-
-type MbMptcpDsn = Maybe Word64
-type MbMptcpDack = Maybe Word64
-
 
 -- |Filters a connection depending on its role
 data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, ShowCSV, Ord)
@@ -120,34 +90,36 @@ data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, Sh
 -- declarePrefixedColumn
 -- Now I want to automate this
 
--- artificial types
+-- declareColumns baseFields
+
+-- artificial types, i.e. created by the app and not tshark
 declareColumn "tcpDest" ''ConnectionRole
 declareColumn "mptcpDest" ''ConnectionRole
 declareColumn "packetHash" ''Int
 
 -- wireshark types
-declareColumn "frameNumber" ''Word64
-declareColumn "interfaceName" ''Text
-declareColumn "absTime" ''Text
-declarePrefixedColumn "absTime" "sender" ''Text
-declareColumn "relTime" ''Double
-declareColumn "ipSource" ''IP
-declareColumn "ipDest" ''IP
--- TODO use tcpStream instead
-declareColumn "tcpStream" ''StreamIdTcp
-declareColumn "tcpSrcPort" ''Word16
-declareColumn "tcpDestPort" ''Word16
-declareColumn "tcpFlags" ''TcpFlagList
-declareColumn "tcpOptionKinds" ''Text
-declareColumn "tcpSeq" ''Word32
-declareColumn "tcpLen" ''Word16
-declareColumn "tcpAck" ''Word32
-declareColumn "mptcpStream" ''MbMptcpStream
-declareColumn "mptcpVersion" ''MbMptcpVersion
-declareColumn "mptcpSendKey" ''MbMptcpSendKey
-declareColumn "mptcpExpectedToken" ''MbMptcpExpectedToken
-declareColumn "mptcpDsn" ''MbMptcpDsn
-declareColumn "mptcpDack" ''MbMptcpDack
+-- declareColumn "frameNumber" ''Word64
+-- declareColumn "interfaceName" ''Text
+-- declareColumn "absTime" ''Text
+-- declarePrefixedColumn "absTime" "sender" ''Text
+-- declareColumn "relTime" ''Double
+-- declareColumn "ipSource" ''IP
+-- declareColumn "ipDest" ''IP
+-- -- TODO use tcpStream instead
+-- declareColumn "tcpStream" ''StreamIdTcp
+-- declareColumn "tcpSrcPort" ''Word16
+-- declareColumn "tcpDestPort" ''Word16
+-- declareColumn "tcpFlags" ''TcpFlagList
+-- declareColumn "tcpOptionKinds" ''Text
+-- declareColumn "tcpSeq" ''Word32
+-- declareColumn "tcpLen" ''Word16
+-- declareColumn "tcpAck" ''Word32
+-- declareColumn "mptcpStream" ''MbMptcpStream
+-- declareColumn "mptcpVersion" ''MbMptcpVersion
+-- declareColumn "mptcpSendKey" ''MbMptcpSendKey
+-- declareColumn "mptcpExpectedToken" ''MbMptcpExpectedToken
+-- declareColumn "mptcpDsn" ''MbMptcpDsn
+-- declareColumn "mptcpDack" ''MbMptcpDack
 
 -- tableTypesExplicitFull myRow
 --   rowGen { rowTypeName = "Packet"
@@ -187,9 +159,7 @@ type ManColumnsTshark = '[
     , "tcpLen"  :-> Word16
     , "tcpAck"  :-> Word32
 
-    -- -- timetsamp Val
     , "tsVal"  :-> Maybe Word32
-    -- -- timestamp echo-reply
     , "tsEcr"  :-> Maybe Word32
 
     , "mptcpExpectedToken"  :-> MbMptcpExpectedToken
@@ -258,13 +228,6 @@ type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': ManColumnsTshark)
 -- comparable to Storable
 deriving instance  (KnownSymbol s, Hashable a) => Hashable(ElField '(s, a))
 deriving instance Hashable( TcpFlag)
--- deriving instance Hashable(Rec f '[])
--- deriving instance (Generic(Rec f rs))
--- deriving instance (Generic(Rec f rs), Hashable (f r), Hashable (Rec f rs)) => Hashable (Rec f (r ': rs))
--- instance (Hashable (rs)) => Hashable (Rec f rs ) where
-  -- hashWithSalt
--- deriving instance Hashable (a) => Hashable(Rec f a)
--- deriving instance (Hashable (f r), Generic (Rec f rs), Hashable (Rec f rs)) => Hashable(Rec f (r ': rs))
 
 -- | This is only here so we can use hash maps for the grouping step.  This should properly be in Vinyl itself.
 instance Hashable (F.Record '[]) where
@@ -277,17 +240,6 @@ instance (V.KnownField t, Hashable (V.Snd t), Hashable (F.Record rs), rs F.⊆ (
   hashWithSalt s r = s `Hash.hashWithSalt` (F.rgetField @t r) `Hash.hashWithSalt` (F.rcast @rs r)
   {-# INLINABLE hashWithSalt #-}
 
--- deriving instance  (Hashable (Rec '[]))
--- deriving instance  forall s a . (Hashable Rec '[]) => Hashable(ElField '[ '(s, a)])
-
--- generalisation existe
--- Generic (Rec f rs) => Generic (Rec f (r ': rs))
--- deriving instance  (t ~ ElField '(s,a),  Hashable a) => Hashable(Rec t)
--- No instance for (Hashable (Rec ElField HashablePart))
--- deriving instance (KnownSymbol s, Hashable a) => Hashable( ElField '(s, a))
-
--- deriving instance Hashable (Record HashablePart)
-
 deriving instance Hashable IP
 
 -- IPv6 is Word128
@@ -295,11 +247,6 @@ deriving instance Generic IPv6
 
 deriving instance Hashable Word128
 deriving instance Hashable IPv6
-
---   -- hashWithSalt :: Int -> a -> Int
---   hashWithSalt salt rs = hashWithSalt
-      -- hashWithSalt
--- type SomeSomeFrame = Frame Packet
 
 -- shadow param
 -- @a@ be Tcp / Mptcp
@@ -397,50 +344,6 @@ makeLenses ''MyState
 
 type OptionList = T.Text
 
-    -- deriving (Read, Generic)
-type FieldDescriptions = [(T.Text, TsharkFieldDesc)]
-
--- MUST BE KEPT IN SYNC WITH  Pcap.hs ManColumnsTshark
--- ORDER INCLUDED !
--- until we can automate this
--- get Name
-baseFields :: FieldDescriptions
-baseFields = [
-    ("packetid", TsharkFieldDesc "frame.number" ''Word64 Nothing False)
-    , ("ifname", TsharkFieldDesc "frame.interface_name" ''Text Nothing False)
-    , ("abstime", TsharkFieldDesc "frame.time_epoch" ''Text Nothing False)
-    , ("reltime", TsharkFieldDesc "frame.time_relative" ''Text Nothing False)
-    , ("ipsrc", TsharkFieldDesc "_ws.col.ipsrc" ''IP (Just "source ip") False)
-    , ("ipdst", TsharkFieldDesc "_ws.col.ipdst" ''IP (Just "destination ip") False)
-    , ("ipsrcHost", TsharkFieldDesc "ip.src_host" ''Text (Just "source ip hostname") False)
-    , ("ipdstHost", TsharkFieldDesc "ip.dst_host" ''Text (Just "destination ip hostname") False)
-    , ("tcpstream", TsharkFieldDesc "tcp.stream" ''Word32 Nothing False)
-    , ("sport", TsharkFieldDesc "tcp.srcport" ''Word16 Nothing False)
-    , ("dport", TsharkFieldDesc "tcp.dstport" ''Word16 Nothing False)
-    , ("rwnd", TsharkFieldDesc "tcp.window_size" ''Word32 Nothing False)
-    -- -- TODO use Word32 instead
-    -- -- TODO read as a list TcpFlagList
-    , ("tcpflags", TsharkFieldDesc "tcp.flags" ''TcpFlagList Nothing False)
-    , ("tcpoptionkind", TsharkFieldDesc "tcp.option_kind" ''Text Nothing False)
-    , ("tcpseq", TsharkFieldDesc "tcp.seq" ''Word32 (Just "Sequence number") False)
-    , ("tcplen", TsharkFieldDesc "tcp.len" ''Word32 (Just "Acknowledgement") False)
-    , ("tcpack", TsharkFieldDesc "tcp.ack" ''Word32 (Just "Acknowledgement") False)
-
-    , ("tsval", TsharkFieldDesc "tcp.options.timestamp.tsval" ''Word32 (Just "Acknowledgement") False)
-    , ("tsecr", TsharkFieldDesc "tcp.options.timestamp.tsecr" ''Word32 (Just "Acknowledgement") False)
-    , ("expectedToken", TsharkFieldDesc "mptcp.expected_token" ''MbMptcpExpectedToken (Just "Acknowledgement") False)
-
-    , ("mptcpStream", TsharkFieldDesc "mptcp.stream" ''MbMptcpStream Nothing False)
-    , ("mptcpSendKey", TsharkFieldDesc "tcp.options.mptcp.sendkey" ''Word64 Nothing False)
-    , ("mptcpRecvKey", TsharkFieldDesc "tcp.options.mptcp.recvkey" ''Word64 Nothing False)
-    , ("mptcpRecvToken", TsharkFieldDesc "tcp.options.mptcp.recvtok" ''Word64 Nothing False)
-    -- bool ?
-    , ("mptcpDataFin", TsharkFieldDesc "tcp.options.mptcp.datafin.flag" ''Word64 Nothing False)
-    , ("mptcpVersion", TsharkFieldDesc "tcp.options.mptcp.version" ''MbMptcpVersion Nothing False)
-    , ("mptcpDack", TsharkFieldDesc "mptcp.ack" ''Word64 Nothing False)
-    , ("mptcpDsn", TsharkFieldDesc "mptcp.dsn" ''Word64 Nothing False)
-
-    ]
 
 -- Used to parse tokens
 instance (Read a, Typeable a, Frames.ColumnTypeable.Parseable a) => Frames.ColumnTypeable.Parseable (Maybe a) where

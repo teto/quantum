@@ -122,10 +122,12 @@ library libmptcpanalyzer
     Exposed-Modules:
         Tshark.TH
         , Tshark.TH2
+        , Tshark.Fields
         , Net.Mptcp.Types
         , Net.Tcp.Stats
         -- reexport the rest
         , MptcpAnalyzer
+        , MptcpAnalyzer.Stream
         , MptcpAnalyzer.Loader
         , MptcpAnalyzer.Frame
         , MptcpAnalyzer.Types
@@ -188,7 +190,7 @@ executable mptcpanalyzer
         , MptcpAnalyzer.Plots.Stream
     -- for now reference mptcp-pm but later move part to a core
     -- build-depends: mptcp-pm >= 0.0.3
-    main-is: Main.hs
+    main-is: app/Main.hs
     hs-source-dirs: src/
     ghc-options: -threaded -fprof-auto -rtsopts
 

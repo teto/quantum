@@ -4,6 +4,8 @@ where
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Frame
+import MptcpAnalyzer.Stream
+import Tshark.TH2
 
 import qualified Control.Foldl as L
 import Control.Lens hiding (argument)

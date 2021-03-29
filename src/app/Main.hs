@@ -29,6 +29,7 @@ module Main where
 -- import qualified Data.Map         as HM
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Types
+import MptcpAnalyzer.Stream
 import MptcpAnalyzer.Commands
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.List as CLI
