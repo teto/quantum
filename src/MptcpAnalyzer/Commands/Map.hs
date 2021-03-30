@@ -22,7 +22,7 @@ import Data.Either (rights, lefts)
 
 mapTcpOpts :: ParserInfo CommandArgs
 mapTcpOpts = info (
-    (parserMapConnection False)<**> helper)
+    (parserMapConnection False) <**> helper)
   ( progDesc "Attempts to map a TCP connection to another one"
   )
 
@@ -67,13 +67,13 @@ parserMapConnection forMptcp =
       )
 
 -- |
--- todo pass an exhaistove flag ?
+-- todo this should be better handled
 cmdMapTcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
 cmdMapTcpConnection args@ArgsMapTcpConnections{} = do
   if argsMapMptcp args then
-    mapTcpConnection args
-  else
     mapMptcpConnection args
+  else
+    mapTcpConnection args
 cmdMapTcpConnection _ = undefined
 
 mapTcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode

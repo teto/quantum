@@ -12,10 +12,13 @@ import Data.Word (Word32)
 
 -- | Registered commands
 -- TODO make it possible to add some from a plugin
-data CommandArgs = ArgsLoadCsv {
+data CommandArgs = 
+    ArgsLoadCsv {
       _loadCsvPath :: FilePath
     }
-    | ArgsLoadPcap {
+    | ArgsQuit {
+    } |
+    ArgsLoadPcap {
         loadPcapPath :: FilePath
     }
     | ArgsListTcpConnections {

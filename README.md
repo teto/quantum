@@ -15,6 +15,12 @@ Install zsh
 # How to use
 `cabal run mptcpanalyzer`
 `plot --display tcp examples/client_2_filtered.pcapng 0 tcpseq`
+```
+mptcpanalyzer "map-tcp examples/client_2_filtered.pcapng examples/server_2_filtered.pcapng 0"
+mptcpanalyzer "load-pcap examples/client_2_filtered.pcapng"
+```
+
+I use [vd](visidata).
 
 # How to develop
 
@@ -33,13 +39,17 @@ $ cabal build
 
 
 
-# How to use ?
+# How to contribute ?
 
-Integration with wireshark is not there yet, csv file has to be regenerated
-manually. I use [vd](visidata).
+##  Run the tests
+
+make test-integration
+
+
 
 
 
 https://www.wireshark.org/docs/dfref/m/mptcp.html
 visidata: https://www.visidata.org/
 diagrams: https://hackage.haskell.org/package/diagrams
+shelltestrunner: https://github.com/simonmichael/shelltestrunner

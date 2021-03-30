@@ -156,6 +156,7 @@ plotParserSpecific =
   subparser (
     command "tcp" (Plots.piPlotTcpAttrParser)
     <> command "mptcp" (Plots.piPlotMptcpAttrParser)
+    <> command "owd" (Plots.piPlotTcpOwd)
    )
 
     -- <*> commandGroup "Loader commands"
@@ -214,11 +215,9 @@ promptSuffix :: String
 promptSuffix = "> "
 
 -- alternatively could modify defaultPrefs
+-- subparserInline + multiSuffix helpShowGlobals
 defaultParserPrefs :: ParserPrefs
-defaultParserPrefs = prefs showHelpOnEmpty
--- {
---     prefShowHelpOnError = True
---     }
+defaultParserPrefs = prefs $ showHelpOnEmpty <> showHelpOnError
 
 main :: IO ()
 main = do
@@ -267,7 +266,9 @@ main = do
 -- one can create groups with <|> subparser
 mainParser :: Parser CommandArgs
 mainParser = subparser (
-    commandGroup "Loader commands"
+    commandGroup "Generic"
+    <> command "quit" quit
+    <> commandGroup "Loader commands"
     <> command "load-csv" CL.loadCsvOpts
     <> command "load-pcap" CL.loadPcapOpts
     <> commandGroup "TCP commands"
@@ -286,6 +287,8 @@ mainParser = subparser (
       -- )
     -- <> command "help" CLI.listMpTcpConnectionsCmd
     )
+    where
+      quit = info (pure ArgsQuit) ( progDesc "Quit mptcpanalyzer")
 
 
 -- |Main parser
@@ -313,7 +316,7 @@ mainParserInfo = info (mainParser <**> helper)
 -- liftIO $ putStrLn doPrintHelp >> 
 
 -- runCommand :: CommandArgs -> CMD.RetCode
-runCommand, runPlotCommand :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
+runCommand, runPlotCommand, cmdQuit :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
 runCommand args@ArgsLoadPcap{} = CL.loadPcap args
 runCommand args@ArgsLoadCsv{} = CL.loadCsv args
 runCommand args@ArgsParserSummary{} = CLI.tcpSummary args
@@ -324,6 +327,9 @@ runCommand args@ArgsListMpTcpConnections{} = CLI.listMpTcpConnectionsCmd args
 runCommand args@ArgsExport{} = CLI.cmdExport args
 runCommand args@ArgsPlotGeneric{} = runPlotCommand args
 runCommand args@ArgsMapTcpConnections{} = CLI.cmdMapTcpConnection args
+runCommand args@ArgsQuit{} = cmdQuit args
+
+cmdQuit _ = return $ CMD.Exit
 
 
 -- |Command specific to plots
@@ -350,7 +356,7 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
                 Right frame -> Plots.cmdPlotTcpAttribute tempPath handle destinations frame
         return res
       (ArgsPlotOwd pcap1 pcap2 streamId1 streamId2 dest) -> do
-        log $ "owd plot" ++ show (plotMptcp specificArgs)
+        log $ "owd plot"
         -- if plotOwdMptcp specificArgs then do
         --       eFrame <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcapFilename (StreamId streamId)
         --       case eFrame of
@@ -397,7 +403,8 @@ runPlotCommand _ = error "Should not happen, file a bug report"
 
 
 -- TODO use genericRunCommand
-runIteration :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r => Maybe String -> Sem r CMD.RetCode
+runIteration :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r
+  => Maybe String -> Sem r CMD.RetCode
 runIteration fullCmd = do
     cmdCode <- case fmap Prelude.words fullCmd of
         Nothing -> do
@@ -416,6 +423,7 @@ runIteration fullCmd = do
             (CompletionInvoked _compl) -> return CMD.Continue
             (Success parsedArgs) -> runCommand parsedArgs
 
+    -- TODO no 
     case cmdCode of
         CMD.Exit -> log "Exiting" >> return CMD.Exit
         CMD.Error msg -> do

@@ -180,7 +180,10 @@ cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
   -- recMaybe
   let mbRecs = map recMaybe mergedRes
   let justRecs = catMaybes mbRecs
+  -- could use showRow as well
   P.embed $ dumpRec $ head justRecs
+  P.embed $ putStrLn $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
+
 
   -- mapM dumpRec mbRecs
   -- let mbRec = recMaybe mergedRes
