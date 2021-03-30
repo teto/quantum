@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module MptcpAnalyzer.Commands.PlotOWD
 where
@@ -27,7 +28,7 @@ import Data.Word (Word8, Word16, Word32, Word64)
 
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Pipes as P
+import qualified Pipes as P hiding (embed)
 import qualified Pipes.Prelude as P
 import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
@@ -37,7 +38,7 @@ import System.Process hiding (runCommand)
 import System.Exit
 -- import Data.Time.LocalTime
 import Data.Foldable (toList)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, catMaybes)
 import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
 import System.Directory (renameFile)
 import System.IO (Handle)
@@ -172,10 +173,25 @@ cmdPlotTcpOwd :: Members [Log String, P.State MyState, Cache, Embed IO] m =>
           -> Sem m RetCode
 cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
   log $ "plotting OWDs "
-  let mframe = mergeTcpConnectionsFromKnownStreams aFrame1 aFrame2
+  -- look at https://hackage.haskell.org/package/vinyl-0.13.0/docs/Data-Vinyl-Functor.html#t::.
+  -- to see how to deal with 
+  -- type (:.) f g = Compose f g
+  let mergedRes = mergeTcpConnectionsFromKnownStreams aFrame1 aFrame2
+  -- recMaybe
+  let mbRecs = map recMaybe mergedRes
+  let justRecs = catMaybes mbRecs
+  P.embed $ dumpRec $ head justRecs
+
+  -- mapM dumpRec mbRecs
+  -- let mbRec = recMaybe mergedRes
+  -- putStrLn mbRec
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
-  embed $ writeCSV "debug.csv" mframe
+  -- embed $ writeCSV "debug.csv" mframe
   -- so for now we assume an innerJoin (but fix it later)
 
   return CMD.Continue
+  where
+    -- Maybe Record
+    -- dumpRec Nothing = putStrLn "nothing"
+    dumpRec x = putStrLn $ show $ x
 
