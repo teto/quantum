@@ -55,6 +55,7 @@ import qualified Data.Text as TS
 import Options.Applicative
 import GHC.Generics
 import GHC.TypeLits (KnownSymbol)
+import MptcpAnalyzer.ArtificalFields
 
 -- An en passant Default class
 -- class Default a where
@@ -81,8 +82,6 @@ import GHC.TypeLits (KnownSymbol)
 
 
 
--- |Filters a connection depending on its role
-data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, ShowCSV, Ord)
 
 
 -- declarePrefixedColumn expects prefix as second argument
@@ -97,29 +96,6 @@ declareColumn "tcpDest" ''ConnectionRole
 declareColumn "mptcpDest" ''ConnectionRole
 declareColumn "packetHash" ''Int
 
--- wireshark types
--- declareColumn "frameNumber" ''Word64
--- declareColumn "interfaceName" ''Text
--- declareColumn "absTime" ''Text
--- declarePrefixedColumn "absTime" "sender" ''Text
--- declareColumn "relTime" ''Double
--- declareColumn "ipSource" ''IP
--- declareColumn "ipDest" ''IP
--- -- TODO use tcpStream instead
--- declareColumn "tcpStream" ''StreamIdTcp
--- declareColumn "tcpSrcPort" ''Word16
--- declareColumn "tcpDestPort" ''Word16
--- declareColumn "tcpFlags" ''TcpFlagList
--- declareColumn "tcpOptionKinds" ''Text
--- declareColumn "tcpSeq" ''Word32
--- declareColumn "tcpLen" ''Word16
--- declareColumn "tcpAck" ''Word32
--- declareColumn "mptcpStream" ''MbMptcpStream
--- declareColumn "mptcpVersion" ''MbMptcpVersion
--- declareColumn "mptcpSendKey" ''MbMptcpSendKey
--- declareColumn "mptcpExpectedToken" ''MbMptcpExpectedToken
--- declareColumn "mptcpDsn" ''MbMptcpDsn
--- declareColumn "mptcpDack" ''MbMptcpDack
 
 -- tableTypesExplicitFull myRow
 --   rowGen { rowTypeName = "Packet"
@@ -188,8 +164,11 @@ type ManColumnsTshark = '[
     -- , "mptcpReinjectedIn" :-> Maybe OptionList
     ]
 
+-- TODO this should be generated
 -- subset of ManColumnsTshark
-type HashablePart = '[ "ipSource" :-> IP , "ipDest" :-> IP
+type HashablePart = '[
+    "ipSource" :-> IP
+    , "ipDest" :-> IP
     , "ipSrcHost" :-> Text
     , "ipDstHost" :-> Text
     -- TODO pass as a StreamIdTcp

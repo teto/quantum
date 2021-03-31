@@ -15,13 +15,13 @@ import Data.Word (Word32)
 data CommandArgs = 
     ArgsLoadCsv {
       _loadCsvPath :: FilePath
-    }
-    | ArgsQuit {
     } |
+    ArgsHelp { } |
+    ArgsQuit { } |
     ArgsLoadPcap {
         loadPcapPath :: FilePath
-    }
-    | ArgsListTcpConnections {
+    } |
+    ArgsListTcpConnections {
       _listTcpDetailed :: Bool
     }
     | ArgsListMpTcpConnections {

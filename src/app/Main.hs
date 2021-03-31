@@ -51,11 +51,13 @@ import qualified Polysemy.State as P
 import qualified Polysemy.Embed as P
 import qualified Polysemy.Internal as P
 -- import qualified Polysemy.Output as P
--- import qualified Polysemy.Trace as P
+import qualified Polysemy.Trace as P
+import Polysemy.Trace (trace)
 import System.FilePath
 import System.Directory
 import Prelude hiding (concat, init, log)
 import Options.Applicative
+import Options.Applicative.Help (parserHelp)
 import Colog.Core.IO (logStringStdout)
 import Colog.Polysemy (Log, log, runLogAction)
 import Graphics.Rendering.Chart.Easy hiding (argument)
@@ -253,6 +255,7 @@ main = do
   _ <- runInputT haskelineSettings $
           runFinal @(InputT IO)
           $ P.embedToFinal . P.runEmbedded lift
+          $ P.traceToIO
           $ P.runState myState
           $ runCache cacheConfig
           $ runLogAction @IO logStringStdout (inputLoop (extraCommands options))
@@ -267,6 +270,7 @@ main = do
 mainParser :: Parser CommandArgs
 mainParser = subparser (
     commandGroup "Generic"
+    <> command "help" helpParser
     <> command "quit" quit
     <> commandGroup "Loader commands"
     <> command "load-csv" CL.loadCsvOpts
@@ -288,6 +292,7 @@ mainParser = subparser (
     -- <> command "help" CLI.listMpTcpConnectionsCmd
     )
     where
+      helpParser = info (pure ArgsHelp) ( progDesc "Display help")
       quit = info (pure ArgsQuit) ( progDesc "Quit mptcpanalyzer")
 
 
@@ -316,7 +321,7 @@ mainParserInfo = info (mainParser <**> helper)
 -- liftIO $ putStrLn doPrintHelp >> 
 
 -- runCommand :: CommandArgs -> CMD.RetCode
-runCommand, runPlotCommand, cmdQuit :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
+runCommand, runPlotCommand, cmdQuit, cmdHelp :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
 runCommand args@ArgsLoadPcap{} = CL.loadPcap args
 runCommand args@ArgsLoadCsv{} = CL.loadCsv args
 runCommand args@ArgsParserSummary{} = CLI.tcpSummary args
@@ -328,9 +333,16 @@ runCommand args@ArgsExport{} = CLI.cmdExport args
 runCommand args@ArgsPlotGeneric{} = runPlotCommand args
 runCommand args@ArgsMapTcpConnections{} = CLI.cmdMapTcpConnection args
 runCommand args@ArgsQuit{} = cmdQuit args
+runCommand args@ArgsHelp{} = cmdHelp args
 
+-- | Quits the program
 cmdQuit _ = return $ CMD.Exit
 
+-- | Prints the help when requested
+cmdHelp _ = do
+  -- TODO display help
+  log $ show $ parserHelp defaultParserPrefs mainParser
+  return CMD.Continue
 
 -- |Command specific to plots
 -- TODO these should return a plot instead of a generated file so that one can overwrite the title
@@ -403,12 +415,12 @@ runPlotCommand _ = error "Should not happen, file a bug report"
 
 
 -- TODO use genericRunCommand
-runIteration :: Members '[Log String, Cache, P.State MyState, P.Embed IO] r
+runIteration :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO] r
   => Maybe String -> Sem r CMD.RetCode
 runIteration fullCmd = do
     cmdCode <- case fmap Prelude.words fullCmd of
         Nothing -> do
-          log "please enter a valid command, see help"
+          trace "please enter a valid command, see help"
           return CMD.Continue
         Just args -> do
           -- TODO parse
@@ -435,14 +447,15 @@ runIteration fullCmd = do
 -- TODO turn it into a library
 -- [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
 -- , P.Embed IO
-inputLoop :: Members '[Log String, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => [String] -> Sem r ()
+inputLoop :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO, P.Final (InputT IO)] r
+    => [String] -> Sem r ()
 -- inputLoop (xs:rest) = pure ()
 inputLoop args =
   go args
   where
-    go :: Members '[Log String, Cache, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => [String] -> Sem r ()
+    go :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => [String] -> Sem r ()
     go (xs:rest) = runIteration (Just xs) >>= \case
-        CMD.Exit -> log "Exiting"
+        CMD.Exit -> trace "Exiting"
         _ -> do
           log $ "Last command failed with message:\n"
           inputLoop rest
