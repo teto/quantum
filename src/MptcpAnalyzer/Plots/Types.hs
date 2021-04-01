@@ -2,6 +2,7 @@ module MptcpAnalyzer.Plots.Types
 where
 
 import MptcpAnalyzer.Types
+import MptcpAnalyzer.ArtificialFields
 import Data.Word (Word32)
 
 data PlotSettings = PlotSettings {

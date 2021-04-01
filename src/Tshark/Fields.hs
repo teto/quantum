@@ -31,8 +31,6 @@ import Frames.ShowCSV
 
 type TcpFlagList = [TcpFlag]
 
--- |Filters a connection depending on its role
-data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, ShowCSV, Ord)
 
 type MbMptcpStream = Maybe (StreamId Mptcp)
 type MbMptcpSendKey = Maybe Word64
@@ -103,9 +101,3 @@ baseFields = [
     ]
 
 
-artificialFields :: FieldDescriptions
-artificialFields = [
-    ("tcpDest", TsharkFieldDesc "" ''ConnectionRole Nothing False)
-    , ("mptcpDest", TsharkFieldDesc "" ''ConnectionRole Nothing False)
-    , ("packetHash", TsharkFieldDesc "" ''ConnectionRole Nothing False)
-  ]

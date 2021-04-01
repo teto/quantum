@@ -171,9 +171,10 @@ testRec1 = (Col 42) :& (Col "bob") :& RNil
 -- :& (col 23) :&  (pure 75.2 )
 
 -- mergeTcpConnectionsFromKnownStreams :: 
---   FrameFiltered Packet -> FrameFiltered Packet
---   -> Frame (Record (PacketHash ': ManColumnsTshark))
-  -- -> Frame (Record '[Packet
+  -- FrameFiltered Packet -> FrameFiltered Packet
+-- --   -> Frame (Record (PacketHash ': ManColumnsTshark))
+  -- -> [ Record (Maybe :. ElField) '[Packet
+
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
   -- FrameTcp (ffCon aframe1) 
   mergedFrame
@@ -192,4 +193,5 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
 
 -- FrameMergedOriented
 -- convert_to_sender_receiver
+-- TODO need to 
 -- convertToSenderReceiver :: FrameMerged ->

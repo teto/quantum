@@ -1,6 +1,7 @@
 module Net.Tcp.Stats
 where
 
+import MptcpAnalyzer.ArtificialFields
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Frame

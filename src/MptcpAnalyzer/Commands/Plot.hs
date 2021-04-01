@@ -3,6 +3,7 @@ module MptcpAnalyzer.Commands.Plot
 where
 
 import MptcpAnalyzer.Types
+import MptcpAnalyzer.ArtificialFields
 import MptcpAnalyzer.Plots.Types
 import MptcpAnalyzer.Commands.Definitions
 import MptcpAnalyzer.Cache

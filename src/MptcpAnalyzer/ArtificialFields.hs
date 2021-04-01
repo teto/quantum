@@ -1,3 +1,7 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies         #-}
 module MptcpAnalyzer.ArtificialFields
 where
 import MptcpAnalyzer.Stream

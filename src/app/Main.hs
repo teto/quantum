@@ -30,6 +30,7 @@ module Main where
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Stream
+import MptcpAnalyzer.ArtificialFields
 import MptcpAnalyzer.Commands
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.List as CLI
@@ -259,7 +260,7 @@ main = do
           $ P.runState myState
           $ runCache cacheConfig
           $ runLogAction @IO logStringStdout (inputLoop (extraCommands options))
-  putStrLn "Thanks for flying with mptcpanalyzer"
+  return ()
 
 
 -- |Global parser: contains every available command
@@ -336,7 +337,7 @@ runCommand args@ArgsQuit{} = cmdQuit args
 runCommand args@ArgsHelp{} = cmdHelp args
 
 -- | Quits the program
-cmdQuit _ = return $ CMD.Exit
+cmdQuit _ = trace "Thanks for flying with mptcpanalyzer" >> return CMD.Exit
 
 -- | Prints the help when requested
 cmdHelp _ = do

@@ -130,6 +130,7 @@ library libmptcpanalyzer
         , Net.Tcp.Stats
         -- reexport the rest
         , MptcpAnalyzer
+        , MptcpAnalyzer.ArtificialFields
         , MptcpAnalyzer.Stream
         , MptcpAnalyzer.Loader
         , MptcpAnalyzer.Frame

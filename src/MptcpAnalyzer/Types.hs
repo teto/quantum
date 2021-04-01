@@ -55,11 +55,7 @@ import qualified Data.Text as TS
 import Options.Applicative
 import GHC.Generics
 import GHC.TypeLits (KnownSymbol)
-import MptcpAnalyzer.ArtificalFields
-
--- An en passant Default class
--- class Default a where
---   def :: a
+import MptcpAnalyzer.ArtificialFields
 
 {- Describe a TCP connection, possibly an Mptcp subflow
   The equality implementation ignores several fields
@@ -81,9 +77,6 @@ import MptcpAnalyzer.ArtificalFields
 -- } deriving (Show, Generic, Ord)
 
 
-
-
-
 -- declarePrefixedColumn expects prefix as second argument
 -- declarePrefixedColumn :: T.Text -> T.Text -> Name -> DecsQ
 -- declarePrefixedColumn
@@ -91,6 +84,7 @@ import MptcpAnalyzer.ArtificalFields
 
 -- declareColumns baseFields
 
+-- todo declare it from ArtificialFields ?
 -- artificial types, i.e. created by the app and not tshark
 declareColumn "tcpDest" ''ConnectionRole
 declareColumn "mptcpDest" ''ConnectionRole

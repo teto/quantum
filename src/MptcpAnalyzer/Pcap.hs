@@ -43,7 +43,7 @@ import Tshark.Fields
 import Net.Tcp ( TcpFlag(..))
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Stream
-
+import MptcpAnalyzer.ArtificialFields
 import Data.Monoid (First(..))
 import qualified Data.Vector as V
 import qualified Data.Text as T

@@ -72,6 +72,29 @@ declareColumns fields = do
       t <- declareColumn name (colType field)
       return $ acc ++ t
 
+-- TODO search frames.TH
+-- Generates a '[ ]
+-- la solution est dans tableTypesText'
+-- genRecordFrom :: String -> FieldDescriptions -> DecsQ
+-- genRecordFrom rowTypeName fields = do
+--   (colTypes, colDecs) <- (second concat . unzip)
+--                         <$> mapM (uncurry mkColDecs) headers
+--   let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
+--       optsName = case rowTypeName of
+--                   [] -> error "Row type name shouldn't be empty"
+--                   h:t -> mkName $ toLower h : t ++ "Parser"
+--   -- let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
+--   return [recTy]
+--   where
+--     -- colTypes = map (\(name, field) -> (name, colType field)) fields
+--     -- TODO headers
+--     headers = 
+
+-- | Generate a 
+-- genHashableRecord :: FieldDescriptions -> DecsQ
+-- genHashableRecord fields = do
+
+
 -- "user id" :-> Int
 -- getTypes :: [(T.Text, TsharkFieldDesc)] -> [Q Type]
 -- getTypes = map (\(_, x) -> colType x)

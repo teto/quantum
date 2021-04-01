@@ -1,6 +1,0 @@
-cradle:
-  cabal:
-    - path: ./src/Main.hs
-      component: "exe:mptcpanalyzer"
-    - path: src/
-      component: "lib:libmptcpanalyzer"

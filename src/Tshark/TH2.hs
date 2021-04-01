@@ -35,6 +35,8 @@ myRow = (RowGen {
 
 declareColumns baseFields
 
+
+
 -- getHeaders :: [(T.Text, TsharkFieldDesc)] -> [(T.Text, Q Type)]
 -- getHeaders = map (\(name, x) -> (name, colType x))
 
