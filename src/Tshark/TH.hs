@@ -5,14 +5,14 @@ module Tshark.TH
 where
 
 import Tshark.Fields
-import MptcpAnalyzer.Types
+-- import MptcpAnalyzer.Types
 
 import qualified Data.Text as T
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax (Q)
 import GHC.TypeLits
 import Net.IP
-import Control.Arrow (second)
+import Control.Arrow (second, first)
 import Data.Word (Word16, Word32, Word64)
 -- import Language.Haskell.TH.Syntax
 import Data.Vinyl ()
@@ -28,6 +28,7 @@ import Frames.TH hiding (tablePrefix, rowTypeName)
 import Frames.Utils
 import Data.Proxy (Proxy(..))
 import Control.Monad (foldM)
+import Data.Char (toLower)
 
 -- for symbol
 -- import GHC.Types
@@ -75,20 +76,33 @@ declareColumns fields = do
 -- TODO search frames.TH
 -- Generates a '[ ]
 -- la solution est dans tableTypesText'
--- genRecordFrom :: String -> FieldDescriptions -> DecsQ
--- genRecordFrom rowTypeName fields = do
---   (colTypes, colDecs) <- (second concat . unzip)
---                         <$> mapM (uncurry mkColDecs) headers
---   let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
---       optsName = case rowTypeName of
---                   [] -> error "Row type name shouldn't be empty"
---                   h:t -> mkName $ toLower h : t ++ "Parser"
---   -- let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
---   return [recTy]
---   where
---     -- colTypes = map (\(name, field) -> (name, colType field)) fields
---     -- TODO headers
---     headers = 
+genRecordFrom :: String -> FieldDescriptions -> DecsQ
+genRecordFrom rowTypeName fields = do
+  (colTypes, colDecs) <- (second concat . unzip)
+                        <$> mapM (uncurry mkColDecs) headers
+  -- let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
+  let recTy = TySynD (mkName rowTypeName) [] (qqDec colTypes)
+  return [recTy]
+  where
+    -- colTypes = map (\(name, field) -> (name, colType field)) fields
+    -- TODO headers
+    -- headers :: [(Text, Type)]
+    headers = zip colNames (repeat (ConT ''T.Text))
+    -- colNames :: [Text]
+    colNames = map fst fields
+    tablePrefix = ""
+    mkColDecs colNm colTy = do
+      let safeName = T.unpack (sanitizeTypeName colNm)
+      mColNm <- lookupTypeName (tablePrefix ++ safeName)
+      case mColNm of
+        Just n -> pure (ConT n, [])
+        Nothing -> colDec (T.pack tablePrefix) rowTypeName colNm (Right colTy)
+
+-- inspired from recDec
+qqDec :: [Type] -> Type
+qqDec = go
+  where go [] = PromotedNilT
+        go (t:cs) = AppT (AppT PromotedConsT t) (go cs)
 
 -- | Generate a 
 -- genHashableRecord :: FieldDescriptions -> DecsQ
@@ -100,30 +114,17 @@ declareColumns fields = do
 -- getTypes = map (\(_, x) -> colType x)
 
 
--- headersFromFields :: [(T.Text, TsharkFieldDesc)] -> Q [(T.Text, Q Type)]
--- headersFromFields fields = do
---   pure (getHeaders fields)
-
-
--- Q Type ?
--- colType
--- colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $(return colTy)|]
--- declareColumns :: [(Text, TsharkFieldDesc)] -> [(Symbol, *)]
--- declareColumns = map (\(name, x) -> name :: Symbol  :-> colType x)
-
--- declarePcapColumn = [t|$(litT . strTyLit $ T.unpack colName) :-> $(return colTy)|]
-
 -- TODO make public in Frames
 -- table
-mkColDecs :: T.Text -> Either (String -> Q [Dec]) Type -> Q (Type, [Dec])
-mkColDecs colNm colTy = do
-  let tablePrefix = ""
-  let rowTypeName = "toto"
-  let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)
-  mColNm <- lookupTypeName safeName
-  case mColNm of
-    Just n -> pure (ConT n, []) -- Column's type was already defined
-    Nothing -> colDec (T.pack tablePrefix) rowTypeName colNm colTy
+-- mkColDecs :: T.Text -> Either (String -> Q [Dec]) Type -> Q (Type, [Dec])
+-- mkColDecs colNm colTy = do
+--   let tablePrefix = ""
+--   let rowTypeName = "toto"
+--   let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)
+--   mColNm <- lookupTypeName safeName
+--   case mColNm of
+--     Just n -> pure (ConT n, []) -- Column's type was already defined
+--     Nothing -> colDec (T.pack tablePrefix) rowTypeName colNm colTy
 
 
 -- | Generate a column type.

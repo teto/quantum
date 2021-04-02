@@ -14,6 +14,8 @@ where
 
 -- Inspired by Frames/demo/missingData
 import MptcpAnalyzer.Stream
+import Tshark.TH
+import Tshark.TH2
 import Tshark.Fields
 import Net.Tcp (TcpFlag(..))
 import Net.Bitset (fromBitMask, toBitMask)
@@ -108,55 +110,59 @@ declareColumn "packetHash" ''Int
 -- type OptionList = [Int]
 
 -- ManColumnsTshark :: [(Symbol, *)]
-type ManColumnsTshark = '[
-    "packetId" :-> Word64
-    , "interfaceName" :-> Text
-    -- Load it as a Float / Time
-    , "absTime" :-> Text
-    , "relTime" :-> Double
-    , "ipSource" :-> IP
-    , "ipDest" :-> IP
-    , "ipSrcHost" :-> Text
-    , "ipDstHost" :-> Text
-    -- TODO pass as a StreamIdTcp
-    , "tcpStream" :-> StreamId Tcp
-    , "tcpSrcPort" :-> Word16
-    , "tcpDestPort" :-> Word16
-    , "rwnd" :-> Word32
-    , "tcpFlags" :-> TcpFlagList
-    , "tcpOptionKinds" :-> Text
-    , "tcpSeq"  :-> Word32
-    , "tcpLen"  :-> Word16
-    , "tcpAck"  :-> Word32
+-- type ManColumnsTshark = '[
+--     "packetId" :-> Word64
+--     , "interfaceName" :-> Text
+--     -- Load it as a Float / Time
+--     , "absTime" :-> Text
+--     , "relTime" :-> Double
+--     , "ipSource" :-> IP
+--     , "ipDest" :-> IP
+--     , "ipSrcHost" :-> Text
+--     , "ipDstHost" :-> Text
+--     -- TODO pass as a StreamIdTcp
+--     , "tcpStream" :-> StreamId Tcp
+--     , "tcpSrcPort" :-> Word16
+--     , "tcpDestPort" :-> Word16
+--     , "rwnd" :-> Word32
+--     , "tcpFlags" :-> TcpFlagList
+--     , "tcpOptionKinds" :-> Text
+--     , "tcpSeq"  :-> Word32
+--     , "tcpLen"  :-> Word16
+--     , "tcpAck"  :-> Word32
 
-    , "tsVal"  :-> Maybe Word32
-    , "tsEcr"  :-> Maybe Word32
+--     , "tsVal"  :-> Maybe Word32
+--     , "tsEcr"  :-> Maybe Word32
 
-    , "mptcpExpectedToken"  :-> MbMptcpExpectedToken
-    , "mptcpStream" :-> MbMptcpStream
-    , "mptcpSendKey" :-> Maybe Word64
-    , "mptcpRecvKey" :-> Maybe Word64
+--     , "mptcpExpectedToken"  :-> MbMptcpExpectedToken
+--     , "mptcpStream" :-> MbMptcpStream
+--     , "mptcpSendKey" :-> Maybe Word64
+--     , "mptcpRecvKey" :-> Maybe Word64
 
-    , "mptcpRecvToken" :-> MbMptcpExpectedToken
-    , "mptcpDataFin" :-> Maybe Bool
-    -- mptcp version for now is 0 or 1
-    -- maybe use a word9 instead
-    , "mptcpVersion" :-> Maybe Int
-    -- TODO check
-    -- , "tcpOptionSubtypes" :-> OptionList
-    -- , "mptcpRawDsn" :-> Word64
-    -- , "mptcpRawDack" :-> Word64
-    -- , "mptcpSSN" :-> Word64
-    -- , "mptcpDssLen" :-> Word32
-    -- , "mptcpAddrId" :-> Maybe Int
-    -- , "mptcpRawDsn" :-> Word64
-    -- relative or abs
-    , "mptcpDack" :-> Maybe Word64
-    , "mptcpDsn" :-> Maybe Word64
-    -- , "mptcpRelatedMappings" :-> Maybe OptionList
-    -- , "mptcpReinjectionOf" :-> Maybe OptionList
-    -- , "mptcpReinjectedIn" :-> Maybe OptionList
-    ]
+--     , "mptcpRecvToken" :-> MbMptcpExpectedToken
+--     , "mptcpDataFin" :-> Maybe Bool
+--     -- mptcp version for now is 0 or 1
+--     -- maybe use a word9 instead
+--     , "mptcpVersion" :-> Maybe Int
+--     -- TODO check
+--     -- , "tcpOptionSubtypes" :-> OptionList
+--     -- , "mptcpRawDsn" :-> Word64
+--     -- , "mptcpRawDack" :-> Word64
+--     -- , "mptcpSSN" :-> Word64
+--     -- , "mptcpDssLen" :-> Word32
+--     -- , "mptcpAddrId" :-> Maybe Int
+--     -- , "mptcpRawDsn" :-> Word64
+--     -- relative or abs
+--     , "mptcpDack" :-> Maybe Word64
+--     , "mptcpDsn" :-> Maybe Word64
+--     -- , "mptcpRelatedMappings" :-> Maybe OptionList
+--     -- , "mptcpReinjectionOf" :-> Maybe OptionList
+--     -- , "mptcpReinjectedIn" :-> Maybe OptionList
+--     ]
+
+-- TODO check it generates  
+-- ManColumnsTshark
+genRecordFrom "ManColumnsTshark" baseFields
 
 -- TODO this should be generated
 -- subset of ManColumnsTshark
@@ -191,9 +197,11 @@ readConnectionRole = eitherReader $ \arg -> case reads arg of
 
 
 -- row / ManRow
+-- Packet
 type Packet = Record ManColumnsTshark
-type PacketWithTcpDest = Record (TcpDest ': ManColumnsTshark)
-type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': ManColumnsTshark)
+-- type Packet = ManColumnsTshark
+-- type PacketWithTcpDest = Record (TcpDest ': ManColumnsTshark)
+-- type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': ManColumnsTshark)
 
 -- https://stackoverflow.com/questions/14020491/is-there-a-way-of-deriving-binary-instances-for-vinyl-record-types-using-derive?rq=1
 -- forall t s a rs. (t ~ '(s,a)

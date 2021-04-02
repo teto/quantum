@@ -24,6 +24,7 @@ let
     pkgs.zlib
     hs.shelltestrunner
   ]);
+
   # my_pkg = (import ./. { inherit compiler; } );
   myHaskellPackages = pkgs.haskell.packages."${compilerName}";
 in

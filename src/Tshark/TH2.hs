@@ -6,7 +6,7 @@ import Frames.TH
 import Frames.CSV
 import Data.Text hiding (map)
 import Data.Proxy (Proxy(..))
-import MptcpAnalyzer.Types
+-- import MptcpAnalyzer.Types
 import Tshark.TH
 
 -- myColumnUniverse :: FieldDescriptions -> Q Type
