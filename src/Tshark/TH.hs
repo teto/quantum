@@ -70,12 +70,13 @@ declareColumns fields = do
   where
     -- acc ++
     toto acc (name, field) = do
-      t <- declareColumn name (colType field)
+      t <- declareColumn name (tfieldColType field)
       return $ acc ++ t
 
 -- TODO search frames.TH
 -- Generates a '[ ]
 -- la solution est dans tableTypesText'
+-- Generate a FieldRec
 genRecordFrom :: String -> FieldDescriptions -> DecsQ
 genRecordFrom rowTypeName fields = do
   (colTypes, colDecs) <- (second concat . unzip)
@@ -97,6 +98,9 @@ genRecordFrom rowTypeName fields = do
       case mColNm of
         Just n -> pure (ConT n, [])
         Nothing -> colDec (T.pack tablePrefix) rowTypeName colNm (Right colTy)
+
+genRecHashable :: String -> FieldDescriptions -> DecsQ
+genRecHashable prefix fields = genRecordFrom prefix (filter (tfieldHashable . snd ) fields)
 
 -- inspired from recDec
 qqDec :: [Type] -> Type

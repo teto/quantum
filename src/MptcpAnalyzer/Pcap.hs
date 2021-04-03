@@ -208,7 +208,7 @@ exportToCsv params pcapPath path tmpFileHandle = do
     return (path, exitCode, err)
     where
       fields :: [T.Text]
-      fields = map (\(_, desc) -> fullname desc) baseFields
+      fields = map (\(_, desc) -> tfieldFullname desc) baseFields
 
       csvSeparator = T.pack [csvDelimiter params]
       fieldHeader :: Text

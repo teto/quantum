@@ -79,11 +79,6 @@ import MptcpAnalyzer.ArtificialFields
 -- } deriving (Show, Generic, Ord)
 
 
--- declarePrefixedColumn expects prefix as second argument
--- declarePrefixedColumn :: T.Text -> T.Text -> Name -> DecsQ
--- declarePrefixedColumn
--- Now I want to automate this
-
 -- declareColumns baseFields
 
 -- todo declare it from ArtificialFields ?
@@ -92,19 +87,6 @@ declareColumn "tcpDest" ''ConnectionRole
 declareColumn "mptcpDest" ''ConnectionRole
 declareColumn "packetHash" ''Int
 
-
--- tableTypesExplicitFull myRow
---   rowGen { rowTypeName = "Packet"
---         , separator = "|"
---         -- TODO I could generate it as well
---         -- , columnNames
---     })
-
--- headersFromFields
--- headersFromFields baseFields
--- $(headersFromFields baseFields)
--- tableTypesExplicitFull [] myRow
--- tableTypesExplicitFull myHeaders myRow
 
 -- myRowGen "ManColumnsTshark" baseFields
 -- type OptionList = [Int]
@@ -163,25 +145,29 @@ declareColumn "packetHash" ''Int
 -- TODO check it generates  
 -- ManColumnsTshark
 genRecordFrom "ManColumnsTshark" baseFields
+genRecHashable "HashablePart" baseFields
+
+-- hashableFields :: FieldDescriptions -> FieldDescriptions
+-- hashableFields = filter (tfieldHashable . snd )
 
 -- TODO this should be generated
 -- subset of ManColumnsTshark
-type HashablePart = '[
-    "ipSource" :-> IP
-    , "ipDest" :-> IP
-    , "ipSrcHost" :-> Text
-    , "ipDstHost" :-> Text
-    -- TODO pass as a StreamIdTcp
-    , "tcpStream" :-> StreamId Tcp
-    , "tcpSrcPort" :-> Word16
-    , "tcpDestPort" :-> Word16
-    , "rwnd" :-> Word32
-    , "tcpFlags" :-> TcpFlagList
-    , "tcpOptionKinds" :-> Text
-    , "tcpSeq"  :-> Word32
-    , "tcpLen"  :-> Word16
-    , "tcpAck"  :-> Word32
-    ]
+-- type HashablePart = '[
+--     "ipSource" :-> IP
+--     , "ipDest" :-> IP
+--     , "ipSrcHost" :-> Text
+--     , "ipDstHost" :-> Text
+--     -- TODO pass as a StreamIdTcp
+--     , "tcpStream" :-> StreamId Tcp
+--     , "tcpSrcPort" :-> Word16
+--     , "tcpDestPort" :-> Word16
+--     , "rwnd" :-> Word32
+--     , "tcpFlags" :-> TcpFlagList
+--     , "tcpOptionKinds" :-> Text
+--     , "tcpSeq"  :-> Word32
+--     , "tcpLen"  :-> Word16
+--     , "tcpAck"  :-> Word32
+--     ]
 
 -- |Can load stream ids from CSV files
 readStreamId :: ReadM (StreamId a)
@@ -200,8 +186,8 @@ readConnectionRole = eitherReader $ \arg -> case reads arg of
 -- Packet
 type Packet = Record ManColumnsTshark
 -- type Packet = ManColumnsTshark
--- type PacketWithTcpDest = Record (TcpDest ': ManColumnsTshark)
--- type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': ManColumnsTshark)
+type PacketWithTcpDest = Record (TcpDest ': ManColumnsTshark)
+type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': ManColumnsTshark)
 
 -- https://stackoverflow.com/questions/14020491/is-there-a-way-of-deriving-binary-instances-for-vinyl-record-types-using-derive?rq=1
 -- forall t s a rs. (t ~ '(s,a)

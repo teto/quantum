@@ -42,13 +42,13 @@ type MbMptcpDack = Maybe Word64
 type MbWord64 = Maybe Word64
 
 data TsharkFieldDesc = TsharkFieldDesc {
-        fullname :: Text
+        tfieldFullname :: Text
         -- ^Test
-        , colType :: Name
+        , tfieldColType :: Name
         -- , colType :: Q Type
-        , label :: Maybe Text
+        , fieldLabel :: Maybe Text
         -- ^How to reference it in plot
-        , hash :: Bool
+        , tfieldHashable :: Bool
         -- ^Wether to take into account this field when creating a hash of a packet
     }
 
@@ -69,8 +69,8 @@ baseFields = [
     , ("relTime", TsharkFieldDesc "frame.time_relative" ''Double Nothing False)
     , ("ipSource", TsharkFieldDesc "_ws.col.ipsrc" ''IP (Just "source ip") False)
     , ("ipDest", TsharkFieldDesc "_ws.col.ipdst" ''IP (Just "destination ip") False)
-    , ("ipsrcHost", TsharkFieldDesc "ip.src_host" ''Text (Just "source ip hostname") False)
-    , ("ipdstHost", TsharkFieldDesc "ip.dst_host" ''Text (Just "destination ip hostname") False)
+    , ("ipSrcHost", TsharkFieldDesc "ip.src_host" ''Text (Just "source ip hostname") False)
+    , ("ipDstHost", TsharkFieldDesc "ip.dst_host" ''Text (Just "destination ip hostname") False)
     , ("tcpStream", TsharkFieldDesc "tcp.stream" ''StreamIdTcp Nothing False)
     , ("tcpSrcPort", TsharkFieldDesc "tcp.srcport" ''Word16 Nothing False)
     , ("tcpDestPort", TsharkFieldDesc "tcp.dstport" ''Word16 Nothing False)
