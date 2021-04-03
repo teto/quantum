@@ -11,6 +11,7 @@ import MptcpAnalyzer.Types
 import Frames
 import Frames.Joins
 import Data.Vinyl
+import Data.Vinyl.TypeLevel
 import Data.Hashable
 import GHC.TypeLits (KnownSymbol)
 import qualified Data.Vinyl as V
@@ -156,9 +157,9 @@ addHash aframe =
 
 -- use zipFrames
 -- just for testing
-type Age = "age" :-> Int
-type Weight = "weight" :-> Double
-type Name = "name" :-> String
+-- type Age = "age" :-> Int
+-- type Weight = "weight" :-> Double
+-- type Name = "name" :-> String
 
 -- | Add a column to the head of a row.
 -- frameCons :: (Functor f, KnownSymbol s)
@@ -166,15 +167,16 @@ type Name = "name" :-> String
 -- frameCons = (V.:&) . fmap Col
 -- {-# INLINE frameCons #-}
 
-testRec1 :: Record '[PacketHash, Name]
-testRec1 = (Col 42) :& (Col "bob") :& RNil
+-- testRec1 :: Record '[PacketHash, Name]
+-- testRec1 = (Col 42) :& (Col "bob") :& RNil
 -- :& (col 23) :&  (pure 75.2 )
 
--- mergeTcpConnectionsFromKnownStreams :: 
-  -- FrameFiltered Packet -> FrameFiltered Packet
--- --   -> Frame (Record (PacketHash ': ManColumnsTshark))
-  -- -> [ Record (Maybe :. ElField) '[Packet
+type ManColumnsTsharkWithHash = '[PacketHash] ++ ManColumnsTshark
 
+mergeTcpConnectionsFromKnownStreams :: 
+  FrameFiltered Packet -> FrameFiltered Packet
+--   -> Frame (Record (PacketHash ': ManColumnsTshark))
+  -> [ Rec (Maybe :. ElField) ('[PacketHash] ++ ManColumnsTshark ++ ManColumnsTshark) ]
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
   -- FrameTcp (ffCon aframe1) 
   mergedFrame
@@ -186,7 +188,7 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
     -- mergedFrame = hframe1
     hframe1 = zipFrames (addHash aframe1) (ffFrame aframe1)
     hframe2 = zipFrames (addHash aframe1) (ffFrame aframe2)
-    hframe3 = toFrame [testRec1]
+    -- hframe3 = toFrame [testRec1]
 
 -- TODO we need to reorder from host1 / host2 to client server
 
