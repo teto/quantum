@@ -2,6 +2,7 @@ module MptcpAnalyzer.Debug
 where
 
 import Frames
+import Frames.CSV
 import Data.Vinyl
 import Data.Proxy
 -- import Data.Text

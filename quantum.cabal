@@ -146,7 +146,7 @@ library libmptcpanalyzer
         , MptcpAnalyzer.Plots.Owd
         -- TODO remove les commandes ?
         -- , MptcpAnalyzer.Commands
-        , MptcpAnalyzer.Commands.Definitions
+        -- , MptcpAnalyzer.Commands.Definitions
         -- , MptcpAnalyzer.Commands.Load
         -- , MptcpAnalyzer.Commands.Export
         -- , MptcpAnalyzer.Commands.Utils

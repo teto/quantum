@@ -152,7 +152,7 @@ addHash aframe =
   fmap (addHash')  (frame)
   where
     frame = fmap toHashablePacket (ffFrame aframe)
-    addHash' row = Col (hashWithSalt 0 row) :& RNil
+    addHash' row = Col (hash row) :& RNil
 
 
 -- use zipFrames

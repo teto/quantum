@@ -184,13 +184,14 @@ cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
   -- could use showRow as well
   P.embed $ dumpRec $ head justRecs
   P.embed $ putStrLn $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
+  P.embed $ putStrLn $ (concat . showFields) (head justRecs)
 
 
   -- mapM dumpRec mbRecs
   -- let mbRec = recMaybe mergedRes
   -- putStrLn mbRec
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
-  -- embed $ writeCSV "debug.csv" mframe
+  embed $ writeCSVopts defaultParserOptions "debug.csv" (toFrame justRecs)
   -- so for now we assume an innerJoin (but fix it later)
 
   return CMD.Continue
@@ -198,4 +199,5 @@ cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
     -- Maybe Record
     -- dumpRec Nothing = putStrLn "nothing"
     dumpRec x = putStrLn $ show $ x
+    -- firstRes = (head justRecs)
 
