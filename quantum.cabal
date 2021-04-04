@@ -10,8 +10,9 @@ Synopsis: A Multipath TCP analyzer
 Homepage:   https://github.com/teto/quantum
 Description:
   Multipath TCP (www.multipath-tcp.org) analyzer
-Extra-source-files:
+extra-source-files:
   README.md CHANGELOG
+  tests/integration/list-tcp.test
 
 Source-repository head
   type:       git

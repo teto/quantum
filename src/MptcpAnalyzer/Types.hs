@@ -79,7 +79,7 @@ import MptcpAnalyzer.ArtificialFields
 -- } deriving (Show, Generic, Ord)
 
 
--- declareColumns baseFields
+-- declarePrefixedColumns baseFields
 
 -- todo declare it from ArtificialFields ?
 -- artificial types, i.e. created by the app and not tshark
@@ -145,29 +145,9 @@ declareColumn "packetHash" ''Int
 -- TODO check it generates  
 -- ManColumnsTshark
 genRecordFrom "ManColumnsTshark" baseFields
+genRecordFromHeaders "test" "CsvHeader" baseFields
 genRecHashable "HashablePart" baseFields
 
--- hashableFields :: FieldDescriptions -> FieldDescriptions
--- hashableFields = filter (tfieldHashable . snd )
-
--- TODO this should be generated
--- subset of ManColumnsTshark
--- type HashablePart = '[
---     "ipSource" :-> IP
---     , "ipDest" :-> IP
---     , "ipSrcHost" :-> Text
---     , "ipDstHost" :-> Text
---     -- TODO pass as a StreamIdTcp
---     , "tcpStream" :-> StreamId Tcp
---     , "tcpSrcPort" :-> Word16
---     , "tcpDestPort" :-> Word16
---     , "rwnd" :-> Word32
---     , "tcpFlags" :-> TcpFlagList
---     , "tcpOptionKinds" :-> Text
---     , "tcpSeq"  :-> Word32
---     , "tcpLen"  :-> Word16
---     , "tcpAck"  :-> Word32
---     ]
 
 -- |Can load stream ids from CSV files
 readStreamId :: ReadM (StreamId a)

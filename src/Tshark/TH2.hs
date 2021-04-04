@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Tshark.TH2
 where
 import Tshark.Fields
@@ -33,7 +34,8 @@ myRow = (RowGen {
     , lineReader =  produceTokens ""
     })
 
-declareColumns baseFields
+declarePrefixedColumns "" baseFields
+declarePrefixedColumns "test" baseFields
 
 
 

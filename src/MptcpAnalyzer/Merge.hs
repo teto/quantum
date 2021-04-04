@@ -175,7 +175,6 @@ type ManColumnsTsharkWithHash = '[PacketHash] ++ ManColumnsTshark
 
 mergeTcpConnectionsFromKnownStreams :: 
   FrameFiltered Packet -> FrameFiltered Packet
---   -> Frame (Record (PacketHash ': ManColumnsTshark))
   -> [ Rec (Maybe :. ElField) ('[PacketHash] ++ ManColumnsTshark ++ ManColumnsTshark) ]
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
   -- FrameTcp (ffCon aframe1) 

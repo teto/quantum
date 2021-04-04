@@ -64,13 +64,13 @@ import Data.Char (toLower)
 --             "TCP timestamp tsecr" True
 --     ]
 
-declareColumns :: FieldDescriptions -> DecsQ
-declareColumns fields = do
+declarePrefixedColumns :: Text -> FieldDescriptions -> DecsQ
+declarePrefixedColumns prefix fields = do
   foldM toto ([]) fields
   where
     -- acc ++
-    toto acc (name, field) = do
-      t <- declareColumn name (tfieldColType field)
+    toto acc (colName, field) = do
+      t <- declarePrefixedColumn colName prefix (tfieldColType field)
       return $ acc ++ t
 
 -- TODO search frames.TH
@@ -78,7 +78,12 @@ declareColumns fields = do
 -- la solution est dans tableTypesText'
 -- Generate a FieldRec
 genRecordFrom :: String -> FieldDescriptions -> DecsQ
-genRecordFrom rowTypeName fields = do
+genRecordFrom  = genRecordFromHeaders ""
+
+-- rename to explicit / upstream
+-- ici on presuppose que les colonnes existrent deja en fait ?
+genRecordFromHeaders :: String -> String ->  FieldDescriptions -> DecsQ
+genRecordFromHeaders tablePrefix rowTypeName fields = do
   (colTypes, colDecs) <- (second concat . unzip)
                         <$> mapM (uncurry mkColDecs) headers
   -- let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
@@ -91,7 +96,6 @@ genRecordFrom rowTypeName fields = do
     headers = zip colNames (repeat (ConT ''T.Text))
     -- colNames :: [Text]
     colNames = map fst fields
-    tablePrefix = ""
     mkColDecs colNm colTy = do
       let safeName = T.unpack (sanitizeTypeName colNm)
       mColNm <- lookupTypeName (tablePrefix ++ safeName)
