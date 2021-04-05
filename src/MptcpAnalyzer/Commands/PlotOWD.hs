@@ -1,5 +1,16 @@
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE DataKinds   #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE PolyKinds           #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE Rank2Types          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module MptcpAnalyzer.Commands.PlotOWD
 where
@@ -175,9 +186,9 @@ type AbsTime2 = "absTime2" :-> Text  -- :: (Symbol, *)
 -- expects (Symbol, Symbol, Type)
 -- type AbsTimeRenameTest =   ("absTime" :: Symbol, "absTime2", Text)
 
-type RetypeMatt = [
-  ("absTime", "absTime2", Text)
-  ]
+-- type RetypeMatt = [
+--   ("absTime", "absTime2", Text)
+--   ]
 
 cmdPlotTcpOwd :: Members [Log String, P.State MyState, Cache, Embed IO] m =>
           FilePath -- ^ temporary file to save plot to
@@ -218,8 +229,13 @@ cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
     -- retypeColumns
     newCol = retypeColumn @AbsTime @AbsTime2 (frameRow (ffFrame aFrame2) 0)
     --
-    processedAFrame2 = retypeColumns aFrame2
-    -- processedAFrame2 = aFrame2 { ffFrame = retypeColumn @ (ffFrame aFrame2) }
+    processedFrame2 :: Frame (Record CsvHeader)
+    processedFrame2 = fmap (retypeColumns @[("absTime", "absTime2", Text)]) frame2
+
+    frame2 = ffFrame aFrame2
+
+    processedAFrame2 :: FrameFiltered (Record CsvHeader)
+    processedAFrame2 = aFrame2 { ffFrame = processedFrame2 }
     -- take a type-level-list of (fromName, toName, type) and use it to rename columns in suitably typed record
 
 

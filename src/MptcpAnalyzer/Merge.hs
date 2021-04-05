@@ -173,11 +173,10 @@ addHash aframe =
 
 type ManColumnsTsharkWithHash = '[PacketHash] ++ ManColumnsTshark
 
-mergeTcpConnectionsFromKnownStreams :: 
-  FrameFiltered Packet -> FrameFiltered Packet
-  -> [ Rec (Maybe :. ElField) ('[PacketHash] ++ ManColumnsTshark ++ ManColumnsTshark) ]
+-- mergeTcpConnectionsFromKnownStreams :: 
+--   FrameFiltered Packet -> FrameFiltered Packet
+--   -> [ Rec (Maybe :. ElField) ('[PacketHash] ++ ManColumnsTshark ++ ManColumnsTshark) ]
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
-  -- FrameTcp (ffCon aframe1) 
   mergedFrame
   where
     -- we want an outerJoin , maybe with a status column like in panda
