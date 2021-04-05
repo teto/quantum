@@ -86,13 +86,14 @@ import MptcpAnalyzer.ArtificialFields
 declareColumn "tcpDest" ''ConnectionRole
 declareColumn "mptcpDest" ''ConnectionRole
 declareColumn "packetHash" ''Int
+declareColumn "owd" ''Double
 
 
--- myRowGen "ManColumnsTshark" baseFields
+-- myRowGen "RecTshark" baseFields
 -- type OptionList = [Int]
 
--- ManColumnsTshark :: [(Symbol, *)]
--- type ManColumnsTshark = '[
+-- RecTshark :: [(Symbol, *)]
+-- type RecTshark = '[
 --     "packetId" :-> Word64
 --     , "interfaceName" :-> Text
 --     -- Load it as a Float / Time
@@ -142,11 +143,15 @@ declareColumn "packetHash" ''Int
 --     -- , "mptcpReinjectedIn" :-> Maybe OptionList
 --     ]
 
--- TODO check it generates  
--- ManColumnsTshark
-genRecordFrom "ManColumnsTshark" baseFields
-genRecordFromHeaders "test" "CsvHeader" baseFields
+-- TODO check it generates
+-- RecTshark
+genRecordFrom "RecTshark" baseFields
+-- these are useful when merging different
+genRecordFromHeaders "test" "RecTsharkPrefixed" baseFields
 genRecHashable "HashablePart" baseFields
+
+-- 
+genRecordFrom "RecMerged" mergedFields
 
 
 -- |Can load stream ids from CSV files
@@ -164,10 +169,10 @@ readConnectionRole = eitherReader $ \arg -> case reads arg of
 
 -- row / ManRow
 -- Packet
-type Packet = Record ManColumnsTshark
--- type Packet = ManColumnsTshark
-type PacketWithTcpDest = Record (TcpDest ': ManColumnsTshark)
-type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': ManColumnsTshark)
+type Packet = Record RecTshark
+-- type Packet = RecTshark
+type PacketWithTcpDest = Record (TcpDest ': RecTshark)
+type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': RecTshark)
 
 -- https://stackoverflow.com/questions/14020491/is-there-a-way-of-deriving-binary-instances-for-vinyl-record-types-using-derive?rq=1
 -- forall t s a rs. (t ~ '(s,a)

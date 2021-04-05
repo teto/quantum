@@ -82,7 +82,7 @@ genRecordFrom  = genRecordFromHeaders ""
 
 -- rename to explicit / upstream
 -- ici on presuppose que les colonnes existrent deja en fait ?
-genRecordFromHeaders :: String -> String ->  FieldDescriptions -> DecsQ
+genRecordFromHeaders :: String -> String -> FieldDescriptions -> DecsQ
 genRecordFromHeaders tablePrefix rowTypeName fields = do
   (colTypes, colDecs) <- (second concat . unzip)
                         <$> mapM (uncurry mkColDecs) headers
@@ -155,7 +155,7 @@ qqDec = go
 --
 
 --myRow :: [(T.Text, TsharkFieldDesc)] -> RowGen a
---myRow fields = RowGen [] "" "|" "ManColumnsTshark" []
+--myRow fields = RowGen [] "" "|" "RecTshark" []
 --  where
 --    --
 --    tfields = map (\(colName, fullField) -> (colName, colType fullField)) fields
@@ -188,7 +188,7 @@ promotedTypeList (t:ts) = [t| $promotedConsT $t $(promotedTypeList ts) |]
 --     tableTypesExplicitFull tfields myRow
 --     where
 --       -- myRow :: RowGen [t| myColumnUniverse baseFields|]
---       myRow = RowGen $(myColumnUniverse baseFields) "" "|" "ManColumnsTshark" (Proxy  [Int, Int])
+--       myRow = RowGen $(myColumnUniverse baseFields) "" "|" "RecTshark" (Proxy  [Int, Int])
 --       tfields = map (\(colName, fullField) -> (colName, colType fullField)) fields
 
 -- colDec :: prefix rowName colName colTypeGen = do

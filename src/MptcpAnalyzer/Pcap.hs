@@ -115,7 +115,7 @@ import Debug.Trace
 -- shadow type to know if it was filtered or not
 -- Make it a record ?
 type ConFrame a = SomeFrame
--- type SomeFrame = Frame ManColumnsTshark
+-- type SomeFrame = Frame RecTshark
 
 
 data TsharkParams = TsharkParams {
@@ -369,13 +369,13 @@ buildSubflowFromTcpStreamId aframe streamId =
 addMptcpDest ::
     (
       -- Frames.InCore.RecVec rs,
-      -- ManColumnsTshark ⊆ rs
+      -- RecTshark ⊆ rs
       -- MptcpStream ∈ rs, TcpStream  ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs
-      -- rs = ManColumnsTshark
+      -- rs = RecTshark
       ) =>
-      Frame (Record ManColumnsTshark)
+      Frame (Record RecTshark)
       -> Connection
-      -> Frame (Record  ( MptcpDest ': TcpDest ': ManColumnsTshark ))
+      -> Frame (Record  ( MptcpDest ': TcpDest ': RecTshark ))
 addMptcpDest frame con@MptcpConnection{} =
     -- foldl' (\tframe sf -> addDestToFrame tframe sf) startingFrame subflows
     mconcat subflowFrames
@@ -410,13 +410,13 @@ addTcpDestToFrame ::
   -- TcpSrcPort ∈ rs, TcpDestPort ∈ rs)
   (
   -- Frames.InCore.RecVec rs
-  -- , ManColumnsTshark ⊆ rs
-  -- , ManColumnsTshark <: rs
-  -- , ManColumnsTshark ∈ rs
+  -- , RecTshark ⊆ rs
+  -- , RecTshark <: rs
+  -- , RecTshark ∈ rs
   -- ,IpSource ∈ rs, IpDest ∈ rs
   -- ,  IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs
   )
-    => Frame (Record ManColumnsTshark) -> Connection -> Frame (Record  ( TcpDest ': ManColumnsTshark ))
+    => Frame (Record RecTshark) -> Connection -> Frame (Record  ( TcpDest ': RecTshark ))
 addTcpDestToFrame frame con = fmap (\x -> addTcpDestToRec x (computeTcpDest x con)) streamFrame
     where
       streamFrame = filterFrame  (\x -> rgetField @TcpStream x == conTcpStreamId con) frame

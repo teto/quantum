@@ -57,7 +57,7 @@ type FieldDescriptions = [(Text, TsharkFieldDesc)]
 
 type MbWord32 = Maybe Word32
 
--- MUST BE KEPT IN SYNC WITH  Pcap.hs ManColumnsTshark
+-- MUST BE KEPT IN SYNC WITH  Pcap.hs RecTshark
 -- ORDER INCLUDED !
 -- until we can automate this
 -- get Name

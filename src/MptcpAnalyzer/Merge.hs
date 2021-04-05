@@ -2,6 +2,8 @@
 
 -}
 {-# LANGUAGE TypeApplications             #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE PolyKinds             #-}
 
 module MptcpAnalyzer.Merge
 where
@@ -13,8 +15,11 @@ import Frames.Joins
 import Data.Vinyl
 import Data.Vinyl.TypeLevel
 import Data.Hashable
-import GHC.TypeLits (KnownSymbol)
+import GHC.TypeLits (KnownSymbol, Symbol)
 import qualified Data.Vinyl as V
+import Language.Haskell.TH (Name)
+import Net.IP (IP)
+import Data.Word (Word8, Word16, Word32, Word64)
 
 -- convert_to_sender_receiver
 -- merge_tcp_dataframes_known_streams(
@@ -132,12 +137,12 @@ scoreTcpCon _ _ = undefined
 
 -- prefix
 -- type PacketMerged =
-toHashablePacket :: Record ManColumnsTshark -> Record HashablePart
+toHashablePacket :: Record RecTshark -> Record HashablePart
 toHashablePacket = rcast
 
 -- instance Hashable (Rec ElField a) where
 
--- -- TODO should generate a column and add it back to ManColumnsTshark
+-- -- TODO should generate a column and add it back to RecTshark
 -- -- type FieldRec = Rec ElField
 -- addHash :: FrameFiltered Packet -> Frame (Record (PacketHash ': HashablePart))
 -- addHash aframe =
@@ -146,7 +151,7 @@ toHashablePacket = rcast
 --     frame = fmap toHashablePacket (ffFrame aframe)
 --     addHash' row = Col (hashWithSalt 0 row) :& row
 
--- generate a column and add it back to ManColumnsTshark
+-- generate a column and add it back to RecTshark
 addHash :: FrameFiltered Packet -> Frame (Record '[PacketHash] )
 addHash aframe =
   fmap (addHash')  (frame)
@@ -171,27 +176,63 @@ addHash aframe =
 -- testRec1 = (Col 42) :& (Col "bob") :& RNil
 -- :& (col 23) :&  (pure 75.2 )
 
-type ManColumnsTsharkWithHash = '[PacketHash] ++ ManColumnsTshark
+type RecTsharkWithHash = '[PacketHash] ++ RecTshark
 
 -- mergeTcpConnectionsFromKnownStreams :: 
 --   FrameFiltered Packet -> FrameFiltered Packet
---   -> [ Rec (Maybe :. ElField) ('[PacketHash] ++ ManColumnsTshark ++ ManColumnsTshark) ]
+--   -> [ Rec (Maybe :. ElField) ('[PacketHash] ++ RecTshark ++ RecTshark) ]
+-- these are from host1 / host2
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
   mergedFrame
   where
     -- we want an outerJoin , maybe with a status column like in panda
     -- outerJoin returns a list of [Rec (Maybe :. ElField) ors]
-    mergedFrame = outerJoin @'[PacketHash] ( hframe1) ( hframe2)
+    mergedFrame = outerJoin @'[PacketHash] ( hframe1dest) ( hframe2)
     -- mergedFrame = innerJoin @'[PacketHash] ( hframe1) ( hframe2)
     -- mergedFrame = hframe1
     hframe1 = zipFrames (addHash aframe1) (ffFrame aframe1)
+    hframe1dest = addTcpDestinationsToFrame hframe1
     hframe2 = zipFrames (addHash aframe1) (ffFrame aframe2)
     -- hframe3 = toFrame [testRec1]
 
 -- TODO we need to reorder from host1 / host2 to client server
 
 
+
+-- | Result of the merge of 2 pcaps
+genRecordFrom "RecTshark" mergedFields
+
+-- gen
+
 -- FrameMergedOriented
--- convert_to_sender_receiver
+-- inspirted by convert_to_sender_receiver
 -- TODO need to 
--- convertToSenderReceiver :: FrameMerged ->
+-- this is for a TCP frame
+convertToSenderReceiver :: FrameMerged -> FrameFiltered RecTshark
+convertToSenderReceiver mframe = do
+  -- compare first packet time
+  if delta > 0 then
+    -- host1 is the client
+    -- h1_role = Client
+    -- filterFrame (
+    -- TODO filter per destination
+    -- then rename into sndTime, rcvTime
+    fmap retype
+
+  where
+    firstRow = frameRow mframe 0
+    -- instead of taking firstRow we should compare the minima in case there are retransmissions
+    delta = absTime firstRow - absTime2 firstRow
+
+    -- frame of something
+    -- For instance
+    renameTo :: ConnectionRole
+      -> Bool -- ^ true if the sender
+      -> Frame  -- ^ return frame rearranged
+    -- or concat
+    renameTo role isSender = sendFrame <> recvFrame
+    where
+      -- succ ?
+      sendFrame = retypeColumn @AbsTime @SndTime (filterFrame (tcpDest == role) mframe)
+      recvFrame = retypeColumn @AbsTime @SndTime (filterFrame (tcpDest == succ role) mframe)
+

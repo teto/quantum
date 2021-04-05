@@ -182,7 +182,9 @@ plotParserOwd mptcpPlot = ArgsPlotOwd <$>
 --           timeData = toList $ view relTime <$> unidirectionalFrame
 
 -- AbsTime2
-type AbsTime2 = "absTime2" :-> Text  -- :: (Symbol, *)
+-- type AbsTime2 = "absTime2" :-> Text  -- :: (Symbol, *)
+declareColumn "absTime2" ''Text
+-- type AbsTime2 = "absTime2" :-> Text  -- :: (Symbol, *)
 -- expects (Symbol, Symbol, Type)
 -- type AbsTimeRenameTest =   ("absTime" :: Symbol, "absTime2", Text)
 
@@ -210,7 +212,7 @@ cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
   P.embed $ dumpRec $ head justRecs
   P.embed $ putStrLn $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
   P.embed $ putStrLn $ (concat . showFields) (head justRecs)
-  P.embed $ putStrLn $ "retyped column" ++ (concat . showFields) (newCol)
+  -- P.embed $ putStrLn $ "retyped column" ++ (concat . showFields) (newCol)
 
 
   -- mapM dumpRec mbRecs
@@ -218,6 +220,7 @@ cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
   -- putStrLn mbRec
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
   embed $ writeDSV defaultParserOptions "debug.csv" (toFrame justRecs)
+  embed $ writeDSV defaultParserOptions "retyped.csv" processedFrame2
   -- so for now we assume an innerJoin (but fix it later)
 
   return CMD.Continue
@@ -226,15 +229,16 @@ cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
     -- dumpRec Nothing = putStrLn "nothing"
     dumpRec x = putStrLn $ show $ x
     -- firstRes = (head justRecs)
-    -- retypeColumns
-    newCol = retypeColumn @AbsTime @AbsTime2 (frameRow (ffFrame aFrame2) 0)
-    --
-    processedFrame2 :: Frame (Record CsvHeader)
-    processedFrame2 = fmap (retypeColumns @[("absTime", "absTime2", Text)]) frame2
+    -- newCol = retypeColumn @AbsTime @AbsTime2 (frameRow (ffFrame aFrame2) 0)
+    -- processedFrame2 :: Frame (Record CsvHeader)
+    -- , '("relTime", "relTime2", Double)
+    -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Text)  ]) frame2
+    processedFrame2 = fmap (retypeColumn @AbsTime @AbsTime2) frame2
 
     frame2 = ffFrame aFrame2
 
-    processedAFrame2 :: FrameFiltered (Record CsvHeader)
+    -- processedAFrame2 :: FrameFiltered (Record CsvHeader)
+    -- processedAFrame2 = aFrame2 
     processedAFrame2 = aFrame2 { ffFrame = processedFrame2 }
     -- take a type-level-list of (fromName, toName, type) and use it to rename columns in suitably typed record
 

@@ -11,9 +11,10 @@ import Net.IP
 import GHC.TypeLits (KnownSymbol)
 -- import Language.Haskell.TH (Name)
 import Data.Text (Text)
--- import Data.Word (Word8, Word16, Word32, Word64)
+import Data.Word (Word8, Word16, Word32, Word64)
 import Frames.ShowCSV
 import Tshark.Fields
+import Language.Haskell.TH (Name)
 
 -- |Filters a connection depending on its role
 data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, ShowCSV, Ord)
@@ -23,4 +24,14 @@ artificialFields = [
     ("tcpDest", TsharkFieldDesc "" ''ConnectionRole Nothing False)
     , ("mptcpDest", TsharkFieldDesc "" ''ConnectionRole Nothing False)
     , ("packetHash", TsharkFieldDesc "" ''ConnectionRole Nothing False)
+  ]
+
+-- FieldRec
+mergedFields :: [(String, Name)]
+mergedFields = [
+  ("senderIP", ''IP)
+  , ("receiverIP", ''IP)
+  , ("sndTime", ''Double)
+  , ("rcvTime", ''Double)
+  , ("tcpSeq", ''Word32)
   ]

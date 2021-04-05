@@ -29,7 +29,7 @@ myRow = (RowGen {
     columnNames = map (unpack . fst) baseFields
     , tablePrefix = ""
     , separator = pack "|"
-    , rowTypeName = "ManColumnsTshark"
+    , rowTypeName = "RecTshark"
     , columnUniverse = Proxy
     , lineReader =  produceTokens ""
     })
