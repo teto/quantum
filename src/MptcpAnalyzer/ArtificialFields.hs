@@ -27,7 +27,7 @@ artificialFields = [
   ]
 
 -- FieldRec
-mergedFields :: [(String, Name)]
+mergedFields :: [(Text, Name)]
 mergedFields = [
   ("senderIP", ''IP)
   , ("receiverIP", ''IP)

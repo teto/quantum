@@ -20,6 +20,10 @@ import qualified Data.Vinyl as V
 import Language.Haskell.TH (Name)
 import Net.IP (IP)
 import Data.Word (Word8, Word16, Word32, Word64)
+import Tshark.TH
+import MptcpAnalyzer.ArtificialFields
+import MptcpAnalyzer.Types
+import Data.Maybe (catMaybes)
 
 -- convert_to_sender_receiver
 -- merge_tcp_dataframes_known_streams(
@@ -178,9 +182,11 @@ addHash aframe =
 
 type RecTsharkWithHash = '[PacketHash] ++ RecTshark
 
--- mergeTcpConnectionsFromKnownStreams :: 
---   FrameFiltered Packet -> FrameFiltered Packet
---   -> [ Rec (Maybe :. ElField) ('[PacketHash] ++ RecTshark ++ RecTshark) ]
+type TsharkMergedCols = '[PacketHash] ++ RecTshark ++ RecTshark
+
+mergeTcpConnectionsFromKnownStreams :: 
+  FrameFiltered Packet -> FrameFiltered Packet
+  -> [ Rec (Maybe :. ElField) TsharkMergedCols ]
 -- these are from host1 / host2
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
   mergedFrame
@@ -191,7 +197,8 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
     -- mergedFrame = innerJoin @'[PacketHash] ( hframe1) ( hframe2)
     -- mergedFrame = hframe1
     hframe1 = zipFrames (addHash aframe1) (ffFrame aframe1)
-    hframe1dest = addTcpDestinationsToFrame hframe1
+    hframe1dest = hframe1
+    -- hframe1dest = addTcpDestinationsToFrame hframe1
     hframe2 = zipFrames (addHash aframe1) (ffFrame aframe2)
     -- hframe3 = toFrame [testRec1]
 
@@ -200,15 +207,20 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
 
 
 -- | Result of the merge of 2 pcaps
-genRecordFrom "RecTshark" mergedFields
+-- genExplicitRecord "" "RecTshark" mergedFields
 
 -- gen
+
 
 -- FrameMergedOriented
 -- inspirted by convert_to_sender_receiver
 -- TODO need to 
 -- this is for a TCP frame
-convertToSenderReceiver :: FrameMerged -> FrameFiltered RecTshark
+-- FrameMerged
+-- for now ignore deal with frame directly rather than FrameFiltered
+convertToSenderReceiver ::
+  Frame (Rec (Maybe :. ElField) TsharkMergedCols)
+  -> Frame (Record RecTshark)
 convertToSenderReceiver mframe = do
   -- compare first packet time
   if delta > 0 then
@@ -217,22 +229,28 @@ convertToSenderReceiver mframe = do
     -- filterFrame (
     -- TODO filter per destination
     -- then rename into sndTime, rcvTime
-    fmap retype
+    -- fmap retype
+    mempty
+  else
+    mempty
 
   where
-    firstRow = frameRow mframe 0
+    justRecs = toFrame $ catMaybes $ map recMaybe mframe
+    firstRow = frameRow justRecs 0
     -- instead of taking firstRow we should compare the minima in case there are retransmissions
     delta = absTime firstRow - absTime2 firstRow
 
     -- frame of something
     -- For instance
-    renameTo :: ConnectionRole
-      -> Bool -- ^ true if the sender
-      -> Frame  -- ^ return frame rearranged
-    -- or concat
-    renameTo role isSender = sendFrame <> recvFrame
-    where
-      -- succ ?
-      sendFrame = retypeColumn @AbsTime @SndTime (filterFrame (tcpDest == role) mframe)
-      recvFrame = retypeColumn @AbsTime @SndTime (filterFrame (tcpDest == succ role) mframe)
+    -- renameTo :: ConnectionRole
+    --   -> Bool -- ^ true if the sender
+    --   -> Frame (Rec (Maybe :. ElField) TsharkMergedCols) -- ^ return frame rearranged
+    -- -- or concat
+    -- renameTo role isSender = sendFrame 
+      -- TODO <> recvFrame
+      where
+        -- succ ?
+        -- sendFrame = retypeColumn @AbsTime @SndTime (filterFrame (\x -> x ^. tcpDest == role) mframe)
+        -- TODO use (succ role) instead
+        -- recvFrame = retypeColumn @AbsTime @SndTime (filterFrame (\x -> x ^. tcpDest == role) mframe)
 

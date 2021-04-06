@@ -79,7 +79,10 @@ import MptcpAnalyzer.ArtificialFields
 -- } deriving (Show, Generic, Ord)
 
 
--- declarePrefixedColumns baseFields
+declarePrefixedColumns "" baseFields
+
+-- when loading the second pcap to merge, we need to distinguish between the different fields
+declarePrefixedColumns "test" baseFields
 
 -- todo declare it from ArtificialFields ?
 -- artificial types, i.e. created by the app and not tshark
@@ -150,8 +153,12 @@ genRecordFrom "RecTshark" baseFields
 genRecordFromHeaders "test" "RecTsharkPrefixed" baseFields
 genRecHashable "HashablePart" baseFields
 
--- 
-genRecordFrom "RecMerged" mergedFields
+--
+declareColumn "sndTime" ''Double
+declareColumn "rcvTime" ''Double
+declareColumn "senderIP" ''IP
+declareColumn "receiverIP" ''IP
+genExplicitRecord "" "RecMerged" mergedFields
 
 
 -- |Can load stream ids from CSV files

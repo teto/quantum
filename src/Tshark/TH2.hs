@@ -34,8 +34,7 @@ myRow = (RowGen {
     , lineReader =  produceTokens ""
     })
 
-declarePrefixedColumns "" baseFields
-declarePrefixedColumns "test" baseFields
+-- declarePrefixedColumns "" baseFields
 
 
 
