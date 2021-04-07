@@ -16,7 +16,10 @@ import Frames
 
 -- TODO return an Either or Maybe ?
 -- return an either instead
-loadPcapIntoFrame :: Members [Cache, Log String, Embed IO ] m => TsharkParams -> FilePath -> Sem m (Either String SomeFrame)
+loadPcapIntoFrame :: Members [Cache, Log String, Embed IO ] m
+    => TsharkParams
+    -> FilePath
+    -> Sem m (Either String SomeFrame)
 loadPcapIntoFrame params path = do
     log $ "Start loading pcap " ++ path
     x <- getCache cacheId
@@ -25,12 +28,8 @@ loadPcapIntoFrame params path = do
           log $ show cacheId ++ " in cache"
           return $ Right frame
       Left err -> do
-          log $ "getCache error: " ++ err
+          log $ "cache miss: " ++ err
           log "Calling tshark"
-          -- TODO need to create a temporary file
-          -- mkstemps
-          -- TODO use showCommandForUser to display the run command to the user
-          -- , stdOut, stdErr)
           (tempPath , exitCode, stdErr) <- liftIO $ withTempFileEx opts "/tmp" "mptcp.csv" (exportToCsv params path)
           if exitCode == ExitSuccess
               then do

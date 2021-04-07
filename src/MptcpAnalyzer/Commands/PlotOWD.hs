@@ -183,7 +183,10 @@ plotParserOwd mptcpPlot = ArgsPlotOwd <$>
 
 -- AbsTime2
 -- type AbsTime2 = "absTime2" :-> Text  -- :: (Symbol, *)
-declareColumn "absTime2" ''Text
+
+-- absTime2 is problematic
+-- declareColumn "absTime2" ''Text
+-- declareColumn "absTimeSnd" ''Double
 -- type AbsTime2 = "absTime2" :-> Text  -- :: (Symbol, *)
 -- expects (Symbol, Symbol, Type)
 -- type AbsTimeRenameTest =   ("absTime" :: Symbol, "absTime2", Text)
@@ -197,7 +200,7 @@ cmdPlotTcpOwd :: Members [Log String, P.State MyState, Cache, Embed IO] m =>
           -> Handle
           -> [ConnectionRole]
           -> FrameFiltered Packet
-          -> FrameFiltered Packet
+          -> FrameFiltered (Record RecTsharkPrefixed)
           -> Sem m RetCode
 cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
   log $ "plotting OWDs "
@@ -232,8 +235,11 @@ cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
     -- newCol = retypeColumn @AbsTime @AbsTime2 (frameRow (ffFrame aFrame2) 0)
     -- processedFrame2 :: Frame (Record CsvHeader)
     -- , '("relTime", "relTime2", Double)
-    -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Text)  ]) frame2
-    processedFrame2 = fmap (retypeColumn @AbsTime @AbsTime2) frame2
+    -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Double)  ]) frame2
+    processedFrame2 =  frame2
+    -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Double)  ]) frame2
+    -- processedFrame2 :: Frame Packet
+    -- processedFrame2 = fmap (retypeColumn @AbsTime @TestAbsTime) frame2
 
     frame2 = ffFrame aFrame2
 

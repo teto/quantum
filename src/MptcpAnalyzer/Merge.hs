@@ -24,6 +24,8 @@ import Tshark.TH
 import MptcpAnalyzer.ArtificialFields
 import MptcpAnalyzer.Types
 import Data.Maybe (catMaybes)
+import Data.Foldable (toList)
+import Control.Lens
 
 -- convert_to_sender_receiver
 -- merge_tcp_dataframes_known_streams(
@@ -182,10 +184,10 @@ addHash aframe =
 
 type RecTsharkWithHash = '[PacketHash] ++ RecTshark
 
-type TsharkMergedCols = '[PacketHash] ++ RecTshark ++ RecTshark
+type TsharkMergedCols = '[PacketHash] ++ RecTshark ++ RecTsharkPrefixed
 
 mergeTcpConnectionsFromKnownStreams :: 
-  FrameFiltered Packet -> FrameFiltered Packet
+  FrameFiltered Packet -> FrameFiltered (Record RecTsharkPrefixed)
   -> [ Rec (Maybe :. ElField) TsharkMergedCols ]
 -- these are from host1 / host2
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
@@ -221,7 +223,7 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
 convertToSenderReceiver ::
   Frame (Rec (Maybe :. ElField) TsharkMergedCols)
   -> Frame (Record RecTshark)
-convertToSenderReceiver mframe = do
+convertToSenderReceiver oframe = do
   -- compare first packet time
   if delta > 0 then
     -- host1 is the client
@@ -235,11 +237,13 @@ convertToSenderReceiver mframe = do
     mempty
 
   where
-    justRecs = toFrame $ catMaybes $ map recMaybe mframe
-    firstRow = frameRow justRecs 0
+    tframe = fmap recMaybe oframe
+    jframe = toFrame $ catMaybes $ toList tframe
+    firstRow = frameRow jframe 0
     -- instead of taking firstRow we should compare the minima in case there are retransmissions
-    delta = absTime firstRow - absTime2 firstRow
-
+    delta :: Double
+    delta =  (firstRow ^. testAbsTime)
+-- (absTime firstRow) -
     -- frame of something
     -- For instance
     -- renameTo :: ConnectionRole

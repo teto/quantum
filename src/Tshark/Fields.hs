@@ -65,7 +65,7 @@ baseFields :: FieldDescriptions
 baseFields = [
     ("packetId", TsharkFieldDesc "frame.number" ''Word64 Nothing False)
     , ("interfaceName", TsharkFieldDesc "frame.interface_name" ''Text Nothing False)
-    , ("absTime", TsharkFieldDesc "frame.time_epoch" ''Text Nothing False)
+    , ("absTime", TsharkFieldDesc "frame.time_epoch" ''Double Nothing False)
     , ("relTime", TsharkFieldDesc "frame.time_relative" ''Double Nothing False)
     , ("ipSource", TsharkFieldDesc "_ws.col.ipsrc" ''IP (Just "source ip") True)
     , ("ipDest", TsharkFieldDesc "_ws.col.ipdst" ''IP (Just "destination ip") True)

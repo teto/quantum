@@ -220,7 +220,7 @@ exportToCsv params pcapPath path tmpFileHandle = do
 -- maybe use a readTableMaybe instead
 -- readTable path
 
-loadRows :: FilePath -> IO SomeFrame
+loadRows :: FilePath -> IO (FrameRec a)
 loadRows path = inCoreAoS (
   eitherProcessed path
   )
@@ -233,29 +233,16 @@ loadMaybeRows path =
   readTableMaybeOpt defaultParserOptions path
   -- )
 
--- | Produce the lines of a latin1 (or ISO8859 Part 1) encoded file as
--- ’T.Text’ values.
--- readFileLatin1Ln :: P.MonadSafe m => FilePath -> P.Producer [T.Text] m ()
--- readFileLatin1Ln fp = pipeLines (try . fmap T.decodeLatin1 . B8.hGetLine) fp
---                       >-> P.map (tokenizeRow defaultParser)
 
 type ManEither = Rec (Either T.Text :. ElField) (RecordColumns Packet)
-
--- -> P.Pipe T.Text (Rec (Either T.Text :. ElField) rs) m ()
-  -- T.readFile path
-  -- readFileLatin1Ln
-  -- produceTokens
 
 -- pipteTable will tokenize on its own
 loadRowsEither :: MonadSafe m => FilePath -> Producer ManEither m ()
 loadRowsEither path =  produceTextLines path >-> pipeTableEitherOpt defaultParserOptions
 
--- loadRowsEitherFiltered :: MonadSafe m => FilePath -> Producer ManEither m ()
--- >-> P.map (tokenizeRow defaultParser)
-
 {- |Load rows and errors when it can't load a specific line
 -}
-eitherProcessed :: MonadSafe m => FilePath -> Producer Packet m ()
+eitherProcessed :: MonadSafe m => FilePath -> Producer a m ()
 eitherProcessed path = loadRowsEither path  >-> P.map fromEither
   where
     fromEither :: Rec (Either Text :. ElField) (RecordColumns Packet) -> Packet
