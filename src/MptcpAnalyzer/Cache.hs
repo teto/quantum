@@ -31,6 +31,7 @@ data CacheConfig = CacheConfig {
 } deriving Show
 
 -- type CachePlaceHolder = Int
+-- TODO a remplacer par un parametre par exemple
 type CachePlaceHolder = SomeFrame
 
 -- TODO add a cacheConfig ?
@@ -90,6 +91,7 @@ doPutCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> CachePlaceHolde
 doPutCache config cid frame =
   -- writeFile
   -- writeCSV :: (ColumnHeaders ts, Foldable f, RecordToList ts, RecMapMethod ShowCSV ElField ts) => FilePath -> f (Record ts) -> IO ()
+  -- produceDSV
   embed $ writeCSV csvFilename frame >> return True
   where
       csvFilename = getFullPath config cid

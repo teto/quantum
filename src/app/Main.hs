@@ -376,6 +376,7 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
         --         Left err -> return $ CMD.Error err
         --         Right frame -> Plots.cmdPlotMptcpAttribute tempPath handle destinations frame
         eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId1)
+        -- TODO
         eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 (StreamId streamId2)
         res <- case (eframe1, eframe2) of
           (Right aframe1, Right aframe2) -> Plots.cmdPlotTcpOwd tempPath handle (getDests dest) aframe1 aframe2
@@ -383,18 +384,8 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
           (_, Left err) -> return $ CMD.Error err
         return res
 
-        -- case res of
-        --   Left err -> return $ CMD.Error "test"
-        --   Right frame -> return CMD.Continue
-
-      -- (ArgsPlotMptcpAttr filePath streamId attr mbDest) -> do
-      --   let destinations = fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) mbDest)
-      --   buildAFrameFromStreamIdMptcp
-      --   Plots.cmdPlotTcpAttribute specificArgs tempPath handle
-
     _ <- P.embed $ case mbOut of
             -- user specified a file move the file
-            -- outFilename = fromMaybe tempPath mbOut
             Just outFilename -> renameFile tempPath outFilename
             Nothing -> return ()
     if displayPlot then do

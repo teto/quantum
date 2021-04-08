@@ -19,7 +19,7 @@ import Frames
 loadPcapIntoFrame :: Members [Cache, Log String, Embed IO ] m
     => TsharkParams
     -> FilePath
-    -> Sem m (Either String SomeFrame)
+    -> Sem m (Either String (FrameRec a))
 loadPcapIntoFrame params path = do
     log $ "Start loading pcap " ++ path
     x <- getCache cacheId

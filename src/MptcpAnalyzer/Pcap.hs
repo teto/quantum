@@ -56,7 +56,7 @@ import Frames
 -- import Frames.InCore
 import Frames.ShowCSV
 import Frames.Col
-import Frames.CSV (produceTextLines, pipeTableEitherOpt, readFileLatin1Ln, readTableMaybeOpt, QuotingMode(..), ParserOptions(..))
+import Frames.CSV (produceTextLines, pipeTableEitherOpt, readFileLatin1Ln, readTableMaybeOpt, QuotingMode(..), ParserOptions(..), ReadRec)
 import Frames.ColumnTypeable (Parseable(..), parseIntish, Parsed(..))
 -- for Record
 -- import Frames.Rec (Record(..))
@@ -83,7 +83,8 @@ import Data.Maybe (fromJust, catMaybes)
 import GHC.Base (Symbol)
 import GHC.TypeLits (KnownSymbol)
 import GHC.List (foldl')
-import qualified Frames.InCore
+-- import qualified Frames.InCore
+import qualified Frames.InCore as I
 import Debug.Trace
 
 
@@ -220,7 +221,7 @@ exportToCsv params pcapPath path tmpFileHandle = do
 -- maybe use a readTableMaybe instead
 -- readTable path
 
-loadRows :: FilePath -> IO (FrameRec a)
+loadRows :: (I.RecVec a, ReadRec a) => FilePath -> IO (FrameRec a)
 loadRows path = inCoreAoS (
   eitherProcessed path
   )
@@ -237,31 +238,28 @@ loadMaybeRows path =
 type ManEither = Rec (Either T.Text :. ElField) (RecordColumns Packet)
 
 -- pipteTable will tokenize on its own
-loadRowsEither :: MonadSafe m => FilePath -> Producer ManEither m ()
-loadRowsEither path =  produceTextLines path >-> pipeTableEitherOpt defaultParserOptions
+-- loadRowsEither :: MonadSafe m => FilePath -> Producer ManEither m ()
+-- loadRowsEither path =  produceTextLines path >-> pipeTableEitherOpt defaultParserOptions
 
 {- |Load rows and errors when it can't load a specific line
 -}
-eitherProcessed :: MonadSafe m => FilePath -> Producer a m ()
-eitherProcessed path = loadRowsEither path  >-> P.map fromEither
+eitherProcessed :: (ReadRec a, MonadSafe m) => FilePath -> Producer (Record a) m ()
+eitherProcessed path = produceTextLines path 
+  >-> pipeTableEitherOpt defaultParserOptions >-> P.map fromEither
   where
-    fromEither :: Rec (Either Text :. ElField) (RecordColumns Packet) -> Packet
+    -- fromEither :: Rec (Either Text :. ElField) (RecordColumns Packet) -> Packet
     fromEither x = case recEither x of
       Left _txt -> error ( "eitherProcessed failure : " ++ T.unpack _txt)
       Right pkt -> pkt
 
--- | Undistribute 'Maybe' from a 'Rec' 'Maybe'. This is just a
--- specific usage of 'rtraverse', but it is quite common.
-recEither :: Rec (Either Text :. ElField) cs -> Either Text (Record cs)
-recEither = rtraverse getCompose
+    recEither = rtraverse getCompose
 
 -- | Undistribute 'Maybe' from a 'Rec' 'Maybe'. This is just a
 -- specific usage of 'rtraverse', but it is quite common.
--- recMaybe :: Rec (Maybe :. ElField) cs -> Maybe (Record cs)
--- recMaybe = rtraverse getCompose
+-- recEither :: Rec (Either Text :. ElField) cs -> Either Text (Record cs)
+-- recEither = rtraverse getCompose
 
 -- http://acowley.github.io/Frames/#orgf328b25
-
 defaultTsharkOptions :: [(String, String)]
 defaultTsharkOptions = [
       -- TODO join these
