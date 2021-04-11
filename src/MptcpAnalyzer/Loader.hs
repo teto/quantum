@@ -4,6 +4,7 @@ import MptcpAnalyzer.Types
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Stream
+import MptcpAnalyzer.Frame
 
 import Prelude hiding (log)
 import Control.Monad.Trans (liftIO)
@@ -13,10 +14,15 @@ import Polysemy (Sem, Members, Embed)
 import Polysemy.State as P
 import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
 import Frames
+import Frames.CSV
+import qualified Frames.InCore
+
+
+
 
 -- TODO return an Either or Maybe ?
 -- return an either instead
-loadPcapIntoFrame :: Members [Cache, Log String, Embed IO ] m
+loadPcapIntoFrame :: (Frames.InCore.RecVec a, Frames.CSV.ReadRec a, Members [Cache, Log String, Embed IO ] m)
     => TsharkParams
     -> FilePath
     -> Sem m (Either String (FrameRec a))

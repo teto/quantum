@@ -3,9 +3,9 @@
   nixpkgs ? import ./pinned_nixpkgs.nix
   # nixpkgs ? import <nixpkgs> {}
   # , compilerName ? "ghc8101" # not supported yet
-  # , compilerName ? "ghc8104"
+  , compilerName ? "ghc8104"
   # , compilerName ? "ghc901"
-  , compilerName ? "ghc884"
+  # , compilerName ? "ghc884"
 }:
 
 let

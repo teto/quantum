@@ -258,7 +258,7 @@ main = do
           $ P.embedToFinal . P.runEmbedded lift
           $ P.traceToIO
           $ P.runState myState
-          $ runCache cacheConfig
+          $ runMockCache cacheConfig
           $ runLogAction @IO logStringStdout (inputLoop (extraCommands options))
   return ()
 

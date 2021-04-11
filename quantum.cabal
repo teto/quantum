@@ -33,6 +33,7 @@ common shared-properties
       , optparse-applicative
       , containers
       -- polysemybased logger
+      , cereal
       , co-log-core
       , co-log-polysemy
       , readable
@@ -76,6 +77,8 @@ common shared-properties
        , vector
        , haskeline >= 0.8.0.0
        , mptcp-pm >= 0.0.4
+       , pipes-safe
+       , pipes-parse
 
         -- for plotting that's what is used in Frames
       -- diagrams is not ready for 8.10

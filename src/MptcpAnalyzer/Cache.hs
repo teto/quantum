@@ -8,6 +8,7 @@ where
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
 
+import Prelude hiding (writeFile)
 import System.Directory (doesFileExist)
 -- import System.Posix.Files.ByteString
 import System.FilePath.Posix (takeBaseName)
@@ -18,6 +19,8 @@ import Frames
 import Frames.CSV
 import Data.Hashable
 import GHC.Generics
+import Data.Serialize
+import Data.ByteString (writeFile)
 
 data CacheId = CacheId {
   cacheDeps :: [FilePath]
@@ -32,14 +35,14 @@ data CacheConfig = CacheConfig {
 
 -- type CachePlaceHolder = Int
 -- TODO a remplacer par un parametre par exemple
-type CachePlaceHolder = SomeFrame
+-- type CachePlaceHolder = SomeFrame
 
 -- TODO add a cacheConfig ?
 -- TODO this should be an effect
-data Cache m a where
+data  Cache m a where
     -- should maybe be a filepath
-    PutCache :: CacheId -> CachePlaceHolder -> Cache m Bool
-    GetCache :: CacheId -> Cache m (Either String CachePlaceHolder)
+    PutCache :: Serialize res => CacheId -> res -> Cache m Bool
+    GetCache :: Serialize res => CacheId -> Cache m (Either String res)
     IsValid :: CacheId -> Cache m Bool
 
 makeSem ''Cache
@@ -71,8 +74,22 @@ runCache config = do
         -- return Right rpcap
       IsValid cid -> isCacheValid config cid
 
+-- | Mock cache
+--
+runMockCache :: Members '[Embed IO] r => CacheConfig -> Sem (Cache : r) a -> Sem r a
+runMockCache config = do
+  interpret $ \case
+      PutCache cid frame -> return True
+      GetCache cid -> return $ Left "Not in cache"
+        -- return $ Left "not implemented"
+        -- use config to get the final path too
+        -- let csvFilename = filenameFromCacheId cid
+        -- rpcap <- embed $ loadRows csvFilename
+        -- return Right rpcap
+      IsValid cid -> return False
+
 -- first check if the file exists ?
-doGetCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> Sem r (Either String CachePlaceHolder)
+doGetCache :: (Serialize a, Members '[Embed IO] r) => CacheConfig -> CacheId -> Sem r (Either String a)
 doGetCache config cid = return $ Left "Not implemented yet"
   -- do
   -- -- res <- embed $ loadRows csvFilename
@@ -87,14 +104,18 @@ doGetCache config cid = return $ Left "Not implemented yet"
 
 -- SomeFrame
 -- TODO reuse export function ?
-doPutCache :: Members '[Embed IO] r => CacheConfig -> CacheId -> CachePlaceHolder -> Sem r Bool
-doPutCache config cid frame =
+doPutCache :: (Serialize a, Members '[Embed IO] r) => CacheConfig -> CacheId -> a -> Sem r Bool
+doPutCache config cid resource =
   -- writeFile
   -- writeCSV :: (ColumnHeaders ts, Foldable f, RecordToList ts, RecMapMethod ShowCSV ElField ts) => FilePath -> f (Record ts) -> IO ()
   -- produceDSV
-  embed $ writeCSV csvFilename frame >> return True
+  -- embed $ writeCSV csvFilename frame >> return True
+  embed $ do
+    writeFile csvFilename $ encode resource
+    return True
   where
       csvFilename = getFullPath config cid
+  
 
 -- TODO log ? / compare inputs date
 isCacheValid :: Members '[Embed IO] r => CacheConfig -> CacheId -> Sem r Bool
