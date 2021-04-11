@@ -199,15 +199,16 @@ cmdPlotTcpOwd :: Members [Log String, P.State MyState, Cache, Embed IO] m =>
           FilePath -- ^ temporary file to save plot to
           -> Handle
           -> [ConnectionRole]
-          -> FrameFiltered Packet
-          -> FrameFiltered (Record RecTsharkPrefixed)
+          -> MergedPcap
+          -- -> FrameFiltered Packet
+          -- -> FrameFiltered (Record RecTsharkPrefixed)
           -> Sem m RetCode
-cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
+cmdPlotTcpOwd tempPath _ destinations mergedRes = do
   log $ "plotting OWDs "
   -- look at https://hackage.haskell.org/package/vinyl-0.13.0/docs/Data-Vinyl-Functor.html#t::.
   -- to see how to deal with 
   -- type (:.) f g = Compose f g
-  let mergedRes = mergeTcpConnectionsFromKnownStreams aFrame1 processedAFrame2
+  -- let mergedRes = mergeTcpConnectionsFromKnownStreams aFrame1 processedAFrame2
   -- recMaybe
   let mbRecs = map recMaybe mergedRes
   let justRecs = catMaybes mbRecs
@@ -232,14 +233,7 @@ cmdPlotTcpOwd tempPath _ destinations aFrame1 aFrame2 = do
     -- dumpRec Nothing = putStrLn "nothing"
     dumpRec x = putStrLn $ show $ x
     -- firstRes = (head justRecs)
-    -- newCol = retypeColumn @AbsTime @AbsTime2 (frameRow (ffFrame aFrame2) 0)
-    -- processedFrame2 :: Frame (Record CsvHeader)
-    -- , '("relTime", "relTime2", Double)
-    -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Double)  ]) frame2
     processedFrame2 =  frame2
-    -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Double)  ]) frame2
-    -- processedFrame2 :: Frame Packet
-    -- processedFrame2 = fmap (retypeColumn @AbsTime @TestAbsTime) frame2
 
     frame2 = ffFrame aFrame2
 

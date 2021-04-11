@@ -186,9 +186,13 @@ type RecTsharkWithHash = '[PacketHash] ++ RecTshark
 
 type TsharkMergedCols = '[PacketHash] ++ RecTshark ++ RecTsharkPrefixed
 
-mergeTcpConnectionsFromKnownStreams :: 
+-- not a frame but hope it should be
+type MergedPcap = [ Rec (Maybe :. ElField) TsharkMergedCols ]
+
+-- | Merge of 2 frames
+mergeTcpConnectionsFromKnownStreams ::
   FrameFiltered Packet -> FrameFiltered (Record RecTsharkPrefixed)
-  -> [ Rec (Maybe :. ElField) TsharkMergedCols ]
+  -> MergedPcap
 -- these are from host1 / host2
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
   mergedFrame
@@ -203,6 +207,13 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
     -- hframe1dest = addTcpDestinationsToFrame hframe1
     hframe2 = zipFrames (addHash aframe1) (ffFrame aframe2)
     -- hframe3 = toFrame [testRec1]
+    -- newCol = retypeColumn @AbsTime @AbsTime2 (frameRow (ffFrame aFrame2) 0)
+    -- processedFrame2 :: Frame (Record CsvHeader)
+    -- , '("relTime", "relTime2", Double)
+    -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Double)  ]) frame2
+    -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Double)  ]) frame2
+    -- processedFrame2 :: Frame Packet
+    -- processedFrame2 = fmap (retypeColumn @AbsTime @TestAbsTime) frame2
 
 -- TODO we need to reorder from host1 / host2 to client server
 

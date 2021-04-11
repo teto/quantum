@@ -77,7 +77,14 @@ import Control.Lens ((^.), view)
 -- Repline is a wrapper (suppposedly more advanced) around haskeline
 -- for now we focus on the simple usecase with repline
 -- import System.Console.Repline
-import MptcpAnalyzer.Pcap (defaultTsharkPrefs)
+-- Repline is a wrapper (suppposedly more advanced) around haskeline
+-- for now we focus on the simple usecase with repline
+-- import System.Console.Repline
+
+-- Repline is a wrapper (suppposedly more advanced) around haskeline
+-- for now we focus on the simple usecase with repline
+-- import System.Console.Repline
+import MptcpAnalyzer.Pcap (defaultTsharkPrefs, defaultTsharkOptions)
 import Pipes hiding (Proxy)
 import System.Process hiding (runCommand)
 import Distribution.Simple.Utils (withTempFileEx)
@@ -376,8 +383,16 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
         --         Left err -> return $ CMD.Error err
         --         Right frame -> Plots.cmdPlotMptcpAttribute tempPath handle destinations frame
         eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId1)
-        -- TODO
-        eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 (StreamId streamId2)
+        -- TODO 
+        -- eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 (StreamId streamId2)
+        frame2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2 
+
+        let mergedRes = mergeTcpConnectionsFromKnownStreams aFrame1 processedAFrame2
+
+        embed $ writeDSV defaultParserOptions "debug.csv" (toFrame mergedRes)
+        -- embed $ writeDSV defaultParserOptions "retyped.csv" processedFrame2
+        -- connection is wrong here, just a hack to work around limitation
+        let eframe2 = FrameTcp (ffCon eframe1) frame2
         res <- case (eframe1, eframe2) of
           (Right aframe1, Right aframe2) -> Plots.cmdPlotTcpOwd tempPath handle (getDests dest) aframe1 aframe2
           (Left err, _) -> return $ CMD.Error err
