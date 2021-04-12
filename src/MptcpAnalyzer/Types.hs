@@ -104,43 +104,6 @@ declareColumn "owd" ''Double
 --     , "relTime" :-> Double
 --     , "ipSource" :-> IP
 --     , "ipDest" :-> IP
---     , "ipSrcHost" :-> Text
---     , "ipDstHost" :-> Text
---     -- TODO pass as a StreamIdTcp
---     , "tcpStream" :-> StreamId Tcp
---     , "tcpSrcPort" :-> Word16
---     , "tcpDestPort" :-> Word16
---     , "rwnd" :-> Word32
---     , "tcpFlags" :-> TcpFlagList
---     , "tcpOptionKinds" :-> Text
---     , "tcpSeq"  :-> Word32
---     , "tcpLen"  :-> Word16
---     , "tcpAck"  :-> Word32
-
---     , "tsVal"  :-> Maybe Word32
---     , "tsEcr"  :-> Maybe Word32
-
---     , "mptcpExpectedToken"  :-> MbMptcpExpectedToken
---     , "mptcpStream" :-> MbMptcpStream
---     , "mptcpSendKey" :-> Maybe Word64
---     , "mptcpRecvKey" :-> Maybe Word64
-
---     , "mptcpRecvToken" :-> MbMptcpExpectedToken
---     , "mptcpDataFin" :-> Maybe Bool
---     -- mptcp version for now is 0 or 1
---     -- maybe use a word9 instead
---     , "mptcpVersion" :-> Maybe Int
---     -- TODO check
---     -- , "tcpOptionSubtypes" :-> OptionList
---     -- , "mptcpRawDsn" :-> Word64
---     -- , "mptcpRawDack" :-> Word64
---     -- , "mptcpSSN" :-> Word64
---     -- , "mptcpDssLen" :-> Word32
---     -- , "mptcpAddrId" :-> Maybe Int
---     -- , "mptcpRawDsn" :-> Word64
---     -- relative or abs
---     , "mptcpDack" :-> Maybe Word64
---     , "mptcpDsn" :-> Maybe Word64
 --     -- , "mptcpRelatedMappings" :-> Maybe OptionList
 --     -- , "mptcpReinjectionOf" :-> Maybe OptionList
 --     -- , "mptcpReinjectedIn" :-> Maybe OptionList
@@ -160,18 +123,6 @@ declareColumn "senderIP" ''IP
 declareColumn "receiverIP" ''IP
 genExplicitRecord "" "RecMerged" mergedFields
 
-
--- |Can load stream ids from CSV files
-readStreamId :: ReadM (StreamId a)
-readStreamId = eitherReader $ \arg -> case reads arg of
-  [(r, "")] -> return $ StreamId r
-  _ -> Left $ "readStreamId: cannot parse value `" ++ arg ++ "`"
-
-readConnectionRole :: ReadM ConnectionRole
-readConnectionRole = eitherReader $ \arg -> case reads arg of
-  [(a, "")] -> return $ a
-  -- [("client", "")] -> return $ RoleClient
-  _ -> Left $ "readConnectionRole: cannot parse value `" ++ arg ++ "`"
 
 
 -- row / ManRow

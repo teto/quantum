@@ -9,6 +9,12 @@ module MptcpAnalyzer.Merge
 where
 
 import MptcpAnalyzer.Types
+import Tshark.TH
+import MptcpAnalyzer.ArtificialFields
+import MptcpAnalyzer.Types
+-- for retypeColumn
+import MptcpAnalyzer.Frames.Utils
+
 
 import Frames
 import Frames.Joins
@@ -20,9 +26,6 @@ import qualified Data.Vinyl as V
 import Language.Haskell.TH (Name)
 import Net.IP (IP)
 import Data.Word (Word8, Word16, Word32, Word64)
-import Tshark.TH
-import MptcpAnalyzer.ArtificialFields
-import MptcpAnalyzer.Types
 import Data.Maybe (catMaybes)
 import Data.Foldable (toList)
 import Control.Lens
@@ -191,7 +194,10 @@ type MergedPcap = [ Rec (Maybe :. ElField) TsharkMergedCols ]
 
 -- | Merge of 2 frames
 mergeTcpConnectionsFromKnownStreams ::
-  FrameFiltered Packet -> FrameFiltered (Record RecTsharkPrefixed)
+  FrameFiltered Packet
+  -- -> FrameFiltered (Record RecTsharkPrefixed)
+  -- -> FrameFiltered Packet
+  -> FrameFiltered (Record RecTsharkPrefixed)
   -> MergedPcap
 -- these are from host1 / host2
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
@@ -199,21 +205,19 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
   where
     -- we want an outerJoin , maybe with a status column like in panda
     -- outerJoin returns a list of [Rec (Maybe :. ElField) ors]
-    mergedFrame = outerJoin @'[PacketHash] ( hframe1dest) ( hframe2)
+    mergedFrame = outerJoin @'[PacketHash] ( hframe1dest) processedFrame2
     -- mergedFrame = innerJoin @'[PacketHash] ( hframe1) ( hframe2)
     -- mergedFrame = hframe1
     hframe1 = zipFrames (addHash aframe1) (ffFrame aframe1)
     hframe1dest = hframe1
     -- hframe1dest = addTcpDestinationsToFrame hframe1
+    hframe2 :: Frame (Record ('[PacketHash] ++ RecTsharkPrefixed))
     hframe2 = zipFrames (addHash aframe1) (ffFrame aframe2)
-    -- hframe3 = toFrame [testRec1]
-    -- newCol = retypeColumn @AbsTime @AbsTime2 (frameRow (ffFrame aFrame2) 0)
-    -- processedFrame2 :: Frame (Record CsvHeader)
-    -- , '("relTime", "relTime2", Double)
     -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Double)  ]) frame2
     -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Double)  ]) frame2
-    -- processedFrame2 :: Frame Packet
-    -- processedFrame2 = fmap (retypeColumn @AbsTime @TestAbsTime) frame2
+    processedFrame2 = hframe2
+    -- processedFrame2 :: Frame (Record ('[PacketHash] ++ RecTsharkPrefixed))
+    -- processedFrame2 = fmap (retypeColumn @AbsTime @TestAbsTime) hframe2
 
 -- TODO we need to reorder from host1 / host2 to client server
 

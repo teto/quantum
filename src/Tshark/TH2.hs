@@ -21,18 +21,18 @@ import Tshark.TH
 -- TODO
 --
 -- type  MptcpColumnUniverse = [Int]
-type MptcpColumnUniverse = [Bool, Int, Double]
+-- type MptcpColumnUniverse = [Bool, Int, Double]
 
 
-myRow :: RowGen [Bool, Int, Double]
-myRow = (RowGen {
-    columnNames = map (unpack . fst) baseFields
-    , tablePrefix = ""
-    , separator = pack "|"
-    , rowTypeName = "RecTshark"
-    , columnUniverse = Proxy
-    , lineReader =  produceTokens ""
-    })
+-- myRow :: RowGen [Bool, Int, Double]
+-- myRow = (RowGen {
+--     columnNames = map (unpack . fst) baseFields
+--     , tablePrefix = ""
+--     , separator = pack "|"
+--     , rowTypeName = "RecTshark"
+--     , columnUniverse = Proxy
+--     , lineReader =  produceTokens ""
+--     })
 
 -- declarePrefixedColumns "" baseFields
 

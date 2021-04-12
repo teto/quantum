@@ -37,12 +37,14 @@ import MptcpAnalyzer.Commands.List as CLI
 import MptcpAnalyzer.Commands.ListMptcp as CLI
 import MptcpAnalyzer.Commands.Export as CLI
 import MptcpAnalyzer.Commands.Map as CLI
+import MptcpAnalyzer.Merge
 import qualified MptcpAnalyzer.Commands.Plot as Plots
 import qualified MptcpAnalyzer.Commands.PlotOWD as Plots
 import MptcpAnalyzer.Plots.Types
 import qualified MptcpAnalyzer.Plots.Owd as Plots
 import qualified MptcpAnalyzer.Commands.Load as CL
 -- import Control.Monad (void)
+
 
 import Polysemy (Sem, Members, runFinal, Final)
 import qualified Polysemy as P
@@ -63,6 +65,7 @@ import Colog.Core.IO (logStringStdout)
 import Colog.Polysemy (Log, log, runLogAction)
 import Graphics.Rendering.Chart.Easy hiding (argument)
 import Graphics.Rendering.Chart.Backend.Cairo
+import Frames.InCore (toFrame)
 
 
 -- for noCompletion
@@ -84,14 +87,30 @@ import Control.Lens ((^.), view)
 -- Repline is a wrapper (suppposedly more advanced) around haskeline
 -- for now we focus on the simple usecase with repline
 -- import System.Console.Repline
-import MptcpAnalyzer.Pcap (defaultTsharkPrefs, defaultTsharkOptions)
+-- Repline is a wrapper (suppposedly more advanced) around haskeline
+-- for now we focus on the simple usecase with repline
+-- import System.Console.Repline
+
+-- Repline is a wrapper (suppposedly more advanced) around haskeline
+-- for now we focus on the simple usecase with repline
+-- import System.Console.Repline
+-- Repline is a wrapper (suppposedly more advanced) around haskeline
+-- for now we focus on the simple usecase with repline
+-- import System.Console.Repline
+
+-- Repline is a wrapper (suppposedly more advanced) around haskeline
+-- for now we focus on the simple usecase with repline
+-- import System.Console.Repline
+import MptcpAnalyzer.Pcap (defaultTsharkPrefs, defaultTsharkOptions, defaultParserOptions)
 import Pipes hiding (Proxy)
 import System.Process hiding (runCommand)
 import Distribution.Simple.Utils (withTempFileEx)
 import Distribution.Compat.Internal.TempFile (openTempFile)
 import MptcpAnalyzer.Loader
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, catMaybes)
 import Data.Either (fromLeft)
+import Frames.CSV (writeDSV)
+import Frames (recMaybe, Frame, Record)
 
 
 data Severity = TraceS | DebugS | InfoS | ErrorS deriving (Read, Show, Eq)
@@ -385,16 +404,24 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
         eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId1)
         -- TODO 
         -- eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 (StreamId streamId2)
-        frame2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2 
+        -- eiFrame2 :: Sem r (Either String (Frame (Record RecTsharkPrefixed)))
+        eiFrame2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
+        -- frame2 <- case eiFrame2 of
+        --   Left err -> error err
+        --   Right frame -> return frame
 
-        let mergedRes = mergeTcpConnectionsFromKnownStreams aFrame1 processedAFrame2
 
-        embed $ writeDSV defaultParserOptions "debug.csv" (toFrame mergedRes)
         -- embed $ writeDSV defaultParserOptions "retyped.csv" processedFrame2
         -- connection is wrong here, just a hack to work around limitation
-        let eframe2 = FrameTcp (ffCon eframe1) frame2
-        res <- case (eframe1, eframe2) of
-          (Right aframe1, Right aframe2) -> Plots.cmdPlotTcpOwd tempPath handle (getDests dest) aframe1 aframe2
+        res <- case (eframe1, eiFrame2 :: Either String (Frame (Record RecTsharkPrefixed))) of
+          (Right aframe1, Right frame2) -> do
+              let aframe2 = FrameTcp (ffCon aframe1) frame2
+              let mergedRes = mergeTcpConnectionsFromKnownStreams aframe1 aframe2
+              let mbRecs = map recMaybe mergedRes
+              let justRecs = catMaybes mbRecs
+              -- embed $ (writeDSV defaultParserOptions "debug.csv" (toFrame justRecs)) >> return CMD.Continue
+              Plots.cmdPlotTcpOwd tempPath handle (getDests dest) mergedRes
+              -- return CMD.Continue
           (Left err, _) -> return $ CMD.Error err
           (_, Left err) -> return $ CMD.Error err
         return res

@@ -39,30 +39,7 @@ import Data.Char (toLower)
 --   where f field = fullname field :-> colType field
 --         rowTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
 
--- mkColSynDec
 
--- baseFields :: [(String, TsharkFieldDesc)]
--- type MyColumns =  SkillLevel ': NumericalAnswer ': CommonColumns
--- frame.number,frame.interface_name,frame.time_epoch,_ws.col.ipsrc,_ws.col.ipdst,ip.src_host,ip.dst_host,tcp.stream,tcp.srcport,tcp.dstport,tcp.flags,tcp.option_kind,tcp.seq,tcp.len,tcp.ack
-
-
--- mptcpFields :: [TsharkField]
--- mptcpFields = [
---         -- # TODO use 'category'
---         -- # rawvalue is tcp.window_size_value
---         -- # tcp.window_size takes into account scaling factor !
---         Field "tcp.window_size" "rwnd" 'Int64' True True
---         Field "tcp.flags" "tcpflags" 'UInt8' False True _convert_flags
---         Field "tcp.option_kind" "tcpoptions" None False False
---             -- functools.partial(_load_list field="option_kind") )
---         Field "tcp.seq" "tcpseq" 'UInt32' "TCP sequence number" True
---         Field "tcp.len" "tcplen" 'UInt16' "TCP segment length" True
---         Field "tcp.ack" "tcpack" 'UInt32' "TCP segment acknowledgment" True
---         Field "tcp.options.timestamp.tsval" "tcptsval" 'Int64'
---             "TCP timestamp tsval" True
---         Field "tcp.options.timestamp.tsecr" "tcptsecr" 'Int64'
---             "TCP timestamp tsecr" True
---     ]
 
 declarePrefixedColumns :: Text -> FieldDescriptions -> DecsQ
 declarePrefixedColumns prefix fields = do
@@ -70,7 +47,8 @@ declarePrefixedColumns prefix fields = do
   where
     -- acc ++
     toto acc (colName, field) = do
-      t <- declarePrefixedColumn colName prefix (tfieldColType field)
+      -- Note: Frames.declarePrefixedColumn doesn't prefix the colName but the accessors !
+      t <- declarePrefixedColumn (prefix <> colName) prefix (tfieldColType field)
       return $ acc ++ t
 
 -- TODO search frames.TH

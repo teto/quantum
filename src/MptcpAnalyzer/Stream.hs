@@ -4,6 +4,7 @@ module MptcpAnalyzer.Stream
 where
 import Data.Word (Word32)
 import Data.Hashable
+import Options.Applicative
 
 -- Phantom types
 data Mptcp
@@ -16,3 +17,9 @@ newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord ) deriving Ha
 type StreamIdTcp = StreamId Tcp
 type StreamIdMptcp = StreamId Mptcp
 
+
+-- |Can load stream ids from CSV files
+readStreamId :: ReadM (StreamId a)
+readStreamId = eitherReader $ \arg -> case reads arg of
+  [(r, "")] -> return $ StreamId r
+  _ -> Left $ "readStreamId: cannot parse value `" ++ arg ++ "`"

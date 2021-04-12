@@ -48,5 +48,6 @@ in
 
     export ASAN_OPTIONS="log_path=./test.log:abort_on_error=1"
     export UBSAN_OPTIONS=print_stacktrace=1
+    ulimit -c unlimited
   '';
   }

@@ -15,6 +15,7 @@ import Data.Word (Word8, Word16, Word32, Word64)
 import Frames.ShowCSV
 import Tshark.Fields
 import Language.Haskell.TH (Name)
+import Options.Applicative
 
 -- |Filters a connection depending on its role
 data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, ShowCSV, Ord)
@@ -35,3 +36,9 @@ mergedFields = [
   , ("rcvTime", ''Double)
   , ("tcpSeq", ''Word32)
   ]
+
+readConnectionRole :: ReadM ConnectionRole
+readConnectionRole = eitherReader $ \arg -> case reads arg of
+  [(a, "")] -> return $ a
+  -- [("client", "")] -> return $ RoleClient
+  _ -> Left $ "readConnectionRole: cannot parse value `" ++ arg ++ "`"

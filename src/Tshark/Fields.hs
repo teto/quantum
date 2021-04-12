@@ -12,7 +12,7 @@ import Net.Tcp (TcpFlag(..))
 import Net.IP
 import Net.IPv6 (IPv6(..))
 import GHC.TypeLits (KnownSymbol)
-import Language.Haskell.TH (Name)
+import Language.Haskell.TH (Name, Q)
 import Data.Text (Text)
 import Data.Word (Word8, Word16, Word32, Word64)
 import Frames.ShowCSV
@@ -100,4 +100,6 @@ baseFields = [
 
     ]
 
-
+-- TODO
+prefixFields :: FieldDescriptions -> Q FieldDescriptions
+prefixFields = 

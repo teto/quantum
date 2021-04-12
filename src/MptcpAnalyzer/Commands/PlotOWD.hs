@@ -224,7 +224,7 @@ cmdPlotTcpOwd tempPath _ destinations mergedRes = do
   -- putStrLn mbRec
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
   embed $ writeDSV defaultParserOptions "debug.csv" (toFrame justRecs)
-  embed $ writeDSV defaultParserOptions "retyped.csv" processedFrame2
+  -- embed $ writeDSV defaultParserOptions "retyped.csv" processedFrame2
   -- so for now we assume an innerJoin (but fix it later)
 
   return CMD.Continue
@@ -233,13 +233,13 @@ cmdPlotTcpOwd tempPath _ destinations mergedRes = do
     -- dumpRec Nothing = putStrLn "nothing"
     dumpRec x = putStrLn $ show $ x
     -- firstRes = (head justRecs)
-    processedFrame2 =  frame2
+    -- processedFrame2 =  frame2
 
-    frame2 = ffFrame aFrame2
+    -- frame2 = ffFrame aFrame2
 
     -- processedAFrame2 :: FrameFiltered (Record CsvHeader)
     -- processedAFrame2 = aFrame2 
-    processedAFrame2 = aFrame2 { ffFrame = processedFrame2 }
+    -- processedAFrame2 = aFrame2 { ffFrame = processedFrame2 }
     -- take a type-level-list of (fromName, toName, type) and use it to rename columns in suitably typed record
 
 

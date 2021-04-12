@@ -8,6 +8,7 @@ import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Types
 import Net.Tcp (TcpConnection(..), TcpFlag(..))
 import MptcpAnalyzer.Pcap
+import MptcpAnalyzer.Stream
 
 import Prelude hiding (log)
 import Options.Applicative
