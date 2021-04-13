@@ -41,6 +41,8 @@ import Data.Char (toLower)
 
 
 
+-- 
+-- WARN the behavior here differs from Frames
 declarePrefixedColumns :: Text -> FieldDescriptions -> DecsQ
 declarePrefixedColumns prefix fields = do
   foldM toto ([]) fields
@@ -48,6 +50,7 @@ declarePrefixedColumns prefix fields = do
     -- acc ++
     toto acc (colName, field) = do
       -- Note: Frames.declarePrefixedColumn doesn't prefix the colName but the accessors !
+      -- expects colName lensPrefix type
       t <- declarePrefixedColumn (prefix <> colName) prefix (tfieldColType field)
       return $ acc ++ t
 
@@ -64,27 +67,10 @@ genRecordFromHeaders :: String -> String -> FieldDescriptions -> DecsQ
 genRecordFromHeaders tablePrefix rowTypeName fields = genExplicitRecord tablePrefix rowTypeName converted
   where
     converted = map (\(name, field) -> (name, tfieldColType field)) fields
-  -- (colTypes, colDecs) <- (second concat . unzip)
-  --                       <$> mapM (uncurry mkColDecs) headers
-  -- -- let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
-  -- let recTy = TySynD (mkName rowTypeName) [] (qqDec colTypes)
-  -- return [recTy]
-  -- where
-  --   -- colTypes = map (\(name, field) -> (name, colType field)) fields
-  --   -- TODO headers
-  --   -- headers :: [(Text, Type)]
-  --   headers = zip colNames (repeat (ConT ''T.Text))
-  --   -- colNames :: [Text]
-  --   colNames = map fst fields
-  --   mkColDecs colNm colTy = do
-  --     let safeName = T.unpack (sanitizeTypeName colNm)
-  --     mColNm <- lookupTypeName (tablePrefix ++ safeName)
-  --     case mColNm of
-  --       Just n -> pure (ConT n, [])
-  --       Nothing -> colDec (T.pack tablePrefix) rowTypeName colNm (Right colTy)
 
 -- mergedFields :: [(String, Name)]
 -- FieldDescriptions
+-- tablePrefix here consists in the lenses but not the actual column names
 genExplicitRecord :: String -> String -> [(Text, Name)] -> Q [Dec]
 genExplicitRecord tablePrefix rowTypeName fields = do
   (colTypes, colDecs) <- (second concat . unzip)

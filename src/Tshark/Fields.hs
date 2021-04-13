@@ -101,5 +101,8 @@ baseFields = [
     ]
 
 -- TODO
-prefixFields :: FieldDescriptions -> Q FieldDescriptions
-prefixFields = 
+prefixFields :: Text -> FieldDescriptions -> FieldDescriptions
+prefixFields prefix = map (\(name, field) -> (prefix<>name , field))
+
+baseFieldsPrefixed :: FieldDescriptions
+baseFieldsPrefixed = prefixFields "test_" baseFields

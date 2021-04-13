@@ -82,7 +82,8 @@ import MptcpAnalyzer.ArtificialFields
 declarePrefixedColumns "" baseFields
 
 -- when loading the second pcap to merge, we need to distinguish between the different fields
-declarePrefixedColumns "test" baseFields
+-- declarePrefixedColumns "test" baseFields
+declarePrefixedColumns "" baseFieldsPrefixed
 
 -- todo declare it from ArtificialFields ?
 -- artificial types, i.e. created by the app and not tshark
@@ -113,7 +114,8 @@ declareColumn "owd" ''Double
 -- RecTshark
 genRecordFrom "RecTshark" baseFields
 -- these are useful when merging different
-genRecordFromHeaders "test" "RecTsharkPrefixed" baseFields
+genRecordFromHeaders "" "RecTsharkPrefixed" baseFieldsPrefixed
+-- genExplicitRecord "test" "RecTsharkPrefixed" baseFieldsPrefixed
 genRecHashable "HashablePart" baseFields
 
 --
