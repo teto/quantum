@@ -29,6 +29,7 @@ import Data.Word (Word8, Word16, Word32, Word64)
 import Data.Maybe (catMaybes)
 import Data.Foldable (toList)
 import Control.Lens
+import MptcpAnalyzer.Pcap (addTcpDestToFrame)
 
 -- convert_to_sender_receiver
 -- merge_tcp_dataframes_known_streams(
@@ -185,9 +186,10 @@ addHash aframe =
 -- testRec1 = (Col 42) :& (Col "bob") :& RNil
 -- :& (col 23) :&  (pure 75.2 )
 
-type RecTsharkWithHash = '[PacketHash] ++ RecTshark
+-- type RecTsharkWithHash = '[PacketHash] ++ RecTshark
 
-type TsharkMergedCols = '[PacketHash] ++ RecTshark ++ RecTsharkPrefixed
+-- type TsharkMergedCols = PacketHash ': TcpDest ': RecTshark ++ RecTsharkPrefixed
+type TsharkMergedCols = '[PacketHash] ++ '[TcpDest] ++ RecTshark ++ RecTsharkPrefixed
 
 -- not a frame but hope it should be
 type MergedPcap = [ Rec (Maybe :. ElField) TsharkMergedCols ]
@@ -205,15 +207,15 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
   where
     -- we want an outerJoin , maybe with a status column like in panda
     -- outerJoin returns a list of [Rec (Maybe :. ElField) ors]
-    mergedFrame = outerJoin @'[PacketHash] ( hframe1dest) processedFrame2
-    -- mergedFrame = innerJoin @'[PacketHash] ( hframe1) ( hframe2)
-    -- mergedFrame = hframe1
-    hframe1 = zipFrames (addHash aframe1) (ffFrame aframe1)
+    mergedFrame = outerJoin @'[PacketHash] (hframe1dest) processedFrame2
+
+    frame1withDest = addTcpDestToFrame (ffFrame aframe1) (ffCon aframe1)
+
+    hframe1 = zipFrames (addHash aframe1) frame1withDest
     hframe1dest = hframe1
     -- hframe1dest = addTcpDestinationsToFrame hframe1
     hframe2 :: Frame (Record ('[PacketHash] ++ RecTsharkPrefixed))
     hframe2 = zipFrames (addHash aframe1) (ffFrame aframe2)
-    -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Double)  ]) frame2
     -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Double)  ]) frame2
     processedFrame2 = hframe2
     -- processedFrame2 :: Frame (Record ('[PacketHash] ++ RecTsharkPrefixed))

@@ -401,7 +401,9 @@ addTcpDestToFrame ::
   -- ,IpSource ∈ rs, IpDest ∈ rs
   -- ,  IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs
   )
-    => Frame (Record RecTshark) -> Connection -> Frame (Record  ( TcpDest ': RecTshark ))
+    => Frame (Record RecTshark)
+    -> Connection
+    -> Frame (Record  ( TcpDest ': RecTshark ))
 addTcpDestToFrame frame con = fmap (\x -> addTcpDestToRec x (computeTcpDest x con)) streamFrame
     where
       streamFrame = filterFrame  (\x -> rgetField @TcpStream x == conTcpStreamId con) frame
