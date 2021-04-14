@@ -231,11 +231,12 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
 -- gen
 
 
+-- TODO and then we should compute a owd
+type RecSenderReceiver = '[SndAbsTime, RcvAbsTime]
+
 -- FrameMergedOriented
 -- inspirted by convert_to_sender_receiver
--- TODO need to 
--- this is for a TCP frame
--- FrameMerged
+-- TODO this should be for a TCP frame
 -- for now ignore deal with frame directly rather than FrameFiltered
 convertToSenderReceiver ::
   Frame (Rec (Maybe :. ElField) TsharkMergedCols)
@@ -249,7 +250,8 @@ convertToSenderReceiver oframe = do
     -- TODO filter per destination
     -- then rename into sndTime, rcvTime
     -- fmap retype
-    mempty
+    -- TODO
+    sendFrame RoleClient 
   else
     mempty
 
@@ -269,9 +271,15 @@ convertToSenderReceiver oframe = do
     -- -- or concat
     -- renameTo role isSender = sendFrame 
       -- TODO <> recvFrame
-      where
+      -- where
         -- succ ?
-        -- sendFrame = retypeColumn @AbsTime @SndTime (filterFrame (\x -> x ^. tcpDest == role) mframe)
-        -- TODO use (succ role) instead
-        -- recvFrame = retypeColumn @AbsTime @SndTime (filterFrame (\x -> x ^. tcpDest == role) mframe)
+    sendFrame h1role = retypeColumn @AbsTime @SndAbsTime (filterFrame (\x -> x ^. tcpDest == h1role) jframe)
+    -- TODO use (succ role) instead
+    recvFrame h1role = retypeColumn @TestAbsTime @RcvAbsTime (filterFrame (\x -> x ^. tcpDest == h1role) mframe)
 
+
+-- | Add a One-Way-Delay column to the results
+-- addOWD :: Frame (Record RecSenderReceiver) -> Frame (Record '[OWD] ++ RecSenderReceiver)
+-- addOWD = fmap addOWD'
+--   where
+--     addOWD' = (rcvAbsTime x - sndAbsTime x)

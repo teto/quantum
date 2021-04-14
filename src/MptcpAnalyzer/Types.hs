@@ -83,7 +83,9 @@ declarePrefixedColumns "" baseFields
 
 -- when loading the second pcap to merge, we need to distinguish between the different fields
 -- declarePrefixedColumns "test" baseFields
-declarePrefixedColumns "" baseFieldsPrefixed
+declarePrefixedColumns "" baseFieldsHost2
+declarePrefixedColumns "" baseFieldsSender
+declarePrefixedColumns "" baseFieldsReceiver
 
 -- todo declare it from ArtificialFields ?
 -- artificial types, i.e. created by the app and not tshark
@@ -114,8 +116,8 @@ declareColumn "owd" ''Double
 -- RecTshark
 genRecordFrom "RecTshark" baseFields
 -- these are useful when merging different
-genRecordFromHeaders "" "RecTsharkPrefixed" baseFieldsPrefixed
--- genExplicitRecord "test" "RecTsharkPrefixed" baseFieldsPrefixed
+genRecordFromHeaders "" "RecTsharkPrefixed" baseFieldsHost2
+-- genExplicitRecord "test" "RecTsharkPrefixed" baseFieldsHost2
 genRecHashable "HashablePart" baseFields
 
 --

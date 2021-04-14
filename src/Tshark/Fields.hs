@@ -104,5 +104,14 @@ baseFields = [
 prefixFields :: Text -> FieldDescriptions -> FieldDescriptions
 prefixFields prefix = map (\(name, field) -> (prefix<>name , field))
 
-baseFieldsPrefixed :: FieldDescriptions
-baseFieldsPrefixed = prefixFields "test_" baseFields
+-- this should actually be host2
+baseFieldsHost2 :: FieldDescriptions
+baseFieldsHost2 = prefixFields "test_" baseFields
+
+
+baseFieldsSender :: FieldDescriptions
+baseFieldsSender = prefixFields "snd_" baseFields
+
+baseFieldsReceiver :: FieldDescriptions
+baseFieldsReceiver = prefixFields "rcv_" baseFields
+
