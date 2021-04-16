@@ -212,6 +212,7 @@ cmdPlotTcpOwd tempPath _ destinations mergedRes = do
   -- recMaybe
   let mbRecs = map recMaybe mergedRes
   let justRecs = catMaybes mbRecs
+  let sndRcvFrame = convertToSenderReceiver mergedRes
   -- could use showRow as well
   P.embed $ dumpRec $ head justRecs
   P.embed $ putStrLn $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
@@ -224,6 +225,7 @@ cmdPlotTcpOwd tempPath _ destinations mergedRes = do
   -- putStrLn mbRec
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
   embed $ writeDSV defaultParserOptions "debug.csv" (toFrame justRecs)
+  embed $ writeDSV defaultParserOptions "converted.csv" sndRcvFrame
   -- embed $ writeDSV defaultParserOptions "retyped.csv" processedFrame2
   -- so for now we assume an innerJoin (but fix it later)
 

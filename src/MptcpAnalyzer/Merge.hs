@@ -192,7 +192,7 @@ addHash aframe =
 type TsharkMergedCols = '[PacketHash] ++ '[TcpDest] ++ RecTshark ++ RecTsharkPrefixed
 
 -- not a frame but hope it should be
-type MergedPcap = [ Rec (Maybe :. ElField) TsharkMergedCols ]
+type MergedPcap = [Rec (Maybe :. ElField) TsharkMergedCols]
 
 -- | Merge of 2 frames
 mergeTcpConnectionsFromKnownStreams ::
@@ -232,15 +232,16 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
 
 
 -- TODO and then we should compute a owd
-type RecSenderReceiver = '[SndAbsTime, RcvAbsTime]
+-- , RcvAbsTime
+type RecSenderReceiver = '[SndAbsTime]
 
 -- FrameMergedOriented
 -- inspirted by convert_to_sender_receiver
 -- TODO this should be for a TCP frame
 -- for now ignore deal with frame directly rather than FrameFiltered
 convertToSenderReceiver ::
-  Frame (Rec (Maybe :. ElField) TsharkMergedCols)
-  -> Frame (Record RecTshark)
+  MergedPcap
+  -> Frame (Record (RDelete AbsTime TsharkMergedCols ++ '[SndAbsTime] ))
 convertToSenderReceiver oframe = do
   -- compare first packet time
   if delta > 0 then
@@ -251,9 +252,9 @@ convertToSenderReceiver oframe = do
     -- then rename into sndTime, rcvTime
     -- fmap retype
     -- TODO
-    sendFrame RoleClient 
+    toFrame [ sendFrame RoleClient ]
   else
-    mempty
+    toFrame [ sendFrame RoleServer ]
 
   where
     tframe = fmap recMaybe oframe
@@ -273,9 +274,13 @@ convertToSenderReceiver oframe = do
       -- TODO <> recvFrame
       -- where
         -- succ ?
-    sendFrame h1role = retypeColumn @AbsTime @SndAbsTime (filterFrame (\x -> x ^. tcpDest == h1role) jframe)
+    -- em fait le retype va ajouter la colonne a la fin seulement
+    -- sendFrame :: ConnectionRole -> Record '[SndAbsTime]
+    sendFrame h1role = retypeColumn @AbsTime @SndAbsTime (frameRow totoFrame 0)
+      where
+        totoFrame = (filterFrame (\x -> x ^. tcpDest == h1role) jframe)
     -- TODO use (succ role) instead
-    recvFrame h1role = retypeColumn @TestAbsTime @RcvAbsTime (filterFrame (\x -> x ^. tcpDest == h1role) mframe)
+    -- recvFrame h1role = retypeColumn @TestAbsTime @RcvAbsTime (filterFrame (\x -> x ^. tcpDest == h1role) mframe)
 
 
 -- | Add a One-Way-Delay column to the results
