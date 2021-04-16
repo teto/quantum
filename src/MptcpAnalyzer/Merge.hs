@@ -252,9 +252,9 @@ convertToSenderReceiver oframe = do
     -- then rename into sndTime, rcvTime
     -- fmap retype
     -- TODO
-    toFrame [ sendFrame RoleClient ]
+    toFrame $ sendFrame RoleClient <> recvFrame RoleServer
   else
-    toFrame [ sendFrame RoleServer ]
+    toFrame $ sendFrame RoleServer <> recvFrame RoleClient
 
   where
     tframe = fmap recMaybe oframe
@@ -263,6 +263,9 @@ convertToSenderReceiver oframe = do
     -- instead of taking firstRow we should compare the minima in case there are retransmissions
     delta :: Double
     delta =  (firstRow ^. testAbsTime)
+
+    totoFrame h1role = (filterFrame (\x -> x ^. tcpDest == h1role) jframe)
+
 -- (absTime firstRow) -
     -- frame of something
     -- For instance
@@ -276,11 +279,13 @@ convertToSenderReceiver oframe = do
         -- succ ?
     -- em fait le retype va ajouter la colonne a la fin seulement
     -- sendFrame :: ConnectionRole -> Record '[SndAbsTime]
-    sendFrame h1role = retypeColumn @AbsTime @SndAbsTime (frameRow totoFrame 0)
-      where
-        totoFrame = (filterFrame (\x -> x ^. tcpDest == h1role) jframe)
+    sendFrame h1role = fmap (convertToSender) (totoFrame h1role)
+    recvFrame h1role = fmap convertToReceiver (totoFrame h1role)
+
+    convertToSender = retypeColumn @AbsTime @SndAbsTime
+    convertToReceiver = retypeColumn @AbsTime @SndAbsTime
+
     -- TODO use (succ role) instead
-    -- recvFrame h1role = retypeColumn @TestAbsTime @RcvAbsTime (filterFrame (\x -> x ^. tcpDest == h1role) mframe)
 
 
 -- | Add a One-Way-Delay column to the results

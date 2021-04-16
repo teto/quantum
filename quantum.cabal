@@ -101,9 +101,13 @@ common shared-properties
     -- -ddump-splices to dump TH code
     ghc-options:
         -Wall -fno-warn-unused-binds -fno-warn-unused-matches
-        -fprof-auto
-        -ddump-splices -ddump-to-file -dth-dec-file
+        -- -fprof-auto
+        -ddump-splices -ddump-to-file 
+        -- -dth-dec-file
         -Wno-unused-imports
+        -Wno-unused-imports
+        -ddump-timings
+        -O0
         -- -fplugin=Polysemy.Plugin
     default-extensions:
         -- , OverloadedStrings
