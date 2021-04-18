@@ -14,6 +14,7 @@ import MptcpAnalyzer.ArtificialFields
 import MptcpAnalyzer.Types
 -- for retypeColumn
 import MptcpAnalyzer.Frames.Utils
+import MptcpAnalyzer.Pcap (addTcpDestToFrame)
 
 
 import Frames
@@ -29,7 +30,7 @@ import Data.Word (Word8, Word16, Word32, Word64)
 import Data.Maybe (catMaybes)
 import Data.Foldable (toList)
 import Control.Lens
-import MptcpAnalyzer.Pcap (addTcpDestToFrame)
+import Frames.Melt          (RDeleteAll, ElemOf)
 
 -- convert_to_sender_receiver
 -- merge_tcp_dataframes_known_streams(
@@ -191,14 +192,14 @@ addHash aframe =
 -- type TsharkMergedCols = PacketHash ': TcpDest ': RecTshark ++ RecTsharkPrefixed
 type TsharkMergedCols = '[PacketHash] ++ '[TcpDest] ++ RecTshark ++ RecTsharkPrefixed
 
+type SenderReceiverCols =  '[SndAbsTime]
+
 -- not a frame but hope it should be
 type MergedPcap = [Rec (Maybe :. ElField) TsharkMergedCols]
 
 -- | Merge of 2 frames
 mergeTcpConnectionsFromKnownStreams ::
   FrameFiltered Packet
-  -- -> FrameFiltered (Record RecTsharkPrefixed)
-  -- -> FrameFiltered Packet
   -> FrameFiltered (Record RecTsharkPrefixed)
   -> MergedPcap
 -- these are from host1 / host2
@@ -233,7 +234,6 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
 
 -- TODO and then we should compute a owd
 -- , RcvAbsTime
-type RecSenderReceiver = '[SndAbsTime]
 
 -- FrameMergedOriented
 -- inspirted by convert_to_sender_receiver
@@ -241,29 +241,32 @@ type RecSenderReceiver = '[SndAbsTime]
 -- for now ignore deal with frame directly rather than FrameFiltered
 convertToSenderReceiver ::
   MergedPcap
-  -> Frame (Record (RDelete AbsTime TsharkMergedCols ++ '[SndAbsTime] ))
+  -- -> Frame (Record (RDeleteAll '[AbsTime] TsharkMergedCols ++ '[SndAbsTime] ))
+  -> FrameRec (RDelete AbsTime TsharkMergedCols ++ SenderReceiverCols)
 convertToSenderReceiver oframe = do
   -- compare first packet time
   if delta > 0 then
     -- host1 is the client
-    -- h1_role = Client
-    -- filterFrame (
-    -- TODO filter per destination
     -- then rename into sndTime, rcvTime
-    -- fmap retype
     -- TODO
-    toFrame $ sendFrame RoleClient <> recvFrame RoleServer
+    toFrame $ sendFrame RoleClient
+      -- <> recvFrame RoleServer
   else
-    toFrame $ sendFrame RoleServer <> recvFrame RoleClient
+    toFrame $ sendFrame RoleServer
+      -- <> recvFrame RoleClient
 
   where
+    -- tframe :: [Maybe TsharkMergedCols]
+    tframe :: [Maybe (Record TsharkMergedCols)]
     tframe = fmap recMaybe oframe
+    jframe :: FrameRec TsharkMergedCols
     jframe = toFrame $ catMaybes $ toList tframe
     firstRow = frameRow jframe 0
     -- instead of taking firstRow we should compare the minima in case there are retransmissions
     delta :: Double
     delta =  (firstRow ^. testAbsTime)
 
+    totoFrame :: ConnectionRole -> FrameRec TsharkMergedCols
     totoFrame h1role = (filterFrame (\x -> x ^. tcpDest == h1role) jframe)
 
 -- (absTime firstRow) -
@@ -278,11 +281,15 @@ convertToSenderReceiver oframe = do
       -- where
         -- succ ?
     -- em fait le retype va ajouter la colonne a la fin seulement
-    -- sendFrame :: ConnectionRole -> Record '[SndAbsTime]
-    sendFrame h1role = fmap (convertToSender) (totoFrame h1role)
+    sendFrame, recvFrame :: ConnectionRole -> FrameRec (RDelete AbsTime TsharkMergedCols ++ '[SndAbsTime])
+    sendFrame h1role = fmap convertToSender (totoFrame h1role)
     recvFrame h1role = fmap convertToReceiver (totoFrame h1role)
 
+    convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (RDelete AbsTime (TsharkMergedCols ++ '[SndAbsTime]))
+    -- convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (TsharkMergedCols ++ '[SndAbsTime])
+    -- convertToSender = retypeColumns @'[ '("absTime", "snd_absTime", Double)  ]
     convertToSender = retypeColumn @AbsTime @SndAbsTime
+
     convertToReceiver = retypeColumn @AbsTime @SndAbsTime
 
     -- TODO use (succ role) instead

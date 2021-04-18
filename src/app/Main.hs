@@ -420,7 +420,7 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
               let mbRecs = map recMaybe mergedRes
               let justRecs = catMaybes mbRecs
               -- embed $ (writeDSV defaultParserOptions "debug.csv" (toFrame justRecs)) >> return CMD.Continue
-              Plots.cmdPlotTcpOwd tempPath handle (getDests dest) mergedRes
+              Plots.cmdPlotTcpOwd tempPath handle (getDests dest) (ffCon aframe1) mergedRes
               -- return CMD.Continue
           (Left err, _) -> return $ CMD.Error err
           (_, Left err) -> return $ CMD.Error err

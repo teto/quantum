@@ -199,49 +199,59 @@ cmdPlotTcpOwd :: Members [Log String, P.State MyState, Cache, Embed IO] m =>
           FilePath -- ^ temporary file to save plot to
           -> Handle
           -> [ConnectionRole]
+          -> Connection
           -> MergedPcap
           -- -> FrameFiltered Packet
           -- -> FrameFiltered (Record RecTsharkPrefixed)
           -> Sem m RetCode
-cmdPlotTcpOwd tempPath _ destinations mergedRes = do
+cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
   log $ "plotting OWDs "
   -- look at https://hackage.haskell.org/package/vinyl-0.13.0/docs/Data-Vinyl-Functor.html#t::.
   -- to see how to deal with 
   -- type (:.) f g = Compose f g
   -- let mergedRes = mergeTcpConnectionsFromKnownStreams aFrame1 processedAFrame2
   -- recMaybe
-  let mbRecs = map recMaybe mergedRes
-  let justRecs = catMaybes mbRecs
-  let sndRcvFrame = convertToSenderReceiver mergedRes
+
   -- could use showRow as well
   P.embed $ dumpRec $ head justRecs
   P.embed $ putStrLn $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
   P.embed $ putStrLn $ (concat . showFields) (head justRecs)
   -- P.embed $ putStrLn $ "retyped column" ++ (concat . showFields) (newCol)
+  embed $ toFile def tempPath $ do
+      layout_title .= "TCP One-way delays"
+      -- TODO generate for mptcp plot
+      -- for each subflow, plot the MptcpDest
+      mapM_ plotAttr  [ x | x <- destinations]
 
 
-  -- mapM dumpRec mbRecs
-  -- let mbRec = recMaybe mergedRes
-  -- putStrLn mbRec
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
   embed $ writeDSV defaultParserOptions "debug.csv" (toFrame justRecs)
   embed $ writeDSV defaultParserOptions "converted.csv" sndRcvFrame
-  -- embed $ writeDSV defaultParserOptions "retyped.csv" processedFrame2
   -- so for now we assume an innerJoin (but fix it later)
 
-  return CMD.Continue
+  return Continue
   where
-    -- Maybe Record
-    -- dumpRec Nothing = putStrLn "nothing"
+    mbRecs = map recMaybe mergedRes
+    justRecs = catMaybes mbRecs
+    sndRcvFrame = convertToSenderReceiver mergedRes
     dumpRec x = putStrLn $ show $ x
-    -- firstRes = (head justRecs)
-    -- processedFrame2 =  frame2
+    -- add dest to the whole frame
+    -- frameDest = addMptcpDest (ffFrame aFrame) (ffCon aFrame)
+    plotAttr dest =
+      plot (line lineLabel [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
 
-    -- frame2 = ffFrame aFrame2
+        where
+          lineLabel = "Tcp stream " ++ show con  ++ " seq (" ++ show dest ++ ")"
+          unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) sndRcvFrame
 
-    -- processedAFrame2 :: FrameFiltered (Record CsvHeader)
-    -- processedAFrame2 = aFrame2 
-    -- processedAFrame2 = aFrame2 { ffFrame = processedFrame2 }
-    -- take a type-level-list of (fromName, toName, type) and use it to rename columns in suitably typed record
+          seqData :: [Double]
+          seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
+          timeData = traceShow ("timedata" ++ show (frameLength unidirectionalFrame)) toList $ view sndAbsTime <$> unidirectionalFrame
+
+          getOwd x = rcvAbsTime x - sndAbsTime x
+
+          owd :: [Double]
+          owd = fmap getOwd unidirectionalFrame
 
 
+-- cmdPlotTcpOwd tempPath _ destinations mergedRes = do
