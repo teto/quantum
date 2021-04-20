@@ -247,12 +247,13 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
           unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) sndRcvFrame
 
           seqData :: [Double]
-          seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
+          seqData = (toList $ view sndAbsTime <$> unidirectionalFrame)
           timeData = traceShow ("timedata" ++ show (frameLength unidirectionalFrame)) toList $ view sndAbsTime <$> unidirectionalFrame
 
           -- getOwd :: Record (RDelete AbsTime TsharkMergedCols V.++ SenderReceiverCols) -> Double
-          -- getOwd x = (x ^. rcvAbsTime) - (x ^. sndAbsTime)
-          getOwd x =  (x ^. sndAbsTime)
+          getOwd x = (x ^. rcvAbsTime) - (x ^. sndAbsTime)
+          -- getOwd x =  (x ^. sndAbsTime)
+          -- getOwd x =  (x ^. absTime)
 
           owd :: [Double]
           owd = map getOwd (toList unidirectionalFrame)

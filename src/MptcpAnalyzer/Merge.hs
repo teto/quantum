@@ -4,7 +4,22 @@
 {-# LANGUAGE TypeApplications             #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE PolyKinds             #-}
-
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# OPTIONS_GHC -O0 #-}
 module MptcpAnalyzer.Merge
 where
 
@@ -17,7 +32,7 @@ import MptcpAnalyzer.Frames.Utils
 import MptcpAnalyzer.Pcap (addTcpDestToFrame)
 
 
-import Frames
+import Frames as F
 import Frames.Joins
 import Data.Vinyl
 import Data.Vinyl.TypeLevel
@@ -193,9 +208,6 @@ addHash aframe =
 -- type TsharkMergedCols = PacketHash ': TcpDest ': RecTshark ++ RecTsharkPrefixed
 type TsharkMergedCols = PacketHash ': '[TcpDest] V.++ RecTshark V.++ RecTsharkPrefixed
 
-type SenderReceiverCols =  '[RcvAbsTime, SndAbsTime]
--- type SenderReceiverCols =  '[SndAbsTime]
-
 -- not a frame but hope it should be
 type MergedPcap = [Rec (Maybe :. ElField) TsharkMergedCols]
 
@@ -236,6 +248,13 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
 
 -- TODO and then we should compute a owd
 -- , RcvAbsTime
+type SenderReceiverCols =  '[SndAbsTime, RcvAbsTime, TcpDest]
+-- type SenderReceiverCols =  '[SndAbsTime]
+-- type SenderReceiverCols =  '[]
+
+
+-- type MergedFinalCols = TsharkMergedCols ++ SenderReceiverCols
+type MergedFinalCols = SenderReceiverCols
 
 -- FrameMergedOriented
 -- inspirted by convert_to_sender_receiver
@@ -243,18 +262,18 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
 -- for now ignore deal with frame directly rather than FrameFiltered
 convertToSenderReceiver ::
   MergedPcap
-  -- -> Frame (Record (RDeleteAll '[AbsTime] TsharkMergedCols ++ '[SndAbsTime] ))
-  -> FrameRec (RDelete AbsTime TsharkMergedCols ++ SenderReceiverCols)
+  -> FrameRec MergedFinalCols
+  -- -> FrameRec (RDelete AbsTime TsharkMergedCols ++ SenderReceiverCols)
 convertToSenderReceiver oframe = do
   -- compare first packet time
   if delta > 0 then
     -- host1 is the client
     -- then rename into sndTime, rcvTime
     -- TODO
-    toFrame $ sendFrame RoleClient
+    sendFrame RoleClient
       -- <> recvFrame RoleServer
   else
-    toFrame $ sendFrame RoleServer
+    sendFrame RoleServer
       -- <> recvFrame RoleClient
 
   where
@@ -283,16 +302,29 @@ convertToSenderReceiver oframe = do
       -- where
         -- succ ?
     -- em fait le retype va ajouter la colonne a la fin seulement
-    -- sendFrame, recvFrame :: ConnectionRole -> FrameRec (RDelete AbsTime TsharkMergedCols ++ SenderReceiverCols)
+    sendFrame, recvFrame :: ConnectionRole -> FrameRec MergedFinalCols
     sendFrame h1role = fmap convertToSender (totoFrame h1role)
+      where
+        convertToSender :: Record TsharkMergedCols -> Record MergedFinalCols
+        convertToSender r = 
+          F.rcast @MergedFinalCols ((
+            -- retypeColumns @'[ '("absTime", "snd_absTime", Double), '("test_absTime", "rcv_absTime", Double) ] r)
+            retypeColumn @AbsTime @SndAbsTime
+            . retypeColumn @TestAbsTime @RcvAbsTime) r)
+
     -- recvFrame h1role = fmap convertToReceiver (totoFrame h1role)
     recvFrame h1role = undefined
 
     -- convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (RDeleteAll SenderReceiverCols (TsharkMergedCols ++ SenderReceiverCols))
+    -- convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (TsharkMergedCols ++ SenderReceiverCols)
     -- convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (RDelete AbsTime (TsharkMergedCols ++ SenderReceiverCols))
     -- convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (TsharkMergedCols ++ '[SndAbsTime])
-    -- convertToSender = retypeColumns @'[ '("absTime", "snd_absTime", Double)  ]
-    convertToSender f = retypeColumn @AbsTime @SndAbsTime ( retypeColumn @TestAbsTime @RcvAbsTime f)
+    -- see https://github.com/blueripple/blueripple-research/blob/4a0ea35e42ae2de1e6cd47e0e149bbac05ee4e2b/src/BlueRipple/Data/Loaders.hs#L311
+    -- F.rcast @(TsharkMergedCols ++ SenderReceiverCols) (
+    -- convertToSender r =
+    --     retypeColumns @'[ '("absTime", "snd_absTime", Double), '("test_absTime", "rcv_absTime", Double) ] r
+    -- convertToSender = retypeColumns @'[]
+    -- convertToSender f = retypeColumn @AbsTime @SndAbsTime ( retypeColumn @TestAbsTime @RcvAbsTime f)
 
     -- convertToReceiver = retypeColumn @AbsTime @RcvAbsTime . retypeColumn @TestAbsTime @SndAbsTime
     convertToReceiver = undefined
