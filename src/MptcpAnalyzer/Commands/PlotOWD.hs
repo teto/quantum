@@ -240,20 +240,15 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
     -- add dest to the whole frame
     -- frameDest = addMptcpDest (ffFrame aFrame) (ffCon aFrame)
     plotAttr dest =
-      plot (line lineLabel [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
+      plot (line lineLabel [ [ (d,v) | (d,v) <- zip timeData owd ] ])
 
         where
-          lineLabel = "Tcp stream " ++ show con  ++ " seq (" ++ show dest ++ ")"
+          lineLabel = showConnection con ++ " seq (" ++ show dest ++ ")"
           unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) sndRcvFrame
 
-          seqData :: [Double]
-          seqData = (toList $ view sndAbsTime <$> unidirectionalFrame)
           timeData = traceShow ("timedata" ++ show (frameLength unidirectionalFrame)) toList $ view sndAbsTime <$> unidirectionalFrame
 
-          -- getOwd :: Record (RDelete AbsTime TsharkMergedCols V.++ SenderReceiverCols) -> Double
           getOwd x = (x ^. rcvAbsTime) - (x ^. sndAbsTime)
-          -- getOwd x =  (x ^. sndAbsTime)
-          -- getOwd x =  (x ^. absTime)
 
           owd :: [Double]
           owd = map getOwd (toList unidirectionalFrame)

@@ -399,8 +399,6 @@ showConnectionText con@TcpConnection{} =
       <> "  (tcp.stream: " <> tshow (conTcpStreamId con) <> ")"
   where
     showIp = Net.IP.encode
---
--- showConnectionText con@MptcpSubflow{} = tshow (consf con)
 
 
 -- showMptcpConnection :: MptcpConnection -> String
