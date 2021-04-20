@@ -21,6 +21,7 @@ import Frames
 import Frames.Joins
 import Data.Vinyl
 import Data.Vinyl.TypeLevel
+import Data.Vinyl.TypeLevel as V --(type (++), Snd)
 import Data.Hashable
 import GHC.TypeLits (KnownSymbol, Symbol)
 import qualified Data.Vinyl as V
@@ -190,9 +191,10 @@ addHash aframe =
 -- type RecTsharkWithHash = '[PacketHash] ++ RecTshark
 
 -- type TsharkMergedCols = PacketHash ': TcpDest ': RecTshark ++ RecTsharkPrefixed
-type TsharkMergedCols = '[PacketHash] ++ '[TcpDest] ++ RecTshark ++ RecTsharkPrefixed
+type TsharkMergedCols = PacketHash ': '[TcpDest] V.++ RecTshark V.++ RecTsharkPrefixed
 
-type SenderReceiverCols =  '[SndAbsTime]
+type SenderReceiverCols =  '[RcvAbsTime, SndAbsTime]
+-- type SenderReceiverCols =  '[SndAbsTime]
 
 -- not a frame but hope it should be
 type MergedPcap = [Rec (Maybe :. ElField) TsharkMergedCols]
@@ -281,16 +283,19 @@ convertToSenderReceiver oframe = do
       -- where
         -- succ ?
     -- em fait le retype va ajouter la colonne a la fin seulement
-    sendFrame, recvFrame :: ConnectionRole -> FrameRec (RDelete AbsTime TsharkMergedCols ++ '[SndAbsTime])
+    -- sendFrame, recvFrame :: ConnectionRole -> FrameRec (RDelete AbsTime TsharkMergedCols ++ SenderReceiverCols)
     sendFrame h1role = fmap convertToSender (totoFrame h1role)
-    recvFrame h1role = fmap convertToReceiver (totoFrame h1role)
+    -- recvFrame h1role = fmap convertToReceiver (totoFrame h1role)
+    recvFrame h1role = undefined
 
-    convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (RDelete AbsTime (TsharkMergedCols ++ '[SndAbsTime]))
+    -- convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (RDeleteAll SenderReceiverCols (TsharkMergedCols ++ SenderReceiverCols))
+    -- convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (RDelete AbsTime (TsharkMergedCols ++ SenderReceiverCols))
     -- convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (TsharkMergedCols ++ '[SndAbsTime])
     -- convertToSender = retypeColumns @'[ '("absTime", "snd_absTime", Double)  ]
-    convertToSender = retypeColumn @AbsTime @SndAbsTime
+    convertToSender f = retypeColumn @AbsTime @SndAbsTime ( retypeColumn @TestAbsTime @RcvAbsTime f)
 
-    convertToReceiver = retypeColumn @AbsTime @SndAbsTime
+    -- convertToReceiver = retypeColumn @AbsTime @RcvAbsTime . retypeColumn @TestAbsTime @SndAbsTime
+    convertToReceiver = undefined
 
     -- TODO use (succ role) instead
 

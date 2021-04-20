@@ -43,6 +43,8 @@ import Graphics.Rendering.Chart.Easy hiding (argument)
 import Graphics.Rendering.Chart.Backend.Cairo
 import Data.Word (Word8, Word16, Word32, Word64)
 
+import Data.Vinyl.TypeLevel as V --(type (++), Snd)
+
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Pipes as P hiding (embed)
@@ -248,10 +250,12 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
           seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
           timeData = traceShow ("timedata" ++ show (frameLength unidirectionalFrame)) toList $ view sndAbsTime <$> unidirectionalFrame
 
-          getOwd x = rcvAbsTime x - sndAbsTime x
+          -- getOwd :: Record (RDelete AbsTime TsharkMergedCols V.++ SenderReceiverCols) -> Double
+          -- getOwd x = (x ^. rcvAbsTime) - (x ^. sndAbsTime)
+          getOwd x =  (x ^. sndAbsTime)
 
           owd :: [Double]
-          owd = fmap getOwd unidirectionalFrame
+          owd = map getOwd (toList unidirectionalFrame)
 
 
 -- cmdPlotTcpOwd tempPath _ destinations mergedRes = do

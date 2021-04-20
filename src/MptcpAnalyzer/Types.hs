@@ -92,7 +92,7 @@ declarePrefixedColumns "" baseFieldsReceiver
 declareColumn "tcpDest" ''ConnectionRole
 declareColumn "mptcpDest" ''ConnectionRole
 declareColumn "packetHash" ''Int
-declareColumn "owd" ''Double
+declareColumn "colOwd" ''Double
 
 
 -- myRowGen "RecTshark" baseFields
