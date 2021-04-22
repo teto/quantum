@@ -30,6 +30,7 @@ import Frames.ShowCSV
 -- type StreamIdMptcp = StreamId Mptcp
 
 type TcpFlagList = [TcpFlag]
+type MbPacketIdList = Maybe [Word64]
 
 
 type MbMptcpStream = Maybe (StreamId Mptcp)
@@ -97,6 +98,20 @@ baseFields = [
     , ("mptcpVersion", TsharkFieldDesc "tcp.options.mptcp.version" ''MbMptcpVersion Nothing True)
     , ("mptcpDack", TsharkFieldDesc "mptcp.ack" ''MbWord64 Nothing True)
     , ("mptcpDsn", TsharkFieldDesc "mptcp.dsn" ''MbWord64 Nothing True)
+
+    -- these ones are experimental
+    , ("relatedMappings", TsharkFieldDesc "mptcp.related_mapping" ''MbWord64 Nothing True)
+    , ("reinjectionOf", TsharkFieldDesc "mptcp.reinjection_of" ''MbPacketIdList Nothing True)
+    , ("reinjectedIn", TsharkFieldDesc "mptcp.reinjection_of" ''MbPacketIdList Nothing True)
+    -- if advanced:
+            -- self.add_field("mptcp.related_mapping", "related_mappings", object, "DSS", False)
+            -- # self.add_field("mptcp.duplicated_dsn", "reinjections", str, "Reinjections")
+            -- # TODO use new names
+            -- # it should be a list of integer
+            -- self.add_field("mptcp.reinjection_of", "reinjection_of", object, "Reinjection", False,
+            --     functools.partial(_load_list, field="reinjectedOfSender"),)
+            -- self.add_field("mptcp.reinjected_in", "reinjected_in", object, "Reinjection list", False,
+            --     functools.partial(_load_list, field="reinjectedInSender"), )
 
     ]
 

@@ -33,12 +33,14 @@ import Data.Vinyl.Class.Method
 import qualified Data.Vinyl as V
 import Data.Word (Word8, Word16, Word32, Word64)
 import Data.WideWord.Word128
-import Data.Text (Text)
+import Control.Monad (liftM)
 import Frames
 import Frames.ShowCSV
 import Frames.TH
 import Frames.CSV (QuotingMode(..), ParserOptions(..))
-import Frames.ColumnTypeable (Parseable(..), parseIntish, Parsed(..))
+-- (Parseable(..), parseIntish, Parsed(..))
+import Frames.ColumnTypeable 
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Text.Read as T
 import Frames.InCore (VectorFor)
@@ -315,6 +317,17 @@ instance Frames.ColumnTypeable.Parseable (StreamId Mptcp) where
 instance Frames.ColumnTypeable.Parseable (StreamId Tcp) where
   parse = parseIntish
 
+
+-- 
+parseList :: (MonadPlus m, Typeable a, Frames.ColumnTypeable.Parseable a) => Text -> m (Parsed [a])
+parseList text = fmap Definitely (mapM parse' (T.splitOn "," text))
+
+instance Frames.ColumnTypeable.Parseable [Word64] where
+  -- expected type parse :: MonadPlus m => T.Text -> m (Parsed [a])
+  parse = parseList
+    
+
+
 -- could not parse 0x00000002
 -- strip leading 0x
 instance Frames.ColumnTypeable.Parseable [TcpFlag] where
@@ -324,12 +337,25 @@ instance Frames.ColumnTypeable.Parseable [TcpFlag] where
     _ -> error $ "TcpFlags: could not parse " ++ T.unpack text
 
 -- TODO rewrite it as wireshark exposes it, eg, in hexa ?
+-- instance ShowCSV [TcpFlag] where
+--   -- showCSV :: a -> Text
+--   showCSV flagList = T.concat texts
+--     where
+--       texts = map (T.pack . show .fromEnum) flagList
+--       res = toBitMask flagList
+
 instance ShowCSV [TcpFlag] where
   -- showCSV :: a -> Text
   showCSV flagList = T.concat texts
     where
       texts = map (T.pack . show .fromEnum) flagList
       res = toBitMask flagList
+
+instance ShowCSV [Word64] where
+  -- showCSV :: a -> Text
+  showCSV seqs = T.intercalate "," texts
+    where
+      texts = map (T.pack . show .fromEnum) seqs
 
 instance ShowCSV IP where
   showCSV = encode
@@ -364,6 +390,10 @@ type instance VectorFor (Maybe Bool) = V.Vector
 type instance VectorFor (Maybe OptionList) = V.Vector
 type instance VectorFor MbMptcpStream = V.Vector
 type instance VectorFor ConnectionRole = V.Vector
+-- FIX generalize
+type instance VectorFor [Word64] = V.Vector
+type instance VectorFor (Maybe [Word64]) = V.Vector
+
 -- type instance VectorFor MbTcpStream = V.Vector
 
 -- getHeaders :: [(T.Text, TsharkFieldDesc)] -> [(T.Text, Q Type)]
