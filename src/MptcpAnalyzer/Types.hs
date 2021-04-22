@@ -426,9 +426,10 @@ showConnectionText con@MptcpConnection{} =
 showConnectionText con@TcpConnection{} =
   showIp (conTcpClientIp con) <> ":" <> tshow (conTcpClientPort con) <> " -> "
       <> showIp (conTcpServerIp con) <> ":" <> tshow (conTcpServerPort con)
-      <> "  (tcp.stream: " <> tshow (conTcpStreamId con) <> ")"
+      <> " (tcp.stream: " <> showStream (conTcpStreamId con) <> ")"
   where
     showIp = Net.IP.encode
+    showStream (StreamId a) = tshow a
 
 
 -- showMptcpConnection :: MptcpConnection -> String

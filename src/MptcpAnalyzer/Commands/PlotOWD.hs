@@ -229,6 +229,7 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
   embed $ writeDSV defaultParserOptions "debug.csv" (toFrame justRecs)
   embed $ writeDSV defaultParserOptions "converted.csv" sndRcvFrame
+  -- P.embed $ putStrLn $ "OWDs:" ++ show owd
   -- so for now we assume an innerJoin (but fix it later)
 
   return Continue
@@ -246,12 +247,12 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
           lineLabel = showConnection con ++ " seq (" ++ show dest ++ ")"
           unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) sndRcvFrame
 
-          timeData = traceShow ("timedata" ++ show (frameLength unidirectionalFrame)) toList $ view sndAbsTime <$> unidirectionalFrame
+          timeData = traceShow ("timedata length=" ++ show (frameLength unidirectionalFrame)) toList $ view sndAbsTime <$> unidirectionalFrame
 
           getOwd x = (x ^. rcvAbsTime) - (x ^. sndAbsTime)
 
           owd :: [Double]
-          owd = map getOwd (toList unidirectionalFrame)
+          owd = let res = map getOwd (toList unidirectionalFrame) in traceShow res res
 
 
 -- cmdPlotTcpOwd tempPath _ destinations mergedRes = do

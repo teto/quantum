@@ -248,7 +248,7 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
 
 -- TODO and then we should compute a owd
 -- , RcvAbsTime
-type SenderReceiverCols =  '[SndAbsTime, RcvAbsTime, TcpDest]
+type SenderReceiverCols =  '[SndPacketId, RcvPacketId, SndAbsTime, RcvAbsTime, TcpDest]
 -- type SenderReceiverCols =  '[SndAbsTime]
 -- type SenderReceiverCols =  '[]
 
@@ -309,8 +309,11 @@ convertToSenderReceiver oframe = do
         convertToSender r = 
           F.rcast @MergedFinalCols ((
             -- retypeColumns @'[ '("absTime", "snd_absTime", Double), '("test_absTime", "rcv_absTime", Double) ] r)
-            retypeColumn @AbsTime @SndAbsTime
-            . retypeColumn @TestAbsTime @RcvAbsTime) r)
+            retypeColumn @PacketId @SndPacketId
+            . retypeColumn @TestPacketId @RcvPacketId
+            . retypeColumn @AbsTime @SndAbsTime
+            . retypeColumn @TestAbsTime @RcvAbsTime
+            ) r)
 
     -- recvFrame h1role = fmap convertToReceiver (totoFrame h1role)
     recvFrame h1role = undefined
