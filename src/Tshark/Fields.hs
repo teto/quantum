@@ -105,6 +105,14 @@ baseFields = [
     , ("reinjectedIn", TsharkFieldDesc "mptcp.reinjection_of" ''MbPacketIdList Nothing True)
     ]
 
+fakeBaseFields :: FieldDescriptions
+fakeBaseFields = [
+    ("fakePacketId", TsharkFieldDesc "frame.number" ''Word64 Nothing False)
+    , ("fakeInterfaceName", TsharkFieldDesc "frame.interface_name" ''Text Nothing False)
+    ]
+fakeBaseFields2 :: FieldDescriptions
+fakeBaseFields2 = prefixFields "fake_" fakeBaseFields
+
 -- TODO
 prefixFields :: Text -> FieldDescriptions -> FieldDescriptions
 prefixFields prefix = map (\(name, field) -> (prefix<>name , field))

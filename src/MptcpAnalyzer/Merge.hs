@@ -214,12 +214,13 @@ type MergedPcap = [Rec (Maybe :. ElField) TsharkMergedCols]
 -- | Merge of 2 frames
 mergeTcpConnectionsFromKnownStreams ::
   FrameFiltered Packet
-  -> FrameFiltered (Record HostColsPrefixed)
+  -> FrameFiltered Packet
   -> MergedPcap
 -- these are from host1 / host2
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
   mergedFrame
   where
+    -- (Record HostColsPrefixed)
     -- we want an outerJoin , maybe with a status column like in panda
     -- outerJoin returns a list of [Rec (Maybe :. ElField) ors]
     mergedFrame = outerJoin @'[PacketHash] (hframe1dest) processedFrame2
@@ -230,23 +231,24 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
     hframe1dest = hframe1
     -- hframe1dest = addTcpDestinationsToFrame hframe1
     hframe2 :: Frame (Record ('[PacketHash] ++ HostColsPrefixed))
-    hframe2 = zipFrames (addHash aframe1) (ffFrame aframe2)
-    -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Double)  ]) frame2
+    hframe2 = zipFrames (addHash aframe2) host2_frame
+
+    host2_frame = convertCols (ffFrame aframe2)
     processedFrame2 = hframe2
-    -- processedFrame2 :: Frame (Record ('[PacketHash] ++ HostColsPrefixed))
-    -- processedFrame2 = fmap (retypeColumn @AbsTime @TestAbsTime) hframe2
-
--- TODO we need to reorder from host1 / host2 to client server
-
-
 
 -- | Result of the merge of 2 pcaps
 -- genExplicitRecord "" "HostCols" mergedFields
 
-
-
--- gen
--- convertCols :: FrameRec HostCols -> FrameRec HostColsPrefixed
+-- gen https://hackage.haskell.org/package/vinyl-0.13.1/docs/Data-Vinyl-Derived.html
+convertCols :: FrameRec HostCols -> FrameRec HostColsPrefixed
+convertCols frame = fmap convertCols' frame
+-- convertCols frame = 
+  where
+    convertCols' :: Record HostCols -> Record HostColsPrefixed
+    convertCols' = withNames . stripNames
+    -- if you need a review on a specific patch, let us know
+    -- stripNames r
+    -- convertCols' r = F.rcast @HostColsPrefixed (retypeColumns @'[ '("fakePacketId", "fake_fakePacketId", Word64), '("fakeInterfaceName", "fake_fakeInterfaceName", Text) ] r)
 
 
 
