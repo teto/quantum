@@ -187,29 +187,11 @@ addHash aframe =
     addHash' row = Col (hash row) :& RNil
 
 
--- use zipFrames
--- just for testing
--- type Age = "age" :-> Int
--- type Weight = "weight" :-> Double
--- type Name = "name" :-> String
-
--- | Add a column to the head of a row.
--- frameCons :: (Functor f, KnownSymbol s)
---           => f a -> Rec f rs -> Rec f (s :-> a ': rs)
--- frameCons = (V.:&) . fmap Col
--- {-# INLINE frameCons #-}
-
--- testRec1 :: Record '[PacketHash, Name]
--- testRec1 = (Col 42) :& (Col "bob") :& RNil
--- :& (col 23) :&  (pure 75.2 )
-
--- type HostColsWithHash = '[PacketHash] ++ HostCols
-
--- type TsharkMergedCols = PacketHash ': TcpDest ': HostCols ++ HostColsPrefixed
-type TsharkMergedCols = PacketHash ': '[TcpDest] V.++ HostCols V.++ HostColsPrefixed
+-- type MergedHostCols = PacketHash ': TcpDest ': HostCols ++ HostColsPrefixed
+type MergedHostCols = PacketHash ': '[TcpDest] V.++ HostCols V.++ HostColsPrefixed
 
 -- not a frame but hope it should be
-type MergedPcap = [Rec (Maybe :. ElField) TsharkMergedCols]
+type MergedPcap = [Rec (Maybe :. ElField) MergedHostCols]
 
 -- | Merge of 2 frames
 mergeTcpConnectionsFromKnownStreams ::
@@ -233,16 +215,15 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
     hframe2 :: Frame (Record ('[PacketHash] ++ HostColsPrefixed))
     hframe2 = zipFrames (addHash aframe2) host2_frame
 
-    host2_frame = convertCols (ffFrame aframe2)
+    host2_frame = convertToHost2Cols (ffFrame aframe2)
     processedFrame2 = hframe2
 
 -- | Result of the merge of 2 pcaps
 -- genExplicitRecord "" "HostCols" mergedFields
 
 -- gen https://hackage.haskell.org/package/vinyl-0.13.1/docs/Data-Vinyl-Derived.html
-convertCols :: FrameRec HostCols -> FrameRec HostColsPrefixed
-convertCols frame = fmap convertCols' frame
--- convertCols frame = 
+convertToHost2Cols :: FrameRec HostCols -> FrameRec HostColsPrefixed
+convertToHost2Cols frame = fmap convertCols' frame
   where
     convertCols' :: Record HostCols -> Record HostColsPrefixed
     convertCols' = withNames . stripNames
@@ -250,17 +231,16 @@ convertCols frame = fmap convertCols' frame
     -- stripNames r
     -- convertCols' r = F.rcast @HostColsPrefixed (retypeColumns @'[ '("fakePacketId", "fake_fakePacketId", Word64), '("fakeInterfaceName", "fake_fakeInterfaceName", Text) ] r)
 
-
+-- convertCols :: Record a -> Record b
+-- convertCols = withNames . stripNames 
 
 -- TODO and then we should compute a owd
 -- , RcvAbsTime
-type SenderReceiverCols =  '[SndPacketId, RcvPacketId, SndAbsTime, RcvAbsTime, TcpDest]
--- type SenderReceiverCols =  '[SndAbsTime]
--- type SenderReceiverCols =  '[]
+-- type SenderReceiverCols =  '[SndPacketId, RcvPacketId, SndAbsTime, RcvAbsTime, TcpDest]
+-- TODO il nous faut le hash + la dest
+type SenderReceiverCols =  SenderCols V.++ ReceiverCols
 
 
--- type MergedFinalCols = TsharkMergedCols ++ SenderReceiverCols
-type MergedFinalCols = SenderReceiverCols
 
 -- FrameMergedOriented
 -- inspirted by convert_to_sender_receiver
@@ -268,8 +248,7 @@ type MergedFinalCols = SenderReceiverCols
 -- for now ignore deal with frame directly rather than FrameFiltered
 convertToSenderReceiver ::
   MergedPcap
-  -> FrameRec MergedFinalCols
-  -- -> FrameRec (RDelete AbsTime TsharkMergedCols ++ SenderReceiverCols)
+  -> FrameRec SenderReceiverCols
 convertToSenderReceiver oframe = do
   -- compare first packet time
   if delta > 0 then
@@ -283,55 +262,53 @@ convertToSenderReceiver oframe = do
       -- <> recvFrame RoleClient
 
   where
-    -- tframe :: [Maybe TsharkMergedCols]
-    tframe :: [Maybe (Record TsharkMergedCols)]
+    -- tframe :: [Maybe MergedHostCols]
+    tframe :: [Maybe (Record MergedHostCols)]
     tframe = fmap recMaybe oframe
-    jframe :: FrameRec TsharkMergedCols
+    jframe :: FrameRec MergedHostCols
     jframe = toFrame $ catMaybes $ toList tframe
     firstRow = frameRow jframe 0
     -- instead of taking firstRow we should compare the minima in case there are retransmissions
     delta :: Double
     delta =  (firstRow ^. testAbsTime)
 
-    totoFrame :: ConnectionRole -> FrameRec TsharkMergedCols
+    totoFrame :: ConnectionRole -> FrameRec MergedHostCols
     totoFrame h1role = (filterFrame (\x -> x ^. tcpDest == h1role) jframe)
 
--- (absTime firstRow) -
-    -- frame of something
-    -- For instance
-    -- renameTo :: ConnectionRole
-    --   -> Bool -- ^ true if the sender
-    --   -> Frame (Rec (Maybe :. ElField) TsharkMergedCols) -- ^ return frame rearranged
-    -- -- or concat
-    -- renameTo role isSender = sendFrame 
-      -- TODO <> recvFrame
-      -- where
-        -- succ ?
     -- em fait le retype va ajouter la colonne a la fin seulement
-    sendFrame, recvFrame :: ConnectionRole -> FrameRec MergedFinalCols
+    -- zipFrames
+    sendFrame, recvFrame :: ConnectionRole -> FrameRec SenderReceiverCols
     sendFrame h1role = fmap convertToSender (totoFrame h1role)
       where
-        convertToSender :: Record TsharkMergedCols -> Record MergedFinalCols
-        convertToSender r = 
-          F.rcast @MergedFinalCols ((
-            -- retypeColumns @'[ '("absTime", "snd_absTime", Double), '("test_absTime", "rcv_absTime", Double) ] r)
-            retypeColumn @PacketId @SndPacketId
-            . retypeColumn @TestPacketId @RcvPacketId
-            . retypeColumn @AbsTime @SndAbsTime
-            . retypeColumn @TestAbsTime @RcvAbsTime
-            . retypeColumn @IpSource @SndIpSource
-            . retypeColumn @IpDest @SndIpDest
-            ) r)
+        convertToSender :: Record MergedHostCols -> Record SenderReceiverCols
+        convertToSender r = let
+            -- TODO add tcpDest
+            senderCols :: Record SenderCols
+            senderCols = (withNames . stripNames . F.rcast @HostCols) r
+            receiverCols :: Record ReceiverCols
+            receiverCols = (withNames . stripNames . F.rcast @HostColsPrefixed) r
+          in
+            rappend senderCols receiverCols
+
+          -- F.rcast @SenderReceiverCols ((
+          --   -- retypeColumns @'[ '("absTime", "snd_absTime", Double), '("test_absTime", "rcv_absTime", Double) ] r)
+          --   retypeColumn @PacketId @SndPacketId
+          --   . retypeColumn @TestPacketId @RcvPacketId
+          --   . retypeColumn @AbsTime @SndAbsTime
+          --   . retypeColumn @TestAbsTime @RcvAbsTime
+          --   . retypeColumn @IpSource @SndIpSource
+          --   . retypeColumn @IpDest @SndIpDest
+          --   ) r)
 
     -- recvFrame h1role = fmap convertToReceiver (totoFrame h1role)
     recvFrame h1role = undefined
 
-    -- convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (RDeleteAll SenderReceiverCols (TsharkMergedCols ++ SenderReceiverCols))
-    -- convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (TsharkMergedCols ++ SenderReceiverCols)
-    -- convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (RDelete AbsTime (TsharkMergedCols ++ SenderReceiverCols))
-    -- convertToSender, convertToReceiver :: Record TsharkMergedCols -> Record (TsharkMergedCols ++ '[SndAbsTime])
+    -- convertToSender, convertToReceiver :: Record MergedHostCols -> Record (RDeleteAll SenderReceiverCols (MergedHostCols ++ SenderReceiverCols))
+    -- convertToSender, convertToReceiver :: Record MergedHostCols -> Record (MergedHostCols ++ SenderReceiverCols)
+    -- convertToSender, convertToReceiver :: Record MergedHostCols -> Record (RDelete AbsTime (MergedHostCols ++ SenderReceiverCols))
+    -- convertToSender, convertToReceiver :: Record MergedHostCols -> Record (MergedHostCols ++ '[SndAbsTime])
     -- see https://github.com/blueripple/blueripple-research/blob/4a0ea35e42ae2de1e6cd47e0e149bbac05ee4e2b/src/BlueRipple/Data/Loaders.hs#L311
-    -- F.rcast @(TsharkMergedCols ++ SenderReceiverCols) (
+    -- F.rcast @(MergedHostCols ++ SenderReceiverCols) (
     -- convertToSender r =
     --     retypeColumns @'[ '("absTime", "snd_absTime", Double), '("test_absTime", "rcv_absTime", Double) ] r
     -- convertToSender = retypeColumns @'[]

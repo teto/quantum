@@ -16,9 +16,14 @@ import Frames.ShowCSV
 import Tshark.Fields
 import Language.Haskell.TH (Name)
 import Options.Applicative
+import Data.String
 
 -- |Filters a connection depending on its role
 data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, ShowCSV, Ord)
+
+showConnectionRole :: (IsString a) => ConnectionRole -> a
+showConnectionRole RoleServer = "Server"
+showConnectionRole RoleClient = "Client"
 
 artificialFields :: FieldDescriptions
 artificialFields = [
@@ -27,7 +32,7 @@ artificialFields = [
     , ("packetHash", TsharkFieldDesc "" ''ConnectionRole Nothing False)
   ]
 
--- FieldRec
+-- TODO remove
 mergedFields :: [(Text, Name)]
 mergedFields = [
   ("senderIP", ''IP)

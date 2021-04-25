@@ -11,7 +11,6 @@ import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Loader
 import MptcpAnalyzer.Debug
-import Tshark.TH2
 
 import Prelude hiding (filter, lookup, repeat, log)
 import Options.Applicative

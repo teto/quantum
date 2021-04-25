@@ -28,7 +28,6 @@ import MptcpAnalyzer.Merge
 -- for retypeColumn
 import MptcpAnalyzer.Frames.Utils
 -- for fields
-import Tshark.TH2
 
 import Prelude hiding (filter, lookup, repeat, log)
 import Options.Applicative
@@ -209,11 +208,6 @@ cmdPlotTcpOwd :: Members [Log String, P.State MyState, Cache, Embed IO] m =>
 cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
   log $ "plotting OWDs "
   -- look at https://hackage.haskell.org/package/vinyl-0.13.0/docs/Data-Vinyl-Functor.html#t::.
-  -- to see how to deal with 
-  -- type (:.) f g = Compose f g
-  -- let mergedRes = mergeTcpConnectionsFromKnownStreams aFrame1 processedAFrame2
-  -- recMaybe
-
   -- could use showRow as well
   P.embed $ dumpRec $ head justRecs
   P.embed $ putStrLn $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
@@ -244,7 +238,7 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
       plot (line lineLabel [ [ (d,v) | (d,v) <- zip timeData owd ] ])
 
         where
-          lineLabel = showConnection con ++ " seq (" ++ show dest ++ ")"
+          lineLabel = "TCP seq " ++ showConnection con ++ " (" ++ showConnectionRole dest ++ ")"
           unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) sndRcvFrame
 
           timeData = traceShow ("timedata length=" ++ show (frameLength unidirectionalFrame)) toList $ view sndAbsTime <$> unidirectionalFrame

@@ -402,28 +402,16 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
         --         Left err -> return $ CMD.Error err
         --         Right frame -> Plots.cmdPlotMptcpAttribute tempPath handle destinations frame
         eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId1)
-        -- TODO 
+        -- TODO
         eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 (StreamId streamId2)
-        -- eiFrame2 :: Sem r (Either String (Frame (Record HostColsPrefixed)))
-        -- TODO FILTER good connection !!
-        -- eiFrame2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
-
-        -- convert to host2
-
-
 
         -- embed $ writeDSV defaultParserOptions "retyped.csv" processedFrame2
-        -- connection is wrong here, just a hack to work around limitation
-        -- :: Either String (Frame (Record HostColsPrefixed))
         res <- case (eframe1, eframe2 ) of
           (Right aframe1, Right aframe2) -> do
-              -- let aframe2 = FrameTcp (ffCon aframe2) (convertframe2
               let mergedRes = mergeTcpConnectionsFromKnownStreams aframe1 aframe2
               let mbRecs = map recMaybe mergedRes
               let justRecs = catMaybes mbRecs
-              -- embed $ (writeDSV defaultParserOptions "debug.csv" (toFrame justRecs)) >> return CMD.Continue
               Plots.cmdPlotTcpOwd tempPath handle (getDests dest) (ffCon aframe1) mergedRes
-              -- return CMD.Continue
           (Left err, _) -> return $ CMD.Error err
           (_, Left err) -> return $ CMD.Error err
         return res

@@ -3,7 +3,6 @@
 module MptcpAnalyzer.Commands.ListMptcp
 where
 
-import Tshark.TH2
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.List as CMD

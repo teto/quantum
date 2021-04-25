@@ -15,7 +15,6 @@ where
 -- Inspired by Frames/demo/missingData
 import MptcpAnalyzer.Stream
 import Tshark.TH
-import Tshark.TH2
 import Tshark.Fields
 import Net.Tcp (TcpFlag(..))
 import Net.Bitset (fromBitMask, toBitMask)
@@ -90,8 +89,8 @@ declarePrefixedColumns "" baseFieldsSender
 declarePrefixedColumns "" baseFieldsReceiver
 
 -- just for tests: to remove
-declarePrefixedColumns "" fakeBaseFields
-declarePrefixedColumns "" fakeBaseFields2
+-- declarePrefixedColumns "" fakeBaseFields
+-- declarePrefixedColumns "" fakeBaseFields2
 
 
 
@@ -110,13 +109,15 @@ genRecordFrom "HostCols" baseFields
 genRecordFromHeaders "" "HostColsPrefixed" baseFieldsHost2
 -- genExplicitRecord "test" "HostColsPrefixed" baseFieldsHost2
 genRecHashable "HashablePart" baseFields
+genRecordFrom "SenderCols" baseFieldsSender
+genRecordFrom "ReceiverCols" baseFieldsReceiver
 
 --
-declareColumn "sndTime" ''Double
-declareColumn "rcvTime" ''Double
-declareColumn "senderIP" ''IP
-declareColumn "receiverIP" ''IP
-genExplicitRecord "" "RecMerged" mergedFields
+-- declareColumn "sndTime" ''Double
+-- declareColumn "rcvTime" ''Double
+-- declareColumn "senderIP" ''IP
+-- declareColumn "receiverIP" ''IP
+-- genExplicitRecord "" "RecMerged" mergedFields
 
 
 

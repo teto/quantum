@@ -38,7 +38,6 @@ where
 
 
 import Tshark.TH
-import Tshark.TH2
 import Tshark.Fields
 import Net.Tcp ( TcpFlag(..))
 import MptcpAnalyzer.Types

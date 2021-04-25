@@ -30,21 +30,7 @@ import Data.Proxy (Proxy(..))
 import Control.Monad (foldM)
 import Data.Char (toLower)
 
--- for symbol
--- import GHC.Types
 
-
--- genRow :: [ TsharkFieldDesc ] -> Q Type
--- genRow fields = rowTy
---   where f field = fullname field :-> colType field
---         rowTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
-
-
--- je voudrais generer une fonction par TH
--- convertCols :: FrameRec HostCols -> FrameRec HostColsPrefixed
--- convertCols = 
-
--- 
 -- WARN the behavior here differs from Frames
 declarePrefixedColumns :: Text -> FieldDescriptions -> DecsQ
 declarePrefixedColumns prefix fields = do
@@ -105,16 +91,6 @@ qqDec = go
   where go [] = PromotedNilT
         go (t:cs) = AppT (AppT PromotedConsT t) (go cs)
 
--- | Generate a 
--- genHashableRecord :: FieldDescriptions -> DecsQ
--- genHashableRecord fields = do
-
-
--- "user id" :-> Int
--- getTypes :: [(T.Text, TsharkFieldDesc)] -> [Q Type]
--- getTypes = map (\(_, x) -> colType x)
-
-
 -- TODO make public in Frames
 -- table
 -- mkColDecs :: T.Text -> Either (String -> Q [Dec]) Type -> Q (Type, [Dec])
@@ -172,64 +148,3 @@ promotedTypeList :: [Q Type] -> Q Type
 promotedTypeList []     = promotedNilT
 promotedTypeList (t:ts) = [t| $promotedConsT $t $(promotedTypeList ts) |]
 
--- myColumnUniverse baseFields
--- recDecExplicit fields
-
--- tableTypesExplicitFull headers RowGen {..} = do
--- declareMyRow :: [(T.Text, TsharkFieldDesc)] -> String -> Q Exp
--- declareMyRow fields rowName = do
---     tableTypesExplicitFull tfields myRow
---     where
---       -- myRow :: RowGen [t| myColumnUniverse baseFields|]
---       myRow = RowGen $(myColumnUniverse baseFields) "" "|" "HostCols" (Proxy  [Int, Int])
---       tfields = map (\(colName, fullField) -> (colName, colType fullField)) fields
-
--- colDec :: prefix rowName colName colTypeGen = do
--- colDec prefix rowName colName colTypeGen = do
-
--- forall a c.
--- mapM (colDec rowName
--- declareRow :: String -> [(T.Text, TsharkFieldDesc)] -> DecsQ
--- declareRow rowTypeName fields = do
---   -- return a list of
---   -- record type recTy
---   -- optsDec 
---   -- let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
---   -- mapM (colDec rowName
---     -- colName,
---   headers <- mapM (\(_colName, fullField) -> (colType fullField)) fields
---   (colTypes, colDecs) <- (second concat . unzip)
---                         <$> mapM (uncurry mkColDecs)
---                                   (map (second colType) headers)
---   return (recTy : colDecs)
---   where
---       -- mkColDecs :: T.Text -> Either (String -> Q [Dec]) Type -> Q (Type, [Dec])
---       recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
-
--- tableTypes' (RowGen {..}) =
---   do headers <- runIO . P.runSafeT
---   -- readColHeaders :: m [(T.Text, a)]
---                 $ readColHeaders opts lineSource :: Q [(T.Text, c)]
---      (colTypes, colDecs) <- (second concat . unzip)
---                             <$> mapM (uncurry mkColDecs)
---                                      (map (second colType) headers)
---      let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
---          optsName = case rowTypeName of
---                       [] -> error "Row type name shouldn't be empty"
---                       h:t -> mkName $ toLower h : t ++ "Parser"
---      optsTy <- sigD optsName [t|ParserOptions|]
---      optsDec <- valD (varP optsName) (normalB $ lift opts) []
---      return (recTy : optsTy : optsDec : colDecs)
---      -- (:) <$> (tySynD (mkName n) [] (recDec' headers))
---      --     <*> (concat <$> mapM (uncurry $ colDec (T.pack prefix)) headers)
---   where colNames' | null columnNames = Nothing
---                   | otherwise = Just (map T.pack columnNames)
---         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
---         lineSource = lineReader separator P.>-> P.take prefixSize
---         mkColDecs :: T.Text -> Either (String -> Q [Dec]) Type -> Q (Type, [Dec])
---         mkColDecs colNm colTy = do
---           let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)
---           mColNm <- lookupTypeName safeName
---           case mColNm of
---             Just n -> pure (ConT n, []) -- Column's type was already defined
---             Nothing -> colDec (T.pack tablePrefix) rowTypeName colNm colTy
