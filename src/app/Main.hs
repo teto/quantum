@@ -404,16 +404,14 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
         eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId1)
         -- TODO 
         -- eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 (StreamId streamId2)
-        -- eiFrame2 :: Sem r (Either String (Frame (Record RecTsharkPrefixed)))
+        -- eiFrame2 :: Sem r (Either String (Frame (Record HostColsPrefixed)))
+        -- TODO FILTER good connection !!
         eiFrame2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
-        -- frame2 <- case eiFrame2 of
-        --   Left err -> error err
-        --   Right frame -> return frame
 
 
         -- embed $ writeDSV defaultParserOptions "retyped.csv" processedFrame2
         -- connection is wrong here, just a hack to work around limitation
-        res <- case (eframe1, eiFrame2 :: Either String (Frame (Record RecTsharkPrefixed))) of
+        res <- case (eframe1, eiFrame2 :: Either String (Frame (Record HostColsPrefixed))) of
           (Right aframe1, Right frame2) -> do
               let aframe2 = FrameTcp (ffCon aframe1) frame2
               let mergedRes = mergeTcpConnectionsFromKnownStreams aframe1 aframe2

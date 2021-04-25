@@ -164,12 +164,12 @@ scoreTcpCon _ _ = undefined
 
 -- prefix
 -- type PacketMerged =
-toHashablePacket :: Record RecTshark -> Record HashablePart
+toHashablePacket :: Record HostCols -> Record HashablePart
 toHashablePacket = rcast
 
 -- instance Hashable (Rec ElField a) where
 
--- -- TODO should generate a column and add it back to RecTshark
+-- -- TODO should generate a column and add it back to HostCols
 -- -- type FieldRec = Rec ElField
 -- addHash :: FrameFiltered Packet -> Frame (Record (PacketHash ': HashablePart))
 -- addHash aframe =
@@ -178,7 +178,7 @@ toHashablePacket = rcast
 --     frame = fmap toHashablePacket (ffFrame aframe)
 --     addHash' row = Col (hashWithSalt 0 row) :& row
 
--- generate a column and add it back to RecTshark
+-- generate a column and add it back to HostCols
 addHash :: FrameFiltered Packet -> Frame (Record '[PacketHash] )
 addHash aframe =
   fmap (addHash')  (frame)
@@ -203,10 +203,10 @@ addHash aframe =
 -- testRec1 = (Col 42) :& (Col "bob") :& RNil
 -- :& (col 23) :&  (pure 75.2 )
 
--- type RecTsharkWithHash = '[PacketHash] ++ RecTshark
+-- type HostColsWithHash = '[PacketHash] ++ HostCols
 
--- type TsharkMergedCols = PacketHash ': TcpDest ': RecTshark ++ RecTsharkPrefixed
-type TsharkMergedCols = PacketHash ': '[TcpDest] V.++ RecTshark V.++ RecTsharkPrefixed
+-- type TsharkMergedCols = PacketHash ': TcpDest ': HostCols ++ HostColsPrefixed
+type TsharkMergedCols = PacketHash ': '[TcpDest] V.++ HostCols V.++ HostColsPrefixed
 
 -- not a frame but hope it should be
 type MergedPcap = [Rec (Maybe :. ElField) TsharkMergedCols]
@@ -214,7 +214,7 @@ type MergedPcap = [Rec (Maybe :. ElField) TsharkMergedCols]
 -- | Merge of 2 frames
 mergeTcpConnectionsFromKnownStreams ::
   FrameFiltered Packet
-  -> FrameFiltered (Record RecTsharkPrefixed)
+  -> FrameFiltered (Record HostColsPrefixed)
   -> MergedPcap
 -- these are from host1 / host2
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
@@ -229,11 +229,11 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
     hframe1 = zipFrames (addHash aframe1) frame1withDest
     hframe1dest = hframe1
     -- hframe1dest = addTcpDestinationsToFrame hframe1
-    hframe2 :: Frame (Record ('[PacketHash] ++ RecTsharkPrefixed))
+    hframe2 :: Frame (Record ('[PacketHash] ++ HostColsPrefixed))
     hframe2 = zipFrames (addHash aframe1) (ffFrame aframe2)
     -- processedFrame2 = fmap (retypeColumns @'[ '("absTime", "absTime2", Double)  ]) frame2
     processedFrame2 = hframe2
-    -- processedFrame2 :: Frame (Record ('[PacketHash] ++ RecTsharkPrefixed))
+    -- processedFrame2 :: Frame (Record ('[PacketHash] ++ HostColsPrefixed))
     -- processedFrame2 = fmap (retypeColumn @AbsTime @TestAbsTime) hframe2
 
 -- TODO we need to reorder from host1 / host2 to client server
@@ -241,9 +241,13 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
 
 
 -- | Result of the merge of 2 pcaps
--- genExplicitRecord "" "RecTshark" mergedFields
+-- genExplicitRecord "" "HostCols" mergedFields
+
+
 
 -- gen
+-- convertCols :: FrameRec HostCols -> FrameRec HostColsPrefixed
+
 
 
 -- TODO and then we should compute a owd
@@ -313,6 +317,8 @@ convertToSenderReceiver oframe = do
             . retypeColumn @TestPacketId @RcvPacketId
             . retypeColumn @AbsTime @SndAbsTime
             . retypeColumn @TestAbsTime @RcvAbsTime
+            . retypeColumn @IpSource @SndIpSource
+            . retypeColumn @IpDest @SndIpDest
             ) r)
 
     -- recvFrame h1role = fmap convertToReceiver (totoFrame h1role)

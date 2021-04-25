@@ -204,7 +204,7 @@ cmdPlotTcpOwd :: Members [Log String, P.State MyState, Cache, Embed IO] m =>
           -> Connection
           -> MergedPcap
           -- -> FrameFiltered Packet
-          -- -> FrameFiltered (Record RecTsharkPrefixed)
+          -- -> FrameFiltered (Record HostColsPrefixed)
           -> Sem m RetCode
 cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
   log $ "plotting OWDs "

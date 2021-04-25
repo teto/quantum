@@ -40,6 +40,9 @@ import Data.Char (toLower)
 --         rowTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
 
 
+-- je voudrais generer une fonction par TH
+-- convertCols :: FrameRec HostCols -> FrameRec HostColsPrefixed
+-- convertCols = 
 
 -- 
 -- WARN the behavior here differs from Frames
@@ -145,7 +148,7 @@ qqDec = go
 --
 
 --myRow :: [(T.Text, TsharkFieldDesc)] -> RowGen a
---myRow fields = RowGen [] "" "|" "RecTshark" []
+--myRow fields = RowGen [] "" "|" "HostCols" []
 --  where
 --    --
 --    tfields = map (\(colName, fullField) -> (colName, colType fullField)) fields
@@ -178,7 +181,7 @@ promotedTypeList (t:ts) = [t| $promotedConsT $t $(promotedTypeList ts) |]
 --     tableTypesExplicitFull tfields myRow
 --     where
 --       -- myRow :: RowGen [t| myColumnUniverse baseFields|]
---       myRow = RowGen $(myColumnUniverse baseFields) "" "|" "RecTshark" (Proxy  [Int, Int])
+--       myRow = RowGen $(myColumnUniverse baseFields) "" "|" "HostCols" (Proxy  [Int, Int])
 --       tfields = map (\(colName, fullField) -> (colName, colType fullField)) fields
 
 -- colDec :: prefix rowName colName colTypeGen = do

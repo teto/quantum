@@ -97,29 +97,12 @@ declareColumn "packetHash" ''Int
 declareColumn "colOwd" ''Double
 
 
--- myRowGen "RecTshark" baseFields
--- type OptionList = [Int]
-
--- RecTshark :: [(Symbol, *)]
--- type RecTshark = '[
---     "packetId" :-> Word64
---     , "interfaceName" :-> Text
---     -- Load it as a Float / Time
---     , "absTime" :-> Text
---     , "relTime" :-> Double
---     , "ipSource" :-> IP
---     , "ipDest" :-> IP
---     -- , "mptcpRelatedMappings" :-> Maybe OptionList
---     -- , "mptcpReinjectionOf" :-> Maybe OptionList
---     -- , "mptcpReinjectedIn" :-> Maybe OptionList
---     ]
-
 -- TODO check it generates
--- RecTshark
-genRecordFrom "RecTshark" baseFields
+-- HostCols
+genRecordFrom "HostCols" baseFields
 -- these are useful when merging different
-genRecordFromHeaders "" "RecTsharkPrefixed" baseFieldsHost2
--- genExplicitRecord "test" "RecTsharkPrefixed" baseFieldsHost2
+genRecordFromHeaders "" "HostColsPrefixed" baseFieldsHost2
+-- genExplicitRecord "test" "HostColsPrefixed" baseFieldsHost2
 genRecHashable "HashablePart" baseFields
 
 --
@@ -133,10 +116,10 @@ genExplicitRecord "" "RecMerged" mergedFields
 
 -- row / ManRow
 -- Packet
-type Packet = Record RecTshark
--- type Packet = RecTshark
-type PacketWithTcpDest = Record (TcpDest ': RecTshark)
-type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': RecTshark)
+type Packet = Record HostCols
+-- type Packet = HostCols
+type PacketWithTcpDest = Record (TcpDest ': HostCols)
+type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': HostCols)
 
 -- https://stackoverflow.com/questions/14020491/is-there-a-way-of-deriving-binary-instances-for-vinyl-record-types-using-derive?rq=1
 -- forall t s a rs. (t ~ '(s,a)

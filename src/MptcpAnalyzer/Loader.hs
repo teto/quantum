@@ -22,7 +22,10 @@ import qualified Frames.InCore
 
 -- TODO return an Either or Maybe ?
 -- return an either instead
-loadPcapIntoFrame :: (Frames.InCore.RecVec a, Frames.CSV.ReadRec a, Members [Cache, Log String, Embed IO ] m)
+loadPcapIntoFrame ::
+    (Frames.InCore.RecVec a
+    , Frames.CSV.ReadRec a
+    , Members [Cache, Log String, Embed IO ] m)
     => TsharkParams
     -> FilePath
     -> Sem m (Either String (FrameRec a))

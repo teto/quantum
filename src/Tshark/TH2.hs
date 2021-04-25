@@ -29,7 +29,7 @@ import Tshark.TH
 --     columnNames = map (unpack . fst) baseFields
 --     , tablePrefix = ""
 --     , separator = pack "|"
---     , rowTypeName = "RecTshark"
+--     , rowTypeName = "HostCols"
 --     , columnUniverse = Proxy
 --     , lineReader =  produceTokens ""
 --     })
