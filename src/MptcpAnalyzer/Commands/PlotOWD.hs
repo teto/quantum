@@ -238,7 +238,7 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
       plot (line lineLabel [ [ (d,v) | (d,v) <- zip timeData owd ] ])
 
         where
-          lineLabel = "TCP seq " ++ showConnection con ++ " (" ++ showConnectionRole dest ++ ")"
+          lineLabel = "TCP seq " ++ showConnection con ++ " (towards " ++ showConnectionRole dest ++ ")"
           unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) sndRcvFrame
 
           timeData = traceShow ("timedata length=" ++ show (frameLength unidirectionalFrame)) toList $ view sndAbsTime <$> unidirectionalFrame
