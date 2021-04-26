@@ -37,6 +37,7 @@ import MptcpAnalyzer.Commands.List as CLI
 import MptcpAnalyzer.Commands.ListMptcp as CLI
 import MptcpAnalyzer.Commands.Export as CLI
 import MptcpAnalyzer.Commands.Map as CLI
+import MptcpAnalyzer.Commands.Reinjections as CLI
 import MptcpAnalyzer.Merge
 import qualified MptcpAnalyzer.Commands.Plot as Plots
 import qualified MptcpAnalyzer.Commands.PlotOWD as Plots
@@ -310,6 +311,7 @@ mainParser = subparser (
     <> commandGroup "MPTCP commands"
     <> command "list-mptcp" CLI.listMpTcpOpts
     <> command "export" CLI.parseExportOpts
+    <> command "analyze" CLI.piQualifyReinjections
     <> commandGroup "TCP plots"
     -- TODO here we should pass a subparser
     -- <> subparser (
@@ -359,7 +361,7 @@ runCommand args@ArgsListMpTcpConnections{} = CLI.listMpTcpConnectionsCmd args
 runCommand args@ArgsExport{} = CLI.cmdExport args
 runCommand args@ArgsPlotGeneric{} = runPlotCommand args
 runCommand args@ArgsMapTcpConnections{} = CLI.cmdMapTcpConnection args
-runCommand args@ArgsQualifyReinjections{} = CLI.cmdMapTcpConnection args
+runCommand args@ArgsQualifyReinjections{} = CLI.cmdQualifyReinjections args
 runCommand args@ArgsQuit{} = cmdQuit args
 runCommand args@ArgsHelp{} = cmdHelp args
 
@@ -379,7 +381,7 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
     -- file is not removed afterwards
     (tempPath, handle) <- P.embed $ openTempFile "/tmp" "plot.png"
     _ <- case specificArgs of
-      (ArgsPlotTcpAttr pcapFilename streamId attr mbDest mptcp) -> do
+      (ArgsPlotTcpAttr field pcapFilename streamId attr mbDest mptcp) -> do
         let destinations = getDests mbDest
         log $ "MPTCP plot" ++ show (plotMptcp specificArgs)
 
@@ -395,6 +397,7 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
                 Left err -> return $ CMD.Error err
                 Right frame -> Plots.cmdPlotTcpAttribute tempPath handle destinations frame
         return res
+      -- Destinations
       (ArgsPlotOwd pcap1 pcap2 streamId1 streamId2 dest) -> do
         log $ "owd plot"
         -- if plotOwdMptcp specificArgs then do
@@ -403,10 +406,8 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
         --         Left err -> return $ CMD.Error err
         --         Right frame -> Plots.cmdPlotMptcpAttribute tempPath handle destinations frame
         eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId1)
-        -- TODO
         eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 (StreamId streamId2)
 
-        -- embed $ writeDSV defaultParserOptions "retyped.csv" processedFrame2
         res <- case (eframe1, eframe2 ) of
           (Right aframe1, Right aframe2) -> do
               let mergedRes = mergeTcpConnectionsFromKnownStreams aframe1 aframe2

@@ -64,6 +64,24 @@ loadPcapIntoFrame params path = do
       opts = TempFileOptions True
 
 
+
+-- loadMergedTcpStream :: 
+--     FilePath -> StreamId Tcp
+--     -> FilePath -> StreamId Tcp
+--     -> MergedPcap
+--         eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId1)
+--         -- TODO
+--         eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 (StreamId streamId2)
+
+--         -- embed $ writeDSV defaultParserOptions "retyped.csv" processedFrame2
+--         res <- case (eframe1, eframe2 ) of
+--           (Right aframe1, Right aframe2) -> do
+--               let mergedRes = mergeTcpConnectionsFromKnownStreams aframe1 aframe2
+--               let mbRecs = map recMaybe mergedRes
+--               let justRecs = catMaybes mbRecs
+--               Plots.cmdPlotTcpOwd tempPath handle (getDests dest) (ffCon aframe1) mergedRes
+
+
 -- buildTcpFrameFromFrame
 -- \ Build a frame with only packets belonging to @streamId@
 buildAFrameFromStreamIdTcp :: Members [Cache, Log String, Embed IO ] m

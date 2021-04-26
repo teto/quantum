@@ -95,6 +95,17 @@ validTcpAttributes = ["tcpseq"]
 
 -- type ValidAttributes = [String]
 
+
+-- TODO pass valid
+validateField :: [String] -> ReadM (String)
+validateField validFields = eitherReader $ \arg -> case reads arg of
+  [(r, "")] -> if elem r validFields then Right r else Left $ "incorrect value"
+  _ -> Left $ "validatedField: incorrect value `" ++ arg ++ "` choose from: ..."
+-- readStreamId :: ReadM (StreamId a)
+-- readStreamId = eitherReader $ \arg -> case reads arg of
+--   [(r, "")] -> return $ StreamId r
+--   _ -> Left $ "readStreamId: cannot parse value `" ++ arg ++ "`"
+
 -- TODO pass the list of accepted attributes (so that it works for TCP/MPTCP)
 plotStreamParser :: 
     [String]
@@ -102,7 +113,11 @@ plotStreamParser ::
     -> Parser ArgsPlots
 plotStreamParser _validAttributes mptcpPlot = ArgsPlotTcpAttr <$>
       -- this ends up being not optional !
-      strArgument (
+      argument (validateField _validAttributes) (
+          metavar "Field"
+          <> help "Field to plot"
+      )
+      <*> strArgument (
           metavar "PCAP"
           <> help "File to analyze"
       )

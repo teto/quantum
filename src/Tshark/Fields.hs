@@ -58,6 +58,10 @@ type FieldDescriptions = [(Text, TsharkFieldDesc)]
 
 type MbWord32 = Maybe Word32
 
+
+-- TODO add this ?
+-- data Field = FieldPacketId | FieldInterfaceName
+
 -- MUST BE KEPT IN SYNC WITH  Pcap.hs HostCols
 -- ORDER INCLUDED !
 -- until we can automate this
