@@ -85,6 +85,7 @@ import GHC.List (foldl')
 -- import qualified Frames.InCore
 import qualified Frames.InCore as I
 import Debug.Trace
+import qualified Data.Map as Map
 
 
 -- tableTypes is a Template Haskell function, which means that it is executed at compile time. It generates a data type for our CSV, so we have everything under control with our types.
@@ -208,11 +209,11 @@ exportToCsv params pcapPath path tmpFileHandle = do
     return (path, exitCode, err)
     where
       fields :: [T.Text]
-      fields = map (\(_, desc) -> tfieldFullname desc) baseFields
+      fields = Map.elems $ Map.map tfieldFullname baseFields
 
       csvSeparator = T.pack [csvDelimiter params]
       fieldHeader :: Text
-      fieldHeader = T.intercalate csvSeparator (map (\(name, _) -> name) baseFields)
+      fieldHeader = T.intercalate csvSeparator (Map.keys baseFields)
 
 -- "data/server_2_filtered.pcapng.csv"
 -- la le probleme c'est que je ne passe pas d'options sur les separators etc

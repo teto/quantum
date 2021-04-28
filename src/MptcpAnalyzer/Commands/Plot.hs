@@ -11,6 +11,7 @@ import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Loader
+import Tshark.Fields (baseFields, TsharkFieldDesc (fieldLabel))
 import MptcpAnalyzer.Debug
 
 import Prelude hiding (filter, lookup, repeat, log)
@@ -39,7 +40,7 @@ import System.Process hiding (runCommand)
 import System.Exit
 -- import Data.Time.LocalTime
 import Data.Foldable (toList)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isJust)
 import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
 import System.Directory (renameFile)
 import System.IO (Handle)
@@ -47,7 +48,8 @@ import Frames.ShowCSV (showCSV)
 import qualified Data.Set as Set
 import Debug.Trace
 import Text.Read (readEither)
-
+import Data.List (filter)
+import qualified Data.Map as Map
 
 -- data PlotTypes = PlotTcpAttribute {
 --     pltAttrField :: Text
@@ -86,6 +88,7 @@ piPlotMptcpAttrParser = info (
   ( progDesc "Plot MPTCP attr"
   )
 
+-- data TcpAttr = 
 
 -- Superset of @validTcpAttributes@
 validMptcpAttributes :: [String]
@@ -96,13 +99,15 @@ validMptcpAttributes = [
 -- |Options that are available for all parsers
 -- plotParserGenericOptions 
 -- TODO generate from the list of fields, via TH?
+
 validTcpAttributes :: [String]
-validTcpAttributes = [
-  "tsval"
-  , "rwnd"
-  , "tcpSeq"
-  , "tcpAck"
-  ]
+validTcpAttributes = map T.unpack (Map.keys $ Map.mapMaybe (fieldLabel ) baseFields)
+-- [
+--   "tsval"
+--   , "rwnd"
+--   , "tcpSeq"
+--   , "tcpAck"
+--   ]
 
 -- type ValidAttributes = [String]
 
@@ -115,6 +120,7 @@ validateField validFields = eitherReader $ \arg -> case elem arg validFields of
 
 validationErrorMsg :: [String] -> String -> String
 validationErrorMsg validFields entry = "validatedField: incorrect value `" ++ entry ++ "` choose from:\n -" ++ intercalate "\n - " validFields
+
 
 -- readStreamId :: ReadM (StreamId a)
 -- readStreamId = eitherReader $ \arg -> case reads arg of
@@ -182,20 +188,22 @@ instance PlotValue Word32 where
 -- todo pass --filterSyn Args fields
 -- TODO filter according to destination
 
+
 -- destinations is an array of destination
-cmdPlotTcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
-          FilePath -- ^ temporary file to save plot to
+cmdPlotTcpAttribute, cmdPlotMptcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
+          String -- Tcp attr
+          -> FilePath -- ^ temporary file to save plot to
           -> Handle
           -> [ConnectionRole]
           -> FrameFiltered Packet
           -> Sem m RetCode
-cmdPlotTcpAttribute tempPath _ destinations aFrame = do
+cmdPlotTcpAttribute field tempPath _ destinations aFrame = do
 
 -- inCore converts into a producer
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
   -- embed $ writeCSV "debug.csv" frame2
   embed $ toFile def tempPath $ do
-      layout_title .= "TCP Sequence number"
+      layout_title .= "TCP " ++ field
       -- TODO generate for mptcp plot
       flip mapM_ destinations plotAttr
 
@@ -204,7 +212,7 @@ cmdPlotTcpAttribute tempPath _ destinations aFrame = do
     -- filter by dest
     frame2 = addTcpDestinationsToFrame aFrame
     plotAttr dest =
-        plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
+        plot (line ("TCP " ++ field ++ " (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
         where
           -- frameDest = ffTcpFrame tcpFrame
           frameDest = frame2
@@ -212,17 +220,25 @@ cmdPlotTcpAttribute tempPath _ destinations aFrame = do
           unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) (ffFrame frameDest)
 
           seqData :: [Double]
-          seqData = map fromIntegral (toList $ view tcpSeq <$> unidirectionalFrame)
+          seqData = map fromIntegral (toList $ view (getSelector field) <$> unidirectionalFrame)
           timeData = toList $ view relTime <$> unidirectionalFrame
 
--- | 
-cmdPlotMptcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
-          FilePath -- ^ temporary file to save plot to
-          -> Handle
-          -> [ConnectionRole]
-          -> FrameFiltered Packet
-          -> Sem m RetCode
-cmdPlotMptcpAttribute tempPath _ destinations aFrame = do
+          -- selector
+          -- type Lens s t a b = forall f. Functor f => (a -> f b) -> s -> f t 
+          -- selector :: String -> Lens s t a b
+
+-- TODO it should be capabale of returning
+getSelector attr = case attr of
+  "tcpSeq" -> tcpSeq
+  "rwnd" -> rwnd
+  "tcpAck" -> tcpAck
+  -- "tcpLen" -> tcpLen
+  -- "tsval" -> tsval
+  _ -> error "unsupported attr"
+
+-- type Lens s t a b
+-- case
+cmdPlotMptcpAttribute field tempPath _ destinations aFrame = do
 
 -- inCore converts into a producer
   log $ "show con " ++ show (ffCon aFrame)
@@ -232,7 +248,7 @@ cmdPlotMptcpAttribute tempPath _ destinations aFrame = do
   embed $ writeCSV "debug.csv" (ffFrame aFrame)
   embed $ writeCSV "dest.csv" (frameDest)
   embed $ toFile def tempPath $ do
-      layout_title .= "MPTCP Sequence number"
+      layout_title .= "MPTCP " ++ field
       -- TODO generate for mptcp plot
       -- for each subflow, plot the MptcpDest
       mapM_ plotAttr ( [ (x, y) | x <- destinations , y <- Set.toList $ mpconSubflows $ ffCon aFrame ])

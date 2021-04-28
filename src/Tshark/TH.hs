@@ -29,12 +29,14 @@ import Frames.Utils
 import Data.Proxy (Proxy(..))
 import Control.Monad (foldM)
 import Data.Char (toLower)
+import Data.Map (mapWithKey, toList)
+import qualified Data.Map as Map
 
 
 -- WARN the behavior here differs from Frames
 declarePrefixedColumns :: Text -> FieldDescriptions -> DecsQ
 declarePrefixedColumns prefix fields = do
-  foldM toto ([]) fields
+  foldM toto (mempty) (toList fields)
   where
     -- acc ++
     toto acc (colName, field) = do
@@ -55,7 +57,7 @@ genRecordFrom  = genRecordFromHeaders ""
 genRecordFromHeaders :: String -> String -> FieldDescriptions -> DecsQ
 genRecordFromHeaders tablePrefix rowTypeName fields = genExplicitRecord tablePrefix rowTypeName converted
   where
-    converted = map (\(name, field) -> (name, tfieldColType field)) fields
+    converted = map (\(name, field) -> (name, tfieldColType field)) (toList fields)
 
 -- mergedFields :: [(String, Name)]
 -- FieldDescriptions
@@ -83,7 +85,7 @@ genExplicitRecord tablePrefix rowTypeName fields = do
 
 
 genRecHashable :: String -> FieldDescriptions -> DecsQ
-genRecHashable prefix fields = genRecordFrom prefix (filter (tfieldHashable . snd ) fields)
+genRecHashable prefix fields = genRecordFrom prefix (Map.filter (tfieldHashable  ) fields)
 
 -- inspired from recDec
 qqDec :: [Type] -> Type

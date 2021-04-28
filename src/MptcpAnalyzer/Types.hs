@@ -88,12 +88,6 @@ declarePrefixedColumns "" baseFieldsHost2
 declarePrefixedColumns "" baseFieldsSender
 declarePrefixedColumns "" baseFieldsReceiver
 
--- just for tests: to remove
--- declarePrefixedColumns "" fakeBaseFields
--- declarePrefixedColumns "" fakeBaseFields2
-
-
-
 -- todo declare it from ArtificialFields ?
 -- artificial types, i.e. created by the app and not tshark
 declareColumn "tcpDest" ''ConnectionRole
@@ -112,19 +106,9 @@ genRecHashable "HashablePart" baseFields
 genRecordFrom "SenderCols" baseFieldsSender
 genRecordFrom "ReceiverCols" baseFieldsReceiver
 
---
--- declareColumn "sndTime" ''Double
--- declareColumn "rcvTime" ''Double
--- declareColumn "senderIP" ''IP
--- declareColumn "receiverIP" ''IP
--- genExplicitRecord "" "RecMerged" mergedFields
-
-
 
 -- row / ManRow
--- Packet
 type Packet = Record HostCols
--- type Packet = HostCols
 type PacketWithTcpDest = Record (TcpDest ': HostCols)
 type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': HostCols)
 

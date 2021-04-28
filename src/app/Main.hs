@@ -243,7 +243,7 @@ defaultPcap :: FilePath
 defaultPcap = "examples/client_2_filtered.pcapng"
 
 promptSuffix :: String
-promptSuffix = "> "
+promptSuffix = setSGRCode [SetColor Foreground Vivid Red] ++ ">"  ++ setSGRCode [Reset]
 
 -- alternatively could modify defaultPrefs
 -- subparserInline + multiSuffix helpShowGlobals
@@ -390,13 +390,13 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
               eFrame <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcapFilename (StreamId streamId)
               case eFrame of
                 Left err -> return $ CMD.Error err
-                Right frame -> Plots.cmdPlotMptcpAttribute tempPath handle destinations frame
+                Right frame -> Plots.cmdPlotMptcpAttribute attr tempPath handle destinations frame
 
             else do
               eFrame <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcapFilename (StreamId streamId)
               case eFrame of
                 Left err -> return $ CMD.Error err
-                Right frame -> Plots.cmdPlotTcpAttribute tempPath handle destinations frame
+                Right frame -> Plots.cmdPlotTcpAttribute attr tempPath handle destinations frame
         return res
       -- Destinations
       (ArgsPlotOwd pcap1 pcap2 streamId1 streamId2 dest) -> do

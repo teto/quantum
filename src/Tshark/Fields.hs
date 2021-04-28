@@ -17,6 +17,7 @@ import Data.Text (Text)
 import Data.Word (Word8, Word16, Word32, Word64)
 import Frames.ShowCSV
 
+import Data.Map (Map, fromList, mapKeys)
 -- Phantom types
 -- data Mptcp
 -- data Tcp
@@ -47,14 +48,16 @@ data TsharkFieldDesc = TsharkFieldDesc {
         -- ^Test
         , tfieldColType :: Name
         -- , colType :: Q Type
-        , fieldLabel :: Maybe Text
+        , fieldLabel :: Maybe String
         -- ^How to reference it in plot
         , tfieldHashable :: Bool
         -- ^Wether to take into account this field when creating a hash of a packet
     }
 
     -- deriving (Read, Generic)
-type FieldDescriptions = [(Text, TsharkFieldDesc)]
+-- TODO as a map
+-- type FieldDescriptions = [(Text, TsharkFieldDesc)]
+type FieldDescriptions = Map Text TsharkFieldDesc
 
 type MbWord32 = Maybe Word32
 
@@ -67,7 +70,7 @@ type MbWord32 = Maybe Word32
 -- until we can automate this
 -- get Name
 baseFields :: FieldDescriptions
-baseFields = [
+baseFields = fromList [
     ("packetId", TsharkFieldDesc "frame.number" ''Word64 Nothing False)
     , ("interfaceName", TsharkFieldDesc "frame.interface_name" ''Text Nothing False)
     , ("absTime", TsharkFieldDesc "frame.time_epoch" ''Double Nothing False)
@@ -119,7 +122,9 @@ baseFields = [
 
 -- TODO
 prefixFields :: Text -> FieldDescriptions -> FieldDescriptions
-prefixFields prefix = map (\(name, field) -> (prefix<>name , field))
+prefixFields prefix descs = 
+  -- map (\(name, field) -> (prefix<>name , field))
+  mapKeys (\name -> prefix<>name) descs
 
 -- this should actually be host2
 baseFieldsHost2 :: FieldDescriptions

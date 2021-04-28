@@ -17,6 +17,7 @@ import Tshark.Fields
 import Language.Haskell.TH (Name)
 import Options.Applicative
 import Data.String
+import Data.Map (Map, fromList)
 
 -- |Filters a connection depending on its role
 data ConnectionRole = RoleServer | RoleClient deriving (Show, Eq, Enum, Read, ShowCSV, Ord)
@@ -26,21 +27,21 @@ showConnectionRole RoleServer = "Server"
 showConnectionRole RoleClient = "Client"
 
 artificialFields :: FieldDescriptions
-artificialFields = [
+artificialFields = fromList [
     ("tcpDest", TsharkFieldDesc "" ''ConnectionRole Nothing False)
     , ("mptcpDest", TsharkFieldDesc "" ''ConnectionRole Nothing False)
     , ("packetHash", TsharkFieldDesc "" ''ConnectionRole Nothing False)
   ]
 
 -- TODO remove
-mergedFields :: [(Text, Name)]
-mergedFields = [
-  ("senderIP", ''IP)
-  , ("receiverIP", ''IP)
-  , ("sndTime", ''Double)
-  , ("rcvTime", ''Double)
-  , ("tcpSeq", ''Word32)
-  ]
+-- mergedFields :: [(Text, Name)]
+-- mergedFields = [
+--   ("senderIP", ''IP)
+--   , ("receiverIP", ''IP)
+--   , ("sndTime", ''Double)
+--   , ("rcvTime", ''Double)
+--   , ("tcpSeq", ''Word32)
+--   ]
 
 readConnectionRole :: ReadM ConnectionRole
 readConnectionRole = eitherReader $ \arg -> case reads arg of
