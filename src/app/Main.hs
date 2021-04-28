@@ -72,6 +72,7 @@ import Frames.InCore (toFrame)
 -- for noCompletion
         -- <> Options.Applicative.value "/tmp"
 import System.Console.Haskeline
+import System.Console.ANSI
 import Control.Lens ((^.), view)
 
 -- Repline is a wrapper (suppposedly more advanced) around haskeline
@@ -381,7 +382,7 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
     -- file is not removed afterwards
     (tempPath, handle) <- P.embed $ openTempFile "/tmp" "plot.png"
     _ <- case specificArgs of
-      (ArgsPlotTcpAttr field pcapFilename streamId attr mbDest mptcp) -> do
+      (ArgsPlotTcpAttr pcapFilename streamId attr mbDest mptcp) -> do
         let destinations = getDests mbDest
         log $ "MPTCP plot" ++ show (plotMptcp specificArgs)
 

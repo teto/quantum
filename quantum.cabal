@@ -172,7 +172,9 @@ library libmptcpanalyzer
 -- monitor new mptcp connections
 executable mptcpanalyzer
     import: shared-properties
-    build-depends: quantum:libmptcpanalyzer
+    build-depends:
+        quantum:libmptcpanalyzer
+        , ansi-terminal
     Other-modules:
         -- Tshark.TH
         -- , Net.Mptcp.Types

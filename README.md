@@ -58,6 +58,10 @@ $ cabal build
 - [wireshark](wireshark-mptcp) to convert packet captures (.pcapng) to csv
 files.
 
+## Tests
+
+Tests are run via [shelltestrunner].
+
 ## Debug splices
 
 `-ddump-splices -ddump-to-file -dth-dec-file`

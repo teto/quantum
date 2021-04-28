@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE OverloadedStrings #-}
 module MptcpAnalyzer.Commands.Plot
 where
 
@@ -25,6 +26,7 @@ import Graphics.Rendering.Chart.Easy hiding (argument)
 import Graphics.Rendering.Chart.Backend.Cairo
 import Data.Word (Word8, Word16, Word32, Word64)
 
+import Data.List (intercalate)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Pipes as P
@@ -44,6 +46,7 @@ import System.IO (Handle)
 import Frames.ShowCSV (showCSV)
 import qualified Data.Set as Set
 import Debug.Trace
+import Text.Read (readEither)
 
 
 -- data PlotTypes = PlotTcpAttribute {
@@ -84,40 +87,52 @@ piPlotMptcpAttrParser = info (
   )
 
 
+-- Superset of @validTcpAttributes@
 validMptcpAttributes :: [String]
-validMptcpAttributes = ["tcpseq", "dsn"]
+validMptcpAttributes = [
+  "tcpseq", "dsn"
+  ]
 
 -- |Options that are available for all parsers
 -- plotParserGenericOptions 
 -- TODO generate from the list of fields, via TH?
 validTcpAttributes :: [String]
-validTcpAttributes = ["tcpseq"]
+validTcpAttributes = [
+  "tsval"
+  , "rwnd"
+  , "tcpSeq"
+  , "tcpAck"
+  ]
 
 -- type ValidAttributes = [String]
 
 
 -- TODO pass valid
 validateField :: [String] -> ReadM (String)
-validateField validFields = eitherReader $ \arg -> case reads arg of
-  [(r, "")] -> if elem r validFields then Right r else Left $ "incorrect value"
-  _ -> Left $ "validatedField: incorrect value `" ++ arg ++ "` choose from: ..."
+validateField validFields = eitherReader $ \arg -> case elem arg validFields of
+  True -> Right arg
+  False -> Left $ validationErrorMsg validFields arg
+
+validationErrorMsg :: [String] -> String -> String
+validationErrorMsg validFields entry = "validatedField: incorrect value `" ++ entry ++ "` choose from:\n -" ++ intercalate "\n - " validFields
+
 -- readStreamId :: ReadM (StreamId a)
 -- readStreamId = eitherReader $ \arg -> case reads arg of
 --   [(r, "")] -> return $ StreamId r
 --   _ -> Left $ "readStreamId: cannot parse value `" ++ arg ++ "`"
 
 -- TODO pass the list of accepted attributes (so that it works for TCP/MPTCP)
-plotStreamParser :: 
+plotStreamParser ::
     [String]
     -> Bool -- ^ for mptcp yes or no
     -> Parser ArgsPlots
 plotStreamParser _validAttributes mptcpPlot = ArgsPlotTcpAttr <$>
       -- this ends up being not optional !
-      argument (validateField _validAttributes) (
-          metavar "Field"
-          <> help "Field to plot"
-      )
-      <*> strArgument (
+      -- argument (validateField _validAttributes) (
+      --     metavar "FIELD"
+      --     <> help ( "Field to plot (choose from " ++ (intercalate ", " _validAttributes) ++ ")")
+      -- )
+      strArgument (
           metavar "PCAP"
           <> help "File to analyze"
       )
@@ -128,7 +143,7 @@ plotStreamParser _validAttributes mptcpPlot = ArgsPlotTcpAttr <$>
       )
       -- TODO validate as presented in https://github.com/pcapriotti/optparse-applicative/issues/75
       --validate :: (a -> Either String a) -> ReadM a -> ReadM a
-      <*> strArgument (
+      <*> argument (validateField _validAttributes) (
           metavar "TCP_ATTR"
           <> help "A TCP attr in the list: "
       )

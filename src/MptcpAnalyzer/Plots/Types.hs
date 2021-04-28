@@ -28,8 +28,8 @@ data ArgsPlots =
 
     -- actually valid for MPTCP too
     ArgsPlotTcpAttr {
-      plotField :: String
-      , plotFilename :: FilePath
+      -- plotField :: String
+      plotFilename :: FilePath
       -- try to pattern match on the StreamId
       , plotStreamId :: Word32
       , plotTcpAttr :: String

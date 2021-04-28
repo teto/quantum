@@ -115,7 +115,7 @@ doPutCache config cid resource =
     return True
   where
       csvFilename = getFullPath config cid
-  
+
 
 -- TODO log ? / compare inputs date
 isCacheValid :: Members '[Embed IO] r => CacheConfig -> CacheId -> Sem r Bool

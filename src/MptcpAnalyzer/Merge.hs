@@ -279,16 +279,29 @@ convertToSenderReceiver oframe = do
     -- zipFrames
     sendFrame, recvFrame :: ConnectionRole -> FrameRec SenderReceiverCols
     sendFrame h1role = fmap convertToSender (totoFrame h1role)
-      where
-        convertToSender :: Record MergedHostCols -> Record SenderReceiverCols
-        convertToSender r = let
-            -- TODO add tcpDest
-            senderCols :: Record SenderCols
-            senderCols = (withNames . stripNames . F.rcast @HostCols) r
-            receiverCols :: Record ReceiverCols
-            receiverCols = (withNames . stripNames . F.rcast @HostColsPrefixed) r
-          in
-            (rget @TcpDest r) :& (rappend senderCols receiverCols)
+
+    recvFrame h1role = fmap convertToReceiver (totoFrame (if h1role == RoleClient then RoleServer else RoleClient))
+
+    convertToSender, convertToReceiver :: Record MergedHostCols -> Record SenderReceiverCols
+    convertToSender r = let
+        -- TODO add tcpDest
+        senderCols :: Record SenderCols
+        senderCols = (withNames . stripNames . F.rcast @HostCols) r
+        receiverCols :: Record ReceiverCols
+        receiverCols = (withNames . stripNames . F.rcast @HostColsPrefixed) r
+      in
+        (rget @TcpDest r) :& (rappend senderCols receiverCols)
+
+    convertToReceiver r = let
+        senderCols :: Record SenderCols
+        senderCols = (withNames . stripNames . F.rcast @HostColsPrefixed) r
+        receiverCols :: Record ReceiverCols
+        receiverCols = (withNames . stripNames . F.rcast @HostCols) r
+      in
+        (rget @TcpDest r) :& (rappend senderCols receiverCols)
+        -- convert ("first host") to sender/receiver
+        -- TODO this could be improved
+
 
           -- F.rcast @SenderReceiverCols ((
           --   -- retypeColumns @'[ '("absTime", "snd_absTime", Double), '("test_absTime", "rcv_absTime", Double) ] r)
@@ -300,24 +313,6 @@ convertToSenderReceiver oframe = do
           --   . retypeColumn @IpDest @SndIpDest
           --   ) r)
 
-    -- recvFrame h1role = fmap convertToReceiver (totoFrame h1role)
-    recvFrame h1role = undefined
-
-    -- convertToSender, convertToReceiver :: Record MergedHostCols -> Record (RDeleteAll SenderReceiverCols (MergedHostCols ++ SenderReceiverCols))
-    -- convertToSender, convertToReceiver :: Record MergedHostCols -> Record (MergedHostCols ++ SenderReceiverCols)
-    -- convertToSender, convertToReceiver :: Record MergedHostCols -> Record (RDelete AbsTime (MergedHostCols ++ SenderReceiverCols))
-    -- convertToSender, convertToReceiver :: Record MergedHostCols -> Record (MergedHostCols ++ '[SndAbsTime])
-    -- see https://github.com/blueripple/blueripple-research/blob/4a0ea35e42ae2de1e6cd47e0e149bbac05ee4e2b/src/BlueRipple/Data/Loaders.hs#L311
-    -- F.rcast @(MergedHostCols ++ SenderReceiverCols) (
-    -- convertToSender r =
-    --     retypeColumns @'[ '("absTime", "snd_absTime", Double), '("test_absTime", "rcv_absTime", Double) ] r
-    -- convertToSender = retypeColumns @'[]
-    -- convertToSender f = retypeColumn @AbsTime @SndAbsTime ( retypeColumn @TestAbsTime @RcvAbsTime f)
-
-    -- convertToReceiver = retypeColumn @AbsTime @RcvAbsTime . retypeColumn @TestAbsTime @SndAbsTime
-    convertToReceiver = undefined
-
-    -- TODO use (succ role) instead
 
 
 -- | Add a One-Way-Delay column to the results
