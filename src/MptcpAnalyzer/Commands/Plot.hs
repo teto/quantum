@@ -220,7 +220,8 @@ cmdPlotTcpAttribute field tempPath _ destinations aFrame = do
           unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) (ffFrame frameDest)
 
           seqData :: [Double]
-          seqData = map fromIntegral (toList $ view (getSelector field) <$> unidirectionalFrame)
+          -- seqData = map fromIntegral (toList $ (getSelector field) <$> unidirectionalFrame)
+          seqData = getData unidirectionalFrame field
           timeData = toList $ view relTime <$> unidirectionalFrame
 
           -- selector
@@ -228,13 +229,20 @@ cmdPlotTcpAttribute field tempPath _ destinations aFrame = do
           -- selector :: String -> Lens s t a b
 
 -- TODO it should be capabale of returning
-getSelector attr = case attr of
-  "tcpSeq" -> tcpSeq
-  "rwnd" -> rwnd
-  "tcpAck" -> tcpAck
-  -- "tcpLen" -> tcpLen
-  -- "tsval" -> tsval
-  _ -> error "unsupported attr"
+-- getSelector :: forall a. a -> Double
+-- Getter
+-- use / view
+
+getData frame attr =
+  map fromIntegral (toList $ view getSelector <$> frame)
+  where
+    getSelector = case attr of
+      "tcpSeq" -> tcpSeq
+      -- "rwnd" -> view rwnd
+      -- "tcpAck" -> view tcpAck
+      "tcpLen" -> tcpLen
+      -- "tsval" -> tsval
+      _ -> error "unsupported attr"
 
 -- type Lens s t a b
 -- case
