@@ -49,6 +49,7 @@ declarePrefixedColumns prefix fields = do
 -- Generates a '[ ]
 -- la solution est dans tableTypesText'
 -- Generate a FieldRec
+-- TODO rename
 genRecordFrom :: String -> FieldDescriptions -> DecsQ
 genRecordFrom  = genRecordFromHeaders ""
 

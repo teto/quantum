@@ -50,6 +50,8 @@ import Debug.Trace
 import Text.Read (readEither)
 import Data.List (filter)
 import qualified Data.Map as Map
+import Data.String
+import Data.Vinyl.TypeLevel
 
 -- data PlotTypes = PlotTcpAttribute {
 --     pltAttrField :: Text
@@ -216,7 +218,6 @@ cmdPlotTcpAttribute field tempPath _ destinations aFrame = do
         where
           -- frameDest = ffTcpFrame tcpFrame
           frameDest = frame2
-          -- frameDest = frame2
           unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) (ffFrame frameDest)
 
           seqData :: [Double]
@@ -233,14 +234,24 @@ cmdPlotTcpAttribute field tempPath _ destinations aFrame = do
 -- Getter
 -- use / view
 
+-- type HostCols = RecordColumns HostCols
+
+
+-- it should be possible to get something more abstract
+getData :: forall rs t a2. (Num a2,
+            -- RecElem
+            --   Rec TcpLen TcpLen rs rs (Data.Vinyl.TypeLevel.RIndex TcpLen rs),
+            -- (Record HostCols) <: (Record rs)
+            Foldable t, Functor t) =>
+            t (Record (TcpDest ': HostCols) ) -> String -> [a2]
 getData frame attr =
-  map fromIntegral (toList $ view getSelector <$> frame)
+  toList $ (getAttr  <$> frame)
   where
-    getSelector = case attr of
-      "tcpSeq" -> tcpSeq
-      -- "rwnd" -> view rwnd
-      -- "tcpAck" -> view tcpAck
-      "tcpLen" -> tcpLen
+    getAttr = case attr of
+      "tcpSeq" -> fromIntegral . (view tcpSeq)
+      "tcpLen" -> fromIntegral. (view tcpLen)
+      "rwnd" -> fromIntegral. (view rwnd)
+      "tcpAck" -> fromIntegral. (view tcpAck)
       -- "tsval" -> tsval
       _ -> error "unsupported attr"
 
