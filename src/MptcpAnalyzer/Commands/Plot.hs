@@ -94,16 +94,13 @@ piPlotMptcpAttrParser = info (
 
 -- Superset of @validTcpAttributes@
 validMptcpAttributes :: [String]
-validMptcpAttributes = [
-  "tcpseq", "dsn"
-  ]
-
+validMptcpAttributes = validTcpAttributes
 -- |Options that are available for all parsers
 -- plotParserGenericOptions 
 -- TODO generate from the list of fields, via TH?
 
 validTcpAttributes :: [String]
-validTcpAttributes = map T.unpack (Map.keys $ Map.mapMaybe (fieldLabel ) baseFields)
+validTcpAttributes = map T.unpack (Map.keys $ Map.mapMaybe fieldLabel baseFields)
 -- [
 --   "tsval"
 --   , "rwnd"

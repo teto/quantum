@@ -93,17 +93,7 @@ piPlotTcpOwd = info (plotParserOwd False)
   ( progDesc "Plot TCP attr"
   )
 
--- |
--- @param
--- piPlotMptcpAttrParser ::  ParserInfo ArgsPlots
--- piPlotMptcpAttrParser = info (
---   plotParserOwd True
---   )
---   ( progDesc "Plot MPTCP attr"
---   )
 
-
--- type ValidAttributes = [String]
 
 -- TODO pass the list of accepted attributes (so that it works for TCP/MPTCP)
 plotParserOwd ::

@@ -103,8 +103,8 @@ baseFields = fromList [
     -- TODO bool
     , ("mptcpDataFin", TsharkFieldDesc "tcp.options.mptcp.datafin.flag" ''MbWord64 Nothing True)
     , ("mptcpVersion", TsharkFieldDesc "tcp.options.mptcp.version" ''MbMptcpVersion Nothing True)
-    , ("mptcpDack", TsharkFieldDesc "mptcp.ack" ''MbWord64 Nothing True)
-    , ("mptcpDsn", TsharkFieldDesc "mptcp.dsn" ''MbWord64 Nothing True)
+    , ("mptcpDack", TsharkFieldDesc "mptcp.ack" ''MbWord64 (Just "DataAck") True)
+    , ("mptcpDsn", TsharkFieldDesc "mptcp.dsn" ''MbWord64 (Just "Data Sequence Number") True)
 
     -- these ones are experimental
     , ("relatedMappings", TsharkFieldDesc "mptcp.related_mapping" ''MbWord64 Nothing True)
