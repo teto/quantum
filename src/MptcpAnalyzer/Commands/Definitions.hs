@@ -57,15 +57,16 @@ data CommandArgs =
       , plotDisplay :: Bool  -- ^Defaults to false
       , plotArgs :: ArgsPlots
     }
-    | ArgsQualifyReinjections {
-      qrPcap1 :: FilePath
-      , qrStream1 :: StreamId Mptcp
-      , qrPcap2 :: FilePath
-      , qrStream2 :: StreamId Mptcp
-      , qrVerbose :: Bool
+    | ArgsQualifyReinjections FilePath (StreamId Mptcp) FilePath (StreamId Mptcp) Bool
+      -- ^ pcap1 stream1 pcap2 stream2 verbose
+      -- qrPcap1 :: FilePath
+      -- , qrStream1 :: StreamId Mptcp
+      -- , qrPcap2 :: FilePath
+      -- , qrStream2 :: StreamId Mptcp
+      -- , qrVerbose :: Bool
       -- , qrLimit :: Int -- ^Number of comparisons to show
       -- , qrMptcp :: Bool -- ^Wether it's an MPTCP
-    }
+    -- }
 
 -- | Return code for user command. Whether to exit program/
 data RetCode = Exit | Error String | Continue

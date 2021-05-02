@@ -170,6 +170,15 @@ data Connection = TcpConnection {
 -- Ord to be able to use fromList
 } deriving (Show, Eq, Ord)
 
+-- data TcpConnection = TcpConnection {
+-- --   -- TODO use libraries to deal with that ? filter from the command line for instance ?
+--   conTcpClientIp :: IP -- ^Client ip
+--   , conTcpServerIp :: IP -- ^Server ip
+--   , conTcpClientPort :: Word16  -- ^ Source port
+--   , conTcpServerPort :: Word16  -- ^Destination port
+--   , conTcpStreamId :: StreamId Tcp  -- ^ @tcp.stream@ in wireshark
+--   }
+
 data MptcpSubflow = MptcpSubflow {
       sfConn :: Connection
       , sfMptcpDest :: ConnectionRole -- ^ Destination

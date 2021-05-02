@@ -235,7 +235,7 @@ cmdPlotTcpAttribute field tempPath _ destinations aFrame = do
 
 
 -- it should be possible to get something more abstract
-getData :: forall rs t a2. (Num a2,
+getData :: forall t a2. (Num a2,
             -- RecElem
             --   Rec TcpLen TcpLen rs rs (Data.Vinyl.TypeLevel.RIndex TcpLen rs),
             -- (Record HostCols) <: (Record rs)

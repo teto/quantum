@@ -20,7 +20,7 @@ let
     # myHaskellPackages.stylish-haskell
     hs.hasktags
     # myHaskellPackages.hlint
-    # haskellPackages.stan  # broken
+    hs.stan
     pkgs.zlib
     hs.shelltestrunner
   ]);
