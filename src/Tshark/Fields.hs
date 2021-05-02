@@ -2,13 +2,14 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE PackageImports         #-}
 -- {-# LANGUAGE DerivingVia         #-}
 -- {-# LANGUAGE DerivingStrategies         #-}
 module Tshark.Fields
 where
 import MptcpAnalyzer.Stream
 
-import Net.Tcp (TcpFlag(..))
+import "mptcp-pm" Net.Tcp (TcpFlag(..))
 import Net.IP
 import Net.IPv6 (IPv6(..))
 import GHC.TypeLits (KnownSymbol)
@@ -27,14 +28,14 @@ import Data.Map (Map, fromList, mapKeys)
 -- -- TODO use Word instead
 -- newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord )
 
--- type StreamIdTcp = StreamId Tcp
--- type StreamIdMptcp = StreamId Mptcp
+-- type StreamIdTcp = StreamId
+-- type StreamIdMptcp = StreamId
 
 type TcpFlagList = [TcpFlag]
 type MbPacketIdList = Maybe [Word64]
 
 
-type MbMptcpStream = Maybe (StreamId Mptcp)
+type MbMptcpStream = Maybe StreamIdMptcp
 type MbMptcpSendKey = Maybe Word64
 type MbMptcpVersion = Maybe Int
 type MbMptcpExpectedToken = Maybe Word32

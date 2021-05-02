@@ -15,6 +15,8 @@ import Polysemy.State as P
 import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
 import Frames
 import Frames.CSV
+import Net.Tcp
+import Net.Mptcp
 import qualified Frames.InCore
 
 
@@ -88,7 +90,7 @@ buildAFrameFromStreamIdTcp :: Members [Cache, Log String, Embed IO ] m
     => TsharkParams
     -> FilePath
     -> StreamId Tcp
-    -> Sem m (Either String (FrameFiltered Packet))
+    -> Sem m (Either String (FrameFiltered TcpConnection Packet))
 buildAFrameFromStreamIdTcp params pcapFilename streamId = do
     res <- loadPcapIntoFrame params pcapFilename
     return $ case res of
@@ -99,7 +101,7 @@ buildAFrameFromStreamIdMptcp :: Members [Cache, Log String, Embed IO ] m
     => TsharkParams
     -> FilePath
     -> StreamId Mptcp
-    -> Sem m (Either String (FrameFiltered Packet))
+    -> Sem m (Either String (FrameFiltered MptcpConnection Packet))
 buildAFrameFromStreamIdMptcp params pcapFilename streamId = do
   log $ "Building frame for mptcp stream " ++ show streamId
   res <- loadPcapIntoFrame params pcapFilename

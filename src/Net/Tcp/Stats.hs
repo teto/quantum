@@ -6,6 +6,7 @@ import MptcpAnalyzer.Types
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Frame
 import MptcpAnalyzer.Stream
+import Net.Tcp
 
 import qualified Control.Foldl as L
 import Control.Lens hiding (argument)
@@ -50,7 +51,7 @@ data MptcpUnidirectionalStats = MptcpUnidirectionalStats {
 
 -- TODO should be able to update an initial one
 --
-getTcpStats :: FrameFiltered Packet -> ConnectionRole -> TcpUnidirectionalStats
+getTcpStats :: FrameFiltered TcpConnection Packet -> ConnectionRole -> TcpUnidirectionalStats
 getTcpStats aframe dest =
   TcpUnidirectionalStats {
     tusThroughput = 0
@@ -101,7 +102,7 @@ getTcpStats aframe dest =
 -- getTcpUnidirectionalStats :: SomeFrameF Tcp ConnectionRole ->  -> TcpUnidirectionalStats
 -- getTcpUnidirectionalStats frame streamId = do
 
--- getTcpUnidirectionalStats :: SomeFrame -> StreamIdTcp -> ConnectionRole -> TcpUnidirectionalStats
+-- getTcpUnidirectionalStats :: SomeFrame -> StreamId -> ConnectionRole -> TcpUnidirectionalStats
 -- getTcpUnidirectionalStats frame streamId role = TcpUnidirectionalStats 0 0 0 0 0 0 0
 
   -- where

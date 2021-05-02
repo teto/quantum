@@ -17,11 +17,11 @@ where
 import MptcpAnalyzer.Stream
 import Tshark.TH
 import Tshark.Fields
-import Net.Tcp hiding (ConnectionRole(..))
+import "mptcp-pm" Net.Tcp (TcpFlag(..))
 import Net.Bitset (fromBitMask, toBitMask)
 import Net.IP
 import Net.IPv6 (IPv6(..))
-import qualified "libmptcpanalyzer" Net.Tcp
+import Net.Tcp
 import Net.Mptcp
 
 import Data.Hashable
@@ -175,28 +175,6 @@ type SomeFrame = PcapFrame ()
 
 
 
--- TODO rename to connection later
-{- Common interface to work with TCP and MPTCP connections
--}
-class StreamConnection a where
-  showConnectionText :: a -> Text
-  -- describeConnection :: a -> Text
-  buildFrameFromStreamId :: Frame w -> StreamId b -> Either String (FrameFiltered a (Record rs))
-  -- listConnections :: FrameFiltered () [a]
-  -- summarize :: a -> Text
-  -- GetLabel ?
-
-
-
-instance StreamConnection TcpConnection where
-  showConnectionText = showTcpConnectionText
-  buildFrameFromStreamId = buildConnectionFromTcpStreamId
-  -- listConnections
-
-instance StreamConnection MptcpConnection where
-  showConnectionText = showMptcpConnectionText
-  buildFrameFromStreamId = buildConnectionFromMptcpStreamId
-
 
 -- data SStreamId (a :: Protocol) where
 --   StreamIdTcp :: SStreamId 'Tcp
@@ -210,6 +188,7 @@ data FrameFiltered a rs = FrameTcp {
     -- Frame of sthg maybe even bigger with TcpDest / MptcpDest
     , ffFrame :: Frame rs
   }
+
 
 -- data FrameMerged = FrameMerged {
 --     ffCon :: !Connection
@@ -382,21 +361,9 @@ type instance VectorFor (Maybe [Word64]) = V.Vector
 
 
 -- TODO add sthg in case it's the master subflow ?
-showConnection :: StreamConnection a => a -> String
-showConnection = TS.unpack . showConnectionText
+-- showConnection :: StreamConnection a => a -> String
+-- showConnection = TS.unpack . showConnectionText
 
-showMptcpConnectionText :: MptcpConnection -> Text
-showMptcpConnectionText con =
-  -- showIp (srcIp con) <> ":" <> tshow (srcPort con) <> " -> " <> showIp (dstIp con) <> ":" <> tshow (dstPort con)
-  tpl <> "\n" <> TS.unlines (map (showConnectionText . sfConn) (Set.toList $ mpconSubflows con))
-  where
-    -- showIp = Net.IP.encode
-    -- tshowSubflow = tshow . showSubflow
-
-    -- todo show server key/
-    tpl :: Text
-    tpl = "Server key/token: " <> tshow (mptcpServerKey con) <> "/" <> tshow ( mptcpServerToken con)
-        <> "\nClient key/token: " <> tshow (mptcpClientKey con) <> "/" <> tshow ( mptcpClientToken con)
 
 
 
