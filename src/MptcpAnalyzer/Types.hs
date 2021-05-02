@@ -8,6 +8,7 @@
 {-# LANGUAGE UndecidableInstances       #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE PackageImports         #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module MptcpAnalyzer.Types
 where
@@ -16,10 +17,12 @@ where
 import MptcpAnalyzer.Stream
 import Tshark.TH
 import Tshark.Fields
-import Net.Tcp (TcpFlag(..))
+import Net.Tcp hiding (ConnectionRole(..))
 import Net.Bitset (fromBitMask, toBitMask)
 import Net.IP
 import Net.IPv6 (IPv6(..))
+import qualified "libmptcpanalyzer" Net.Tcp
+import Net.Mptcp
 
 import Data.Hashable
 import qualified Data.Hashable as Hash
@@ -148,29 +151,7 @@ type SomeFrame = PcapFrame ()
 -- TODO PcapFrame should be a monoid and a semigroup with a list of Connection []
 
 -- Named ConnectionTcp to not clash with mptcppm's one ?
-data Connection = TcpConnection {
---   -- TODO use libraries to deal with that ? filter from the command line for instance ?
-  conTcpClientIp :: IP -- ^Client ip
-  , conTcpServerIp :: IP -- ^Server ip
-  , conTcpClientPort :: Word16  -- ^ Source port
-  , conTcpServerPort :: Word16  -- ^Destination port
-  , conTcpStreamId :: StreamId Tcp  -- ^ @tcp.stream@ in wireshark
-  }
-    | MptcpConnection {
-      -- todo prefix as mpcon
-      mptcpStreamId :: StreamIdMptcp
-      , mptcpServerKey :: Word64
-      , mptcpClientKey :: Word64
-      , mptcpServerToken :: Word32
-      , mptcpClientToken :: Word32
-      , mptcpNegotiatedVersion :: Word8
-      -- should be a subflow
-      , mpconSubflows :: Set.Set MptcpSubflow
-
--- Ord to be able to use fromList
-} deriving (Show, Eq, Ord)
-
--- data TcpConnection = TcpConnection {
+-- data Connection = TcpConnection {
 -- --   -- TODO use libraries to deal with that ? filter from the command line for instance ?
 --   conTcpClientIp :: IP -- ^Client ip
 --   , conTcpServerIp :: IP -- ^Server ip
@@ -178,29 +159,43 @@ data Connection = TcpConnection {
 --   , conTcpServerPort :: Word16  -- ^Destination port
 --   , conTcpStreamId :: StreamId Tcp  -- ^ @tcp.stream@ in wireshark
 --   }
+--     | MptcpConnection {
+--       -- todo prefix as mpcon
+--       mptcpStreamId :: StreamIdMptcp
+--       , mptcpServerKey :: Word64
+--       , mptcpClientKey :: Word64
+--       , mptcpServerToken :: Word32
+--       , mptcpClientToken :: Word32
+--       , mptcpNegotiatedVersion :: Word8
+--       -- should be a subflow
+--       , mpconSubflows :: Set.Set MptcpSubflow
+-- -- Ord to be able to use fromList
+-- } deriving (Show, Eq, Ord)
 
-data MptcpSubflow = MptcpSubflow {
-      sfConn :: Connection
-      , sfMptcpDest :: ConnectionRole -- ^ Destination
-      , sfPriority :: Maybe Word8 -- ^subflow priority
-      , sfLocalId :: Word8  -- ^ Convert to AddressFamily
-      , sfRemoteId :: Word8
-      --conTcp TODO remove could be deduced from srcIp / dstIp ?
-      , sfInterface :: Text -- ^Interface of Maybe ? why a maybe ?
-    } deriving (Show, Eq, Ord)
+
 
 
 -- TODO rename to connection later
 {- Common interface to work with TCP and MPTCP connections
 -}
 class StreamConnection a where
-  describeConnection :: a -> Text
-  -- buildFromStreamId :: a -> FrameFiltered (Record rs)
-  -- list :: Connection
+  showConnectionText :: a -> Text
+  -- describeConnection :: a -> Text
+  buildFrameFromStreamId :: Frame w -> StreamId b -> Either String (FrameFiltered a (Record rs))
+  -- listConnections :: FrameFiltered () [a]
+  -- summarize :: a -> Text
+  -- GetLabel ?
 
 
--- instance StreamConnection MptcpConnection where
---   describeConnection = showMptcpConnectionText
+
+instance StreamConnection TcpConnection where
+  showConnectionText = showTcpConnectionText
+  buildFrameFromStreamId = buildConnectionFromTcpStreamId
+  -- listConnections
+
+instance StreamConnection MptcpConnection where
+  showConnectionText = showMptcpConnectionText
+  buildFrameFromStreamId = buildConnectionFromMptcpStreamId
 
 
 -- data SStreamId (a :: Protocol) where
@@ -209,8 +204,8 @@ class StreamConnection a where
 
 -- | TODO adapt / rename to AFrame ? AdvancedFrames ?
 -- GADT ?
-data FrameFiltered rs = FrameTcp {
-    ffCon :: !Connection
+data FrameFiltered a rs = FrameTcp {
+    ffCon :: a
     -- StreamConnection b => b
     -- Frame of sthg maybe even bigger with TcpDest / MptcpDest
     , ffFrame :: Frame rs
@@ -308,7 +303,6 @@ parseList text = fmap Definitely (mapM parse' (T.splitOn "," text))
 instance Frames.ColumnTypeable.Parseable [Word64] where
   -- expected type parse :: MonadPlus m => T.Text -> m (Parsed [a])
   parse = parseList
-    
 
 
 -- could not parse 0x00000002
@@ -387,15 +381,12 @@ type instance VectorFor (Maybe [Word64]) = V.Vector
 --   pure (getHeaders fields)
 
 
-tshow :: Show a => a -> TS.Text
-tshow = TS.pack . Prelude.show
-
 -- TODO add sthg in case it's the master subflow ?
-showConnection :: Connection -> String
+showConnection :: StreamConnection a => a -> String
 showConnection = TS.unpack . showConnectionText
 
-showConnectionText :: Connection -> Text
-showConnectionText con@MptcpConnection{} =
+showMptcpConnectionText :: MptcpConnection -> Text
+showMptcpConnectionText con =
   -- showIp (srcIp con) <> ":" <> tshow (srcPort con) <> " -> " <> showIp (dstIp con) <> ":" <> tshow (dstPort con)
   tpl <> "\n" <> TS.unlines (map (showConnectionText . sfConn) (Set.toList $ mpconSubflows con))
   where
@@ -406,13 +397,7 @@ showConnectionText con@MptcpConnection{} =
     tpl :: Text
     tpl = "Server key/token: " <> tshow (mptcpServerKey con) <> "/" <> tshow ( mptcpServerToken con)
         <> "\nClient key/token: " <> tshow (mptcpClientKey con) <> "/" <> tshow ( mptcpClientToken con)
-showConnectionText con@TcpConnection{} =
-  showIp (conTcpClientIp con) <> ":" <> tshow (conTcpClientPort con) <> " -> "
-      <> showIp (conTcpServerIp con) <> ":" <> tshow (conTcpServerPort con)
-      <> " (tcp.stream: " <> showStream (conTcpStreamId con) <> ")"
-  where
-    showIp = Net.IP.encode
-    showStream (StreamId a) = tshow a
+
 
 
 -- showMptcpConnection :: MptcpConnection -> String
