@@ -13,6 +13,8 @@ import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Loader
 import Tshark.Fields (baseFields, TsharkFieldDesc (fieldLabel))
 import MptcpAnalyzer.Debug
+import Net.Tcp
+import Net.Mptcp
 
 import Prelude hiding (filter, lookup, repeat, log)
 import Options.Applicative
@@ -189,12 +191,12 @@ instance PlotValue Word32 where
 
 
 -- destinations is an array of destination
-cmdPlotTcpAttribute, cmdPlotMptcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
+cmdPlotTcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
           String -- Tcp attr
           -> FilePath -- ^ temporary file to save plot to
           -> Handle
           -> [ConnectionRole]
-          -> FrameFiltered Packet
+          -> FrameFiltered TcpConnection Packet
           -> Sem m RetCode
 cmdPlotTcpAttribute field tempPath _ destinations aFrame = do
 
@@ -223,7 +225,7 @@ cmdPlotTcpAttribute field tempPath _ destinations aFrame = do
           timeData = toList $ view relTime <$> unidirectionalFrame
 
           -- selector
-          -- type Lens s t a b = forall f. Functor f => (a -> f b) -> s -> f t 
+          -- type Lens s t a b = forall f. Functor f => (a -> f b) -> s -> f t
           -- selector :: String -> Lens s t a b
 
 -- TODO it should be capabale of returning
@@ -254,11 +256,18 @@ getData frame attr =
 
 -- type Lens s t a b
 -- case
+cmdPlotMptcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
+          String -- Tcp attr
+          -> FilePath -- ^ temporary file to save plot to
+          -> Handle
+          -> [ConnectionRole]
+          -> FrameFiltered MptcpConnection Packet
+          -> Sem m RetCode
 cmdPlotMptcpAttribute field tempPath _ destinations aFrame = do
 
 -- inCore converts into a producer
   log $ "show con " ++ show (ffCon aFrame)
-  embed $ putStrLn $ showConnection (ffCon aFrame)
+  embed $ putStrLn $ T.unpack $ showConnectionText (ffCon aFrame)
   log $ "number of packets" ++ show (frameLength (ffFrame aFrame))
   -- TODO remove
   embed $ writeCSV "debug.csv" (ffFrame aFrame)

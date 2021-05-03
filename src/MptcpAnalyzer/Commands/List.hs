@@ -1,4 +1,5 @@
 -- {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE PackageImports           #-}
 
 module MptcpAnalyzer.Commands.List
 where
@@ -6,7 +7,7 @@ where
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Types
-import Net.Tcp (TcpConnection(..), TcpFlag(..))
+import "mptcp-pm" Net.Tcp (TcpFlag(..))
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Stream
 
@@ -17,6 +18,7 @@ import Control.Lens hiding (argument)
 import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
+import Polysemy.Trace as P
 import Colog.Polysemy (Log, log)
 import Data.Either (fromRight)
 
@@ -94,7 +96,9 @@ tcpSummaryOpts = info (
   tcp.stream 6: 11.0.0.1:35589 -> 10.0.0.2:05201
   tcp.stream 7: 11.0.0.1:50007 -> 10.0.0.2:05201
 -}
-listTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
+listTcpConnectionsCmd ::
+    Members '[Log String, P.State MyState, P.Trace, Cache, Embed IO] r
+    => CommandArgs -> Sem r RetCode
 listTcpConnectionsCmd args = do
     -- TODO this part should be extracted so that
     state <- P.get
@@ -107,7 +111,7 @@ listTcpConnectionsCmd args = do
         let tcpStreams = getTcpStreams frame
         let streamIdList = if _listTcpDetailed args then [] else tcpStreams
         -- log $ "Number of rows " ++ show (frameLength frame)
-        P.embed $ putStrLn $ "Number of TCP connections " ++ show (length tcpStreams)
+        P.trace $ "Number of TCP connections " ++ show (length tcpStreams)
         _ <- P.embed $ mapM (putStrLn . describeFrame . buildConnectionFromTcpStreamId frame ) streamIdList
         return CMD.Continue
     where

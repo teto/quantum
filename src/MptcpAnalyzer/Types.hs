@@ -360,12 +360,3 @@ type instance VectorFor (Maybe [Word64]) = V.Vector
 --   pure (getHeaders fields)
 
 
--- TODO add sthg in case it's the master subflow ?
--- showConnection :: StreamConnection a => a -> String
--- showConnection = TS.unpack . showConnectionText
-
-
-
-
--- showMptcpConnection :: MptcpConnection -> String
--- showMptcpConnection = TS.unpack . showMptcpConnectionText

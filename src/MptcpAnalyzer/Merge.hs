@@ -43,6 +43,7 @@ import qualified Data.Vinyl as V
 import Language.Haskell.TH (Name)
 import Net.IP (IP)
 import Net.Tcp
+import Net.Mptcp
 import Data.Word (Word8, Word16, Word32, Word64)
 import Data.Maybe (catMaybes)
 import Data.Foldable (toList)
@@ -127,6 +128,19 @@ type MergedHostCols = PacketHash ': '[TcpDest] V.++ HostCols V.++ HostColsPrefix
 
 -- not a frame but hope it should be
 type MergedPcap = [Rec (Maybe :. ElField) MergedHostCols]
+
+
+
+
+-- | Merge of 2 frames
+mergeMptcpConnectionsFromKnownStreams ::
+  FrameFiltered MptcpConnection Packet
+  -> FrameFiltered MptcpConnection Packet
+  -> MergedPcap
+mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 frame2) = 
+  -- first we need to map subflow to oneanother
+  -- map mpconSubflows
+  undefined
 
 -- | Merge of 2 frames
 mergeTcpConnectionsFromKnownStreams ::

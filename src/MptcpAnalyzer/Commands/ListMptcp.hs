@@ -9,10 +9,11 @@ import MptcpAnalyzer.Commands.List as CMD
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Stream
+import Net.Mptcp
 
 -- import Net.Mptcp.Types (MptcpConnection(..), MptcpSubflow, showMptcpConnection)
 
-import Net.Tcp (TcpConnection(..), TcpFlag(..), showTcpConnection)
+import "mptcp-pm" Net.Tcp (TcpFlag(..))
 import Prelude hiding (log)
 import Options.Applicative
 import Frames
@@ -128,10 +129,10 @@ listMpTcpConnectionsCmd _args = do
         -- >>
         return CMD.Continue
         where
-          mptcpConnections :: [Either String Connection]
+          mptcpConnections :: [Either String MptcpConnection]
           mptcpConnections = map (\x -> fmap ffCon ( buildMptcpConnectionFromStreamId frame x)) mptcpStreams
 
-          showEitherCon :: Either String Connection -> String
+          showEitherCon :: Either String MptcpConnection -> String
           showEitherCon (Left msg) = msg ++ "\n"
           showEitherCon (Right mptcpCon) = showConnection mptcpCon ++ "\n"
 

@@ -140,6 +140,10 @@ library libmptcpanalyzer
         , Tshark.Fields
         , Net.Mptcp.Types
         , Net.Tcp.Stats
+        , Net.Tcp.Connection
+        , Net.Tcp
+        , Net.Mptcp
+        , Net.Mptcp.Connection
         -- reexport the rest
         , MptcpAnalyzer
         , MptcpAnalyzer.ArtificialFields
@@ -167,7 +171,7 @@ library libmptcpanalyzer
         -- , MptcpAnalyzer.Commands.Plot
         , MptcpAnalyzer.Frames.Utils
         , Columns
-        , Connection
+        -- , Connection
     build-depends:
         Chart
         , Chart-cairo
@@ -203,7 +207,7 @@ executable mptcpanalyzer
         , Columns
         , MptcpAnalyzer.Commands.List
         , MptcpAnalyzer.Types
-        , Connection
+        -- , Connection
         , MptcpAnalyzer.Commands.ListMptcp
         , MptcpAnalyzer.Commands.Plot
         , MptcpAnalyzer.Plots.Stream

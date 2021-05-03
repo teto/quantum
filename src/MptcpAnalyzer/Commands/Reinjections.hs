@@ -97,7 +97,7 @@ cmdQualifyReinjections (ArgsQualifyReinjections pcap1 streamId1 pcap2 streamId2 
     (Right aframe1, Right aframe2) ->
         -- TODO need to convert to senderReceiver
         let
-          mergedRes = mergeTcpConnectionsFromKnownStreams aframe1 aframe2
+          mergedRes = mergeMptcpConnectionsFromKnownStreams aframe1 aframe2
           mbRecs = map recMaybe mergedRes
           justRecs = catMaybes mbRecs
           -- myFrame ::

@@ -607,3 +607,8 @@ instance StreamConnection MptcpSubflow Tcp where
   buildFrameFromStreamId = undefined
   -- TODO use score as well
   similarityScore sf1 sf2 = similarityScore (sfConn sf1) (sfConn sf2)
+
+
+-- TODO add sthg in case it's the master subflow ?
+showConnection :: StreamConnection a b => a -> String
+showConnection = T.unpack . showConnectionText
