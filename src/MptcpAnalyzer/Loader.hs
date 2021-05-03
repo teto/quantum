@@ -95,7 +95,7 @@ buildAFrameFromStreamIdTcp params pcapFilename streamId = do
     res <- loadPcapIntoFrame params pcapFilename
     return $ case res of
       Left err -> Left err
-      Right frame -> buildConnectionFromTcpStreamId frame streamId
+      Right frame -> buildTcpConnectionFromStreamId frame streamId
 
 buildAFrameFromStreamIdMptcp :: Members [Cache, Log String, Embed IO ] m
     => TsharkParams

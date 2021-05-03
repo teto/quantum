@@ -112,7 +112,7 @@ listTcpConnectionsCmd args = do
         let streamIdList = if _listTcpDetailed args then [] else tcpStreams
         -- log $ "Number of rows " ++ show (frameLength frame)
         P.trace $ "Number of TCP connections " ++ show (length tcpStreams)
-        _ <- P.embed $ mapM (putStrLn . describeFrame . buildConnectionFromTcpStreamId frame ) streamIdList
+        _ <- P.embed $ mapM (putStrLn . describeFrame . buildTcpConnectionFromStreamId frame ) streamIdList
         return CMD.Continue
     where
       describeFrame = \case
@@ -137,7 +137,7 @@ tcpSummary args = do
         -- log $ "Number of SYN packets " ++ (fmap  )
         >> return CMD.Continue
         where
-            filteredFrame = buildConnectionFromTcpStreamId frame (summaryTcpStreamId args)
+            filteredFrame = buildTcpConnectionFromStreamId frame (summaryTcpStreamId args)
 
 {-
 mptcp stream 0 transferred 308.0 Bytes over 45.658558 sec(308.0 Bytes per second) towards Client.
@@ -176,7 +176,7 @@ cmdMptcpSummary args = do
 --         -- log $ "Number of SYN packets " ++ (fmap  )
 --         >> return CMD.Continue
 --         where
---             tcpCon = buildConnectionFromTcpStreamId frame (summaryTcpStreamId args)
+--             tcpCon = buildTcpConnectionFromStreamId frame (summaryTcpStreamId args)
 
 -- listTcpConnectionsInFrame :: SomeFrame -> IO ()
 -- listTcpConnectionsInFrame frame = do

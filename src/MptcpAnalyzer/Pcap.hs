@@ -302,7 +302,7 @@ buildAFrameFromStreamId = undefined
 {- 
 -}
 getTcpFrame :: SomeFrame -> StreamId Tcp -> Either String (FrameFiltered TcpConnection Packet)
-getTcpFrame = buildConnectionFromTcpStreamId
+getTcpFrame = buildTcpConnectionFromStreamId
 
 -- | For now assume the packet is the first syn from client to server
 buildTcpConnectionFromRecord :: Packet -> TcpConnection
@@ -317,8 +317,8 @@ buildTcpConnectionFromRecord r =
 
 {- Builds a Tcp connection from a non filtered frame
 -}
-buildConnectionFromTcpStreamId :: SomeFrame -> StreamId Tcp -> Either String (FrameFiltered TcpConnection Packet)
-buildConnectionFromTcpStreamId frame streamId =
+buildTcpConnectionFromStreamId :: SomeFrame -> StreamId Tcp -> Either String (FrameFiltered TcpConnection Packet)
+buildTcpConnectionFromStreamId frame streamId =
     if frameLength synPackets < 1 then
       Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
     else
@@ -439,10 +439,9 @@ addTcpDestToRec x role = (Col $ role) :& x
 
 
 -- | should expect a 
--- buildSubflowFromTcpStreamId
 buildSubflow :: SomeFrame -> StreamId Tcp -> MptcpSubflow
-buildSubflow frame (StreamId sfId) = case buildConnectionFromTcpStreamId frame (StreamId sfId) of
-  Right con@FrameTcp{} -> MptcpSubflow {
+buildSubflow frame (StreamId sfId) = case buildTcpConnectionFromStreamId frame (StreamId sfId) of
+  Right con -> MptcpSubflow {
         sfConn = ffCon con
         -- TODO fix
         , sfMptcpDest = RoleServer 
@@ -453,7 +452,9 @@ buildSubflow frame (StreamId sfId) = case buildConnectionFromTcpStreamId frame (
       }
   _ -> error "should not happen"
 
-buildMptcpConnectionFromStreamId :: SomeFrame -> StreamId Mptcp -> Either String (FrameFiltered MptcpConnection Packet)
+buildMptcpConnectionFromStreamId ::
+    SomeFrame
+    -> StreamId Mptcp -> Either String (FrameFiltered MptcpConnection Packet)
 buildMptcpConnectionFromStreamId frame streamId = do
     -- Right $ frameLength synPackets
     if frameLength streamPackets < 1 then
@@ -543,7 +544,7 @@ scoreTcpCon con1 con2 =
 
 instance StreamConnection TcpConnection Tcp where
   showConnectionText = showTcpConnectionText
-  buildFrameFromStreamId = buildConnectionFromTcpStreamId
+  buildFrameFromStreamId = buildTcpConnectionFromStreamId
   similarityScore = scoreTcpCon
   -- listConnections
 
@@ -557,32 +558,9 @@ scoreMptcpCon con1 con2 =
         200
       else
         0
-
-    -- TODO compare subflow scores
-    -- scoreSubflow = sum . map score
   in
     keyScore
---     def score(self, other: 'MpTcpConnection') -> float:
-        -- """
-        -- ALREADY FILTERED dataframes
-
-        -- Returns:
-        --     a score
-        --     - '-inf' means it's not possible those 2 matched
-        --     - '+inf' means
-        -- """
-
-        -- score = 0
-        -- if len(self.subflows()) != len(other.subflows()):
-        --     log.warn("Fishy ?! Datasets contain a different number of subflows (d vs d)" % ())
-        --     score -= 5
-
-        -- common_sf = []
-
-        -- if (self.keys[ConnectionRoles.Server] == other.keys[ConnectionRoles.Server]
-        --     and self.keys[ConnectionRoles.Client] == other.keys[ConnectionRoles.Client]):
-        --     log.debug("matching keys => same")
-        --     return float('inf')
+        -- map similarityScore (mpconSubflows con1)
 
         -- # TODO check there is at least the master
         -- # with nat, ips don't mean a thing ?
@@ -594,8 +572,6 @@ scoreMptcpCon con1 con2 =
         --     else:
         --         log.debug("subflows %s doesn't seem to exist in other ", sf)
 
-        -- # TODO compare start times supposing cloak are insync ?
-        -- return score
 
 instance StreamConnection MptcpConnection Mptcp where
   showConnectionText = showMptcpConnectionText
