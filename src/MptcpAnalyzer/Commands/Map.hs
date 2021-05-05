@@ -10,6 +10,7 @@ import MptcpAnalyzer.Loader
 import MptcpAnalyzer.Merge
 import MptcpAnalyzer.Stream
 import MptcpAnalyzer.Map
+import Net.Mptcp
 
 import Prelude hiding (log)
 import Options.Applicative
@@ -20,6 +21,8 @@ import Colog.Polysemy (Log, log)
 import Data.Function (on)
 import Data.List (sortBy, sortOn)
 import Data.Either (rights, lefts)
+import System.Console.Haskeline
+import System.Console.ANSI
 
 mapTcpOpts :: ParserInfo CommandArgs
 mapTcpOpts = info (
@@ -106,7 +109,7 @@ cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _)
 
     displayScore (con, score) = log $ "Score for connection " ++ showConnection con ++ ": " ++ show score
     displayFailure err = log $ "Couldn't compute score for tcp.stream  " ++ show err
-
+cmdMapTcpConnection _ = error "not supported"
 
 cmdMapMptcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
 cmdMapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit True) = do
@@ -129,6 +132,9 @@ cmdMapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit 
   where
     evalScore con1 (FrameTcp con2 _) = (con2, similarityScore con1 con2)
 
-    displayScore (con, score) = log $ "Score for connection " ++ showConnection con ++ ": " ++ show score
+    displayScore (con, score) = log $ "Score for connection " ++ show (mptcpStreamId con) 
+        ++ ": " ++ setSGRCode [SetColor Foreground Vivid Red] ++ show score ++ setSGRCode [Reset] ++ "\n"
+        ++ showConnection con ++ "\n"
     displayFailure err = log $ "Couldn't compute score for mptcp.stream " ++ show err
 
+cmdMapMptcpConnection _ = error "not supported"

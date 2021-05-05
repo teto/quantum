@@ -29,7 +29,9 @@ import MptcpAnalyzer.ArtificialFields
 import MptcpAnalyzer.Types
 -- for retypeColumn
 import MptcpAnalyzer.Frames.Utils
-import MptcpAnalyzer.Pcap (addTcpDestToFrame, StreamConnection)
+import MptcpAnalyzer.Pcap
+import MptcpAnalyzer.Map
+-- (addTcpDestToFrame, StreamConnection)
 
 
 import Frames as F
@@ -136,10 +138,27 @@ mergeMptcpConnectionsFromKnownStreams ::
   FrameFiltered MptcpConnection Packet
   -> FrameFiltered MptcpConnection Packet
   -> MergedPcap
-mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 frame2) = 
+mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 frame2) = let
   -- first we need to map subflow to oneanother
   -- map mpconSubflows
-  undefined
+    mappedSubflows = mapSubflows con1 con2
+    mergedFrames = map mergeSubflow mappedSubflows
+
+    -- aframeSf1 = buildFrameFromStreamId frame1 (conTcpStreamId $ sfConn con1) 
+    -- aframeSf1 = buildFrameFromStreamId frame2 (conTcpStreamId $ sfConn con1) 
+    -- sf1 = buildTcpConnectionFromStreamId (
+
+    -- :: MptcpSubflow ->
+    mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
+    mergeSubflow (sf1, scores) = mergeTcpConnectionsFromKnownStreams aframe1 aframe2
+      where
+        aframe1 = fromRight undefined ( buildFrameFromStreamId frame1 (conTcpStreamId $ sfConn sf1) )
+        aframe2 = fromRight undefined (buildFrameFromStreamId frame2 (conTcpStreamId $ sfConn $ fst (head scores ) ))
+                                    -- (FrameFiltered (sfConn sf) frame1)
+                                    -- (FrameFiltered (sfConn sf) frame2)
+  in
+    mconcat mergedFrames
+
 
 -- | Merge of 2 frames
 mergeTcpConnectionsFromKnownStreams ::

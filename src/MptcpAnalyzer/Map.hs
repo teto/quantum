@@ -9,7 +9,6 @@ import MptcpAnalyzer.Commands.List as CMD
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Loader
-import MptcpAnalyzer.Merge
 import MptcpAnalyzer.Stream
 import Net.Tcp
 import Net.Mptcp
@@ -38,13 +37,14 @@ mapTcpConnection aframe frame = let
       streamsToCompare = getTcpStreams frame
       consToCompare = map (buildTcpConnectionFromStreamId frame) (getTcpStreams frame)
       scores = map (evalScore (ffCon aframe)) (rights consToCompare)
-      sortedScores = sortOn snd scores
+      sortedScores = reverse $ sortOn snd scores
       evalScore con1 (FrameTcp con2 _) = (con2, similarityScore con1 con2)
     in
       sortedScores
 
 
 -- | Returns
+-- TODO we should sort the returned 
 mapSubflows :: MptcpConnection -> MptcpConnection -> [(MptcpSubflow, [(MptcpSubflow, Int)])]
 mapSubflows con1 con2 =
   -- map selectBest (mpconSubflows con1)
@@ -64,7 +64,7 @@ mapMptcpConnection aframe frame = let
       streamsToCompare = getMptcpStreams frame
       consToCompare = map (buildMptcpConnectionFromStreamId frame) (getMptcpStreams frame)
       scores = map (evalScore (ffCon aframe)) (rights consToCompare)
-      sortedScores = sortOn snd scores
+      sortedScores = reverse $ sortOn snd scores
       evalScore con1 (FrameTcp con2 _) = (con2, similarityScore con1 con2)
     in
       sortedScores
