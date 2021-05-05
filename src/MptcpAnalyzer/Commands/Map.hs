@@ -9,6 +9,7 @@ import MptcpAnalyzer.Types
 import MptcpAnalyzer.Loader
 import MptcpAnalyzer.Merge
 import MptcpAnalyzer.Stream
+import MptcpAnalyzer.Map
 
 import Prelude hiding (log)
 import Options.Applicative
@@ -34,7 +35,12 @@ mapMptcpOpts = info (
 
 parserMapConnection :: Bool -> Parser CommandArgs
 parserMapConnection forMptcp =
-      ArgsMapTcpConnections <$>
+  -- if forMptcp then
+    ArgsMapTcpConnections <$> 
+  -- else
+  --   ArgsMapMptcpConnections <$> toto
+  -- where
+  -- toto =
       strArgument (
           metavar "PCAP1"
           <> help "File to analyze"
@@ -68,26 +74,24 @@ parserMapConnection forMptcp =
 
 -- |
 -- todo this should be better handled
-cmdMapTcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
-cmdMapTcpConnection args@ArgsMapTcpConnections{} = do
-  if argsMapMptcp args then
-    mapMptcpConnection args
-  else
-    mapTcpConnection args
-cmdMapTcpConnection _ = undefined
-
+-- cmdMapConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
+-- cmdMapConnection args@ArgsMapConnections{} = do
+--   if argsMapMptcp args then
+--     cmdMapMptcpConnection args
+--   else
+--     cmdMapTcpConnection args
 
 
 -- TODO this could be made polymorphic using StreamConnection
-mapTcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
-mapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _) = do
+cmdMapTcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
+cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _) = do
   log $ "Mapping tcp connections"
   res <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId)
   res2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
   case (res, res2) of
     (Right aframe, Right frame) -> do
-      -- let streamsToCompare = (getTcpStreams frame)
-      -- let consToCompare = map (buildTcpConnectionFromStreamId frame) (getTcpStreams frame)
+      let streamsToCompare = (getTcpStreams frame)
+      let consToCompare = map (buildTcpConnectionFromStreamId frame) (getTcpStreams frame)
       log $ "Best match for " ++ show (ffCon aframe) ++ " is "
       log $ "Comparing with stream " ++ show streamsToCompare
       -- TODO sort results and print them
@@ -101,11 +105,11 @@ mapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _) = 
   where
 
     displayScore (con, score) = log $ "Score for connection " ++ showConnection con ++ ": " ++ show score
-    displayFailure err = log $ "Couldn't compute score for streamId  " ++ show err
+    displayFailure err = log $ "Couldn't compute score for tcp.stream  " ++ show err
 
 
-mapMptcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
-mapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit True) = do
+cmdMapMptcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
+cmdMapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit True) = do
   log $ "Mapping mptcp connections"
   res <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap1 (StreamId streamId)
   res2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
@@ -115,8 +119,9 @@ mapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit Tru
       let consToCompare = map (buildTcpConnectionFromStreamId frame) (getTcpStreams frame)
       log $ "Best match for " ++ show (ffCon aframe) ++ " is "
       log $ "Comparing with stream " ++ show streamsToCompare
-      let scores = map (evalScore (ffCon aframe)) (rights consToCompare)
-      let sortedScores = (sortOn snd scores)
+      -- let scores = map (evalScore (ffCon aframe)) (rights consToCompare)
+      -- let sortedScores = (sortOn snd scores)
+      let sortedScores = mapMptcpConnection aframe frame
       mapM_ displayScore sortedScores
       mapM_ displayFailure (lefts consToCompare)
       return CMD.Continue
@@ -125,5 +130,5 @@ mapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit Tru
     evalScore con1 (FrameTcp con2 _) = (con2, similarityScore con1 con2)
 
     displayScore (con, score) = log $ "Score for connection " ++ showConnection con ++ ": " ++ show score
-    displayFailure err = log $ "Couldn't compute score for streamId  " ++ show err
+    displayFailure err = log $ "Couldn't compute score for mptcp.stream " ++ show err
 

@@ -67,18 +67,16 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1610966101,
-        "narHash": "sha256-Vq3pu4GI3atvOOl9maZneuie4VKMaT4VN/gphriM93Q=",
-        "owner": "teto",
+        "lastModified": 1620134685,
+        "narHash": "sha256-RzO4EBbF6HMHFNcf+/VVZL+jND30OC2UPzG0d9IUd9U=",
+        "owner": "nix-community",
         "repo": "poetry2nix",
-        "rev": "1dfce1a5e44edbd5b04e30a671d53cf8f9309482",
+        "rev": "6549bd9534f38c51010d24a7bebbb24492555c0f",
         "type": "github"
       },
       "original": {
-        "owner": "teto",
-        "ref": "fix_tag",
-        "repo": "poetry2nix",
-        "type": "github"
+        "id": "poetry",
+        "type": "indirect"
       }
     },
     "root": {

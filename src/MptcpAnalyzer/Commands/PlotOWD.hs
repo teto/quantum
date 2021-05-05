@@ -28,6 +28,8 @@ import MptcpAnalyzer.Merge
 -- for retypeColumn
 import MptcpAnalyzer.Frames.Utils
 -- for fields
+import Net.Tcp
+import Net.Mptcp
 
 import Prelude hiding (filter, lookup, repeat, log)
 import Options.Applicative
@@ -190,7 +192,7 @@ cmdPlotTcpOwd :: Members [Log String, P.State MyState, Cache, Embed IO] m =>
           FilePath -- ^ temporary file to save plot to
           -> Handle
           -> [ConnectionRole]
-          -> Connection
+          -> TcpConnection
           -> MergedPcap
           -- -> FrameFiltered Packet
           -- -> FrameFiltered (Record HostColsPrefixed)
@@ -238,5 +240,3 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
           owd :: [Double]
           owd = let res = map getOwd (toList unidirectionalFrame) in traceShow res res
 
-
--- cmdPlotTcpOwd tempPath _ destinations mergedRes = do

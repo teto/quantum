@@ -23,7 +23,8 @@ import Colog.Polysemy (Log, log)
 import Data.Function (on)
 import Data.List (sortBy, sortOn)
 import Data.Either (rights, lefts)
-
+import Frames
+import qualified Data.Set as Set
 
 -- |
 -- Returns a list of 
@@ -44,28 +45,29 @@ mapTcpConnection aframe frame = let
 
 
 -- | Returns
-mapSubflows :: MptcpConnection -> MptcpConnection -> [MptcpSubflow, (MptcpSubflow, Int)]
+mapSubflows :: MptcpConnection -> MptcpConnection -> [(MptcpSubflow, [(MptcpSubflow, Int)])]
 mapSubflows con1 con2 =
-  map selectBest (mpconSubflows con1)
-  [ (sf1, scoreSubflows sf1) | sf1 <- (mpconSubflows con1) ]
+  -- map selectBest (mpconSubflows con1)
+  [ (sf1, scoreSubflows sf1) | sf1 <- Set.toList (mpconSubflows con1) ]
   where
     -- select best / sortOn
-    scoreSubflows sf1 = map (\sf -> (sf, similarityScore sf1 sf)) (mpconSubflows cons2)
+    scoreSubflows sf1 = map (\sf -> (sf, similarityScore sf1 sf)) (Set.toList $ mpconSubflows con2)
 
 -- |
 -- map_mptcp_connection_from_known_streams
 mapMptcpConnection ::
-  FrameFiltered TcpConnection Packet
+  FrameFiltered MptcpConnection Packet
   -> Frame Packet
   -> [(MptcpConnection, Int)]
   -- ^ (connection, score)
 mapMptcpConnection aframe frame = let
       streamsToCompare = getMptcpStreams frame
-      consToCompare = map (buildTcpConnectionFromStreamId frame) (getTcpStreams frame)
+      consToCompare = map (buildMptcpConnectionFromStreamId frame) (getMptcpStreams frame)
       scores = map (evalScore (ffCon aframe)) (rights consToCompare)
       sortedScores = sortOn snd scores
       evalScore con1 (FrameTcp con2 _) = (con2, similarityScore con1 con2)
     in
+      sortedScores
 
 -- map_tcp_connection examples/client_1_tcp_only.pcap examples/server_1_tcp_only.pcap  0
 -- do_map_tcp_connection(self, args):

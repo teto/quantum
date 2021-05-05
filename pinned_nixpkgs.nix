@@ -33,13 +33,15 @@ let
       };
   };
 
-  nixpkgsRev = "f5e8bdd07d1afaabf6b37afc5497b1e498b8046f";
+  # nixpkgsRev = "f5e8bdd07d1afaabf6b37afc5497b1e498b8046f";
+  nixpkgsRev = "7cb76200088f45cd24a9aa67fd2f9657943d78a4";
   # pinned nixpkgs before cabal 3 becomes the default else hie fails
   # nixpkgs = import <nixpkgs>
   nixpkgs = import (builtins.fetchTarball {
       name = "nixos-unstable";
       url = "https://github.com/nixos/nixpkgs/archive/${nixpkgsRev}.tar.gz";
-      sha256 = "1fmwkb2wjfrpx8fis4x457vslam0x8vqlpfwqii6p9vm33dyxhzk";
+      sha256 = "12q3jy364nrcixfnd522jc9piagnc16p5b5l57mgp01lk311k7z1";
+      # sha256 = "1fmwkb2wjfrpx8fis4x457vslam0x8vqlpfwqii6p9vm33dyxhzk";
   })
   {
     overlays = [ overlay]; config = {allowBroken = true;};

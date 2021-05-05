@@ -27,14 +27,15 @@ data CommandArgs =
     | ArgsListMpTcpConnections {
       _listMpTcpDetailed :: Bool
     }
-    | ArgsMapTcpConnections {
-      argsMapPcap1 :: FilePath
-      , argsMapPcap2 :: FilePath
-      , argsMapStream :: Word32
-      , argsMapVerbose :: Bool
-      , argsMapLimit :: Int -- ^Number of comparisons to show
-      , argsMapMptcp :: Bool -- ^Wether it's an MPTCP
-    }
+    | ArgsMapTcpConnections FilePath FilePath Word32 Bool Int Bool
+    -- | ArgsMapMptcpConnections FilePath FilePath Word32 Bool Int Bool
+      -- argsMapPcap1 :: FilePath
+      -- , argsMapPcap2 :: FilePath
+      -- , argsMapStream :: Word32
+      -- , argsMapVerbose :: Bool
+      -- , argsMapLimit :: Int -- ^Number of comparisons to show
+      -- , argsMapMptcp :: Bool -- ^Wether it's an MPTCP
+    -- }
     | ArgsListSubflows {
       _listSubflowsDetailed :: Bool
     }
