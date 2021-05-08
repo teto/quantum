@@ -30,12 +30,34 @@ import qualified Data.Foldable as F
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
 import Data.List (intercalate)
+import Control.Lens hiding (argument)
+
+piListReinjections :: ParserInfo CommandArgs
+piListReinjections = info (
+    (parserListReinjections )
+    <**> helper)
+  ( progDesc "List MPTCP reinjections"
+  )
+  where
+    -- parserListReinjections :: Parser CommandArgs
+    parserListReinjections =
+          ArgsListReinjections <$>
+          -- strArgument (
+          --     metavar "PCAP1"
+          --     <> help "File to analyze"
+          -- )
+          -- <*>
+          argument readStreamId (
+              metavar "TCP_STREAM"
+              <> help "stream id to analyze"
+          )
 
 piQualifyReinjections :: ParserInfo CommandArgs
 piQualifyReinjections = info (
     (parserQualifyReinjections ) <**> helper)
   ( progDesc "Qualifies MPTCP reinjections"
   )
+
 
 parserQualifyReinjections :: Parser CommandArgs
 parserQualifyReinjections =
@@ -60,6 +82,25 @@ parserQualifyReinjections =
           long "verbose"
           <> help "Verbose or not"
       )
+
+cmdListReinjections :: Members '[Log String, P.State MyState, Cache, Embed IO] r
+    => StreamId Mptcp
+    -> Sem r RetCode
+cmdListReinjections streamId = do
+  state <- P.get
+  let loadedPcap = view loadedFile state
+  res <- case loadedPcap of
+    Nothing -> do
+      log ( "please load a pcap first" :: String)
+      return CMD.Continue
+    Just frame -> do
+      -- log $ "Number of rows " ++ show (frameLength frame)
+      -- P.embed $ putStrLn $ "Number of MPTCP connections " ++ show (length mptcpStreams)
+      -- P.embed $ putStrLn $ show mptcpStreams
+      return CMD.Continue
+      -- where
+      --   reinjections = filterFrame (
+  return res
 
 -- Analyzes row of reinject packets
 -- Compares arrival time of the first send of a segment with the
@@ -109,14 +150,15 @@ cmdQualifyReinjections (ArgsQualifyReinjections pcap1 streamId1 pcap2 streamId2 
           -- assume both were mapped
           reinjects = fmap (analyzeReinjection myFrame) reinjectedPacketsFrame
 
-          showReinjects frame = 
+          showReinjects frame =
             -- unlines (intercalate sep (columnHeaders (Proxy :: Proxy (Record rs))) : rows)
             intercalate "," rows
             where
               rows = P.toList (F.mapM_ (P.yield . show ) frame)
 
         in do
-          trace $ "Result of the analysis" ++ showReinjects reinjects
+          trace $ "Result of the analysis; reinjections:" ++ showReinjects reinjects
+          trace $ "Merged mptcp connection" ++ showFrame "," reinjectedPacketsFrame
 
           -- qualifyReinjections tempPath handle (getDests dest) (ffCon aframe1) mergedRes
           return CMD.Continue

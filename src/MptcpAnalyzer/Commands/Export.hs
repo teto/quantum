@@ -27,7 +27,9 @@ parseExportOpts = info (
 
 {-| Export loaded file
 -}
-cmdExport :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
+cmdExport :: Members '[Log String, P.State MyState, Cache, Embed IO] r
+    => FilePath
+    -> Sem r RetCode
 cmdExport args = do
   state <- P.get
   return Continue

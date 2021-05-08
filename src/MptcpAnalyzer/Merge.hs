@@ -51,6 +51,7 @@ import Data.Maybe (catMaybes)
 import Data.Foldable (toList)
 import Control.Lens
 import Frames.Melt          (RDeleteAll, ElemOf)
+import Data.Either (fromRight)
 
 -- convert_to_sender_receiver
 -- merge_tcp_dataframes_known_streams(
@@ -131,6 +132,15 @@ type MergedHostCols = PacketHash ': '[TcpDest] V.++ HostCols V.++ HostColsPrefix
 -- not a frame but hope it should be
 type MergedPcap = [Rec (Maybe :. ElField) MergedHostCols]
 
+-- liste de
+mergedPcapToFrame :: MergedPcap -> (FrameRec MergedHostCols, MergedPcap)
+mergedPcapToFrame mergedRes = let
+  -- P.embed $ putStrLn $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
+  -- P.embed $ putStrLn $ (concat . showFields) (head justRecs)
+    mbRecs = map recMaybe mergedRes
+    justRecs = catMaybes mbRecs
+  in
+    (toFrame justRecs, [])
 
 
 -- | Merge of 2 frames

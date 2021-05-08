@@ -16,8 +16,8 @@ data CommandArgs =
     ArgsLoadCsv {
       _loadCsvPath :: FilePath
     } |
-    ArgsHelp { } |
-    ArgsQuit { } |
+    ArgsHelp |
+    ArgsQuit |
     ArgsLoadPcap {
         loadPcapPath :: FilePath
     } |
@@ -39,17 +39,15 @@ data CommandArgs =
     | ArgsListSubflows {
       _listSubflowsDetailed :: Bool
     }
-    | ArgsListReinjections {
-      injStream :: StreamId Mptcp
-    }
+    | ArgsListReinjections (StreamId Mptcp)
     | ArgsParserSummary {
       summaryFull :: Bool,
       summaryTcpStreamId :: StreamId Tcp
       -- hidden file
     }
-    | ArgsExport {
-      argsExportFilename :: FilePath
-    }
+    | ArgsExport FilePath   -- ^ argsExportFilename
+      -- argsExportFilename :: FilePath
+    -- }
     | ArgsPlotGeneric {
       plotOut :: Maybe String
   --     , plotToClipboard :: Maybe Bool

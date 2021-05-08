@@ -351,28 +351,30 @@ mainParserInfo = info (mainParser <**> helper)
 -- liftIO $ putStrLn doPrintHelp >> 
 
 -- runCommand :: CommandArgs -> CMD.RetCode
-runCommand, runPlotCommand, cmdQuit, cmdHelp :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
+runCommand, runPlotCommand :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
 runCommand args@ArgsLoadPcap{} = CL.loadPcap args
 runCommand args@ArgsLoadCsv{} = CL.loadCsv args
 runCommand args@ArgsParserSummary{} = CLI.tcpSummary args
 runCommand args@ArgsListSubflows{} = CLI.listSubflowsCmd args
-runCommand args@ArgsListReinjections{} = CLI.cmdListReinjections args
+runCommand (ArgsListReinjections streamId)  = CLI.cmdListReinjections streamId
 runCommand args@ArgsListTcpConnections{} = CLI.listTcpConnectionsCmd args
 runCommand args@ArgsListMpTcpConnections{} = CLI.listMpTcpConnectionsCmd args
-runCommand args@ArgsExport{} = CLI.cmdExport args
+runCommand (ArgsExport out) = CLI.cmdExport out
 runCommand args@ArgsPlotGeneric{} = runPlotCommand args
 runCommand args@(ArgsMapTcpConnections _ _ _ _ _ False) = CLI.cmdMapTcpConnection args
 runCommand args@(ArgsMapTcpConnections _ _ _ _ _ True) = CLI.cmdMapMptcpConnection args
 runCommand args@ArgsQualifyReinjections{} = CLI.cmdQualifyReinjections args
-runCommand args@ArgsQuit{} = cmdQuit args
-runCommand args@ArgsHelp{} = cmdHelp args
+runCommand ArgsQuit = cmdQuit
+runCommand ArgsHelp = cmdHelp
 
 -- | Quits the program
-cmdQuit _ = trace "Thanks for flying with mptcpanalyzer" >> return CMD.Exit
+cmdQuit :: Members '[P.Trace] r => Sem r CMD.RetCode
+cmdQuit = trace "Thanks for flying with mptcpanalyzer" >> return CMD.Exit
 
 -- | Prints the help when requested
-cmdHelp _ = do
-  -- TODO display help
+cmdHelp :: Members '[Log String, P.Trace, P.State MyState] r => Sem r CMD.RetCode
+cmdHelp = do
+  -- TODO display help / use trace instead
   log $ show $ parserHelp defaultParserPrefs mainParser
   return CMD.Continue
 
