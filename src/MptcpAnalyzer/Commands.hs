@@ -29,16 +29,3 @@ printHelpTemp :: Members '[Log String, Cache, P.Embed IO] r => Sem r RetCode
 printHelpTemp = do
   P.embed $ putStrLn "temporary help"
   return Continue
-
--- TODO
--- this should be a polysemy reinterpreter ?
--- runCommand :: Members '[Log String, P.State MyState, Cache, P.Embed IO] r => Sem (Command : r) a -> Sem r a
--- runCommand = interpret $ \case
---     LoadCsv args -> CL.loadCsv args
---     LoadPcap args -> CL.loadPcap args
---     PrintHelp  -> printHelpTemp
---     ListTcpConnections  args -> CL.listTcpConnectionsCmd args
---     ListMpTcpConnections  args -> CL.listMpTcpConnectionsCmd args
---     TcpSummary  args -> CL.tcpSummary args
---     Plot args -> PL.cmdPlot args
---     -- (LogInfo stringToLog) -> embed $ putStrLn stringToLog)

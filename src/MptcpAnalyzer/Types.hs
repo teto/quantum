@@ -143,7 +143,6 @@ deriving instance Hashable IPv6
 -- shadow param
 -- @a@ be Tcp / Mptcp
 -- @b@ could be the direction
--- SomeFrame Qualified
 type PcapFrame a = Frame Packet
 type SomeFrame = PcapFrame ()
 

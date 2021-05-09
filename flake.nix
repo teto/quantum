@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    replica.url = "github:teto/REPLica/nix";
 
     # temporary until this gets fixed upstream
     # poetry.url = "github:teto/poetry2nix/fix_tag";
@@ -10,7 +11,7 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils, poetry }:
+  outputs = { self, nixpkgs, flake-utils, poetry, replica }@inputs:
     flake-utils.lib.eachDefaultSystem (system: let
 
       compilerName = "ghc8104";
@@ -41,10 +42,15 @@
 
       buildInputs = with pkgs; [
         cairo # for chart-cairo
+        dhall-json
         glib
         hsEnv
         pkg-config
         zlib
+        replica.packages."${system}".build
+        # inputs.replica
+        # replica
+
       ];
 
       # see https://discourse.nixos.org/t/shared-libraries-error-with-cabal-repl-in-nix-shell/8921/9

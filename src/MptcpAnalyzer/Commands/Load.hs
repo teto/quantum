@@ -17,7 +17,8 @@ import System.Exit (ExitCode(..))
 import Prelude hiding (log)
 import Colog.Polysemy (Log, log)
 import Polysemy (Sem, Members, Embed)
-import Polysemy.State as P
+import qualified Polysemy.State as P
+import qualified Polysemy.Trace as P
 
 loadPcapArgs :: Parser CommandArgs
 loadPcapArgs =  ArgsLoadPcap <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
@@ -29,8 +30,8 @@ loadCsvArgs =  ArgsLoadCsv <$> argument str (metavar "PCAP" <> completeWith ["to
           <> help "Load a Csv file"
       )
 
-loadCsvOpts :: ParserInfo CommandArgs
-loadCsvOpts = info (loadCsvArgs <**> helper)
+piLoadCsv :: ParserInfo CommandArgs
+piLoadCsv = info (loadCsvArgs <**> helper)
   ( fullDesc
   <> progDesc "Load a csv file generated from wireshark"
   )
@@ -45,43 +46,18 @@ loadPcapOpts = info (loadPcapArgs <**> helper)
 -- myHandleParseResult :: ParserResult a -> m CMD.RetCode
 -- myHandleParseResult (Success a) = 
 
--- TODO move commands to their own module
--- TODO it should update the loadedFile in State !
--- handleParseResult
--- loadPcap :: CMD.CommandCb
--- loadPcap :: Members [Log, P.State MyState, Cache, Embed IO] m => [String] -> Sem m RetCode
-loadPcap :: Members [Log String, P.State MyState, Cache, Embed IO] m => CommandArgs -> Sem m RetCode
-loadPcap args = do
-    log $ "loading pcap " ++ pcapFilename
-    -- s <- gets
-    -- liftIO $ withProgName "load" (
-    -- TODO fix the name of the program, by "load"
-    mFrame <- loadPcapIntoFrame defaultTsharkPrefs pcapFilename
-    -- fmap onSuccess mFrame
-    case mFrame of
-      Left _ -> return CMD.Continue
-      Right frame -> do
-        -- prompt .= pcap parsedArgs ++ "> "
-        modify (\s -> s { _prompt = pcapFilename ++ "> ",
-              _loadedFile = Just frame
-            })
-        log "Frame loaded" >> return CMD.Continue
-    where
-      pcapFilename = loadPcapPath args
 
 
-loadCsv :: Members '[Log String, State MyState, Cache, Embed IO] m => CommandArgs -> Sem m CMD.RetCode
-loadCsv (ArgsLoadCsv csvFilename)  = do
+loadCsv :: Members '[Log String, P.Trace, P.State MyState, Cache, Embed IO] m
+    => FilePath   -- ^ csv file to load
+    -> Sem m CMD.RetCode
+loadCsv csvFilename  = do
 
-    log $ "Loading " ++ csvFilename
-    -- parsedArgs <- liftIO $ myHandleParseResult parserResult
+    P.trace $ "Loading " ++ csvFilename
     frame <- liftIO $ loadRows csvFilename
     -- TODO restore
     -- loadedFile .= Just frame
-    modify (\s -> s { _loadedFile = Just frame })
+    P.modify (\s -> s { _loadedFile = Just frame })
     log $ "Number of rows " ++ show (frameLength frame)
     log "Frame loaded" >> return CMD.Continue
-    -- where
-    --   csvFilename = loadCsvPath parsedArgs
 
-loadCsv _ = error "unsupported "

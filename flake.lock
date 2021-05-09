@@ -2,11 +2,11 @@
   "nodes": {
     "flake-utils": {
       "locked": {
-        "lastModified": 1614513358,
-        "narHash": "sha256-LakhOx3S1dRjnh0b5Dg3mbZyH0ToC9I8Y2wKSkBaTzU=",
+        "lastModified": 1619345332,
+        "narHash": "sha256-qHnQkEp1uklKTpx3MvKtY6xzgcqXDsz5nLilbbuL+3A=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "5466c5bbece17adaab2d82fae80b46e807611bf3",
+        "rev": "2ebf2558e5bf978c7fb8ea927dfaed8fefab2e28",
         "type": "github"
       },
       "original": {
@@ -30,13 +30,68 @@
         "type": "github"
       }
     },
+    "flake-utils_3": {
+      "locked": {
+        "lastModified": 1619345332,
+        "narHash": "sha256-qHnQkEp1uklKTpx3MvKtY6xzgcqXDsz5nLilbbuL+3A=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "2ebf2558e5bf978c7fb8ea927dfaed8fefab2e28",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "idris": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "idris-emacs-src": "idris-emacs-src",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1620557364,
+        "narHash": "sha256-VYUq5lUWR4t8bmQVmnI+tVTfCL6ohGHD+m0jF5gdhcQ=",
+        "owner": "idris-lang",
+        "repo": "Idris2",
+        "rev": "416cf6af3e746c65b0ac5bafcc7f739ca568d435",
+        "type": "github"
+      },
+      "original": {
+        "owner": "idris-lang",
+        "repo": "Idris2",
+        "type": "github"
+      }
+    },
+    "idris-emacs-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1613351183,
+        "narHash": "sha256-ngg48SzrR2LCtjle3WR3BOK86USRB0ZXmgXWu9EzQbo=",
+        "owner": "redfish64",
+        "repo": "idris2-mode",
+        "rev": "77390611a934f13e03a45e9f8a4e476dd17a9c5b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "redfish64",
+        "repo": "idris2-mode",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1614815769,
-        "narHash": "sha256-Rdy37Ioof5FlMlc+YC9PniSIJW/EsdImG+wZPP5VWvo=",
+        "lastModified": 1620340338,
+        "narHash": "sha256-Op/4K0+Z9Sp5jtFH0s/zMM4H7VFZxrekcAmjQ6JpQ4w=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "d496205cf22c3079461d868ea3198d42ded59287",
+        "rev": "63586475587d7e0e078291ad4b49b6f6a6885100",
         "type": "github"
       },
       "original": {
@@ -61,17 +116,28 @@
         "type": "github"
       }
     },
+    "nixpkgs_3": {
+      "locked": {
+        "narHash": "sha256-ktysr/ZX40/A1cNWc9aEZGIWtVnLS3NWU4bv/uaaqSo=",
+        "path": "/home/teto/nixpkgs",
+        "type": "path"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "type": "indirect"
+      }
+    },
     "poetry": {
       "inputs": {
         "flake-utils": "flake-utils_2",
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1620134685,
-        "narHash": "sha256-RzO4EBbF6HMHFNcf+/VVZL+jND30OC2UPzG0d9IUd9U=",
+        "lastModified": 1620416674,
+        "narHash": "sha256-Pu7mMKp6ZD2zSf4btO2kVbHmnoYs5iSIfat+VBKIuoQ=",
         "owner": "nix-community",
         "repo": "poetry2nix",
-        "rev": "6549bd9534f38c51010d24a7bebbb24492555c0f",
+        "rev": "4da97aa34e3ed399164c979e063da3736a88acde",
         "type": "github"
       },
       "original": {
@@ -79,11 +145,33 @@
         "type": "indirect"
       }
     },
+    "replica": {
+      "inputs": {
+        "flake-utils": "flake-utils_3",
+        "idris": "idris",
+        "nixpkgs": "nixpkgs_3"
+      },
+      "locked": {
+        "lastModified": 1620589846,
+        "narHash": "sha256-YoXWECBgkM6vIyfZRrZzv9Vs7YRHZDHd15/tZ7igzCM=",
+        "owner": "teto",
+        "repo": "REPLica",
+        "rev": "85a580a45811a106a5135cc3065ee5c1b9c038a6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "teto",
+        "ref": "nix",
+        "repo": "REPLica",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
-        "poetry": "poetry"
+        "poetry": "poetry",
+        "replica": "replica"
       }
     }
   },

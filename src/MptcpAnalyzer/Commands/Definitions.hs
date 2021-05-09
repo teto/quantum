@@ -12,22 +12,16 @@ import Data.Word (Word32)
 
 -- | Registered commands
 -- TODO make it possible to add some from a plugin
-data CommandArgs = 
-    ArgsLoadCsv {
-      _loadCsvPath :: FilePath
-    } |
-    ArgsHelp |
-    ArgsQuit |
-    ArgsLoadPcap {
-        loadPcapPath :: FilePath
-    } |
-    ArgsListTcpConnections {
-      _listTcpDetailed :: Bool
-    }
-    | ArgsListMpTcpConnections {
-      _listMpTcpDetailed :: Bool
-    }
+data CommandArgs =
+    ArgsLoadCsv FilePath
+    | ArgsHelp
+    | ArgsQuit
+    | ArgsLoadPcap FilePath
+    | ArgsListTcpConnections Bool  -- ^ Detailed
+    | ArgsListMpTcpConnections Bool  -- ^ Detailed
     | ArgsMapTcpConnections FilePath FilePath Word32 Bool Int Bool
+    -- ^ Pcap 1
+    -- ^ Pcap 2
     -- | ArgsMapMptcpConnections FilePath FilePath Word32 Bool Int Bool
       -- argsMapPcap1 :: FilePath
       -- , argsMapPcap2 :: FilePath
@@ -36,26 +30,22 @@ data CommandArgs =
       -- , argsMapLimit :: Int -- ^Number of comparisons to show
       -- , argsMapMptcp :: Bool -- ^Wether it's an MPTCP
     -- }
-    | ArgsListSubflows {
-      _listSubflowsDetailed :: Bool
-    }
+    | ArgsListSubflows Bool
+      -- ^ _listSubflowsDetailed
     | ArgsListReinjections (StreamId Mptcp)
-    | ArgsParserSummary {
-      summaryFull :: Bool,
-      summaryTcpStreamId :: StreamId Tcp
-      -- hidden file
-    }
+    | ArgsParserSummary Bool (StreamId Tcp)
+      -- summaryFull and summaryTcpStreamId
     | ArgsExport FilePath   -- ^ argsExportFilename
-      -- argsExportFilename :: FilePath
+    -- | plotOut
+    | ArgsPlotGeneric (Maybe String) (Maybe String) Bool ArgsPlots
+    -- {
+    --   plotOut :: Maybe String 
+  -- --     , plotToClipboard :: Maybe Bool
+  -- -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
+    --   , plotTitle :: Maybe String  -- ^ To override default title of the plot
+    --   , plotDisplay :: Bool  -- ^Defaults to false
+    --   , plotArgs :: ArgsPlots
     -- }
-    | ArgsPlotGeneric {
-      plotOut :: Maybe String
-  --     , plotToClipboard :: Maybe Bool
-  -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
-      , plotTitle :: Maybe String  -- ^ To override default title of the plot
-      , plotDisplay :: Bool  -- ^Defaults to false
-      , plotArgs :: ArgsPlots
-    }
     | ArgsQualifyReinjections FilePath (StreamId Mptcp) FilePath (StreamId Mptcp) Bool
       -- ^ pcap1 stream1 pcap2 stream2 verbose
       -- qrPcap1 :: FilePath

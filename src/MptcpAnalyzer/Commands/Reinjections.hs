@@ -18,7 +18,7 @@ import Polysemy.State as P
 import Polysemy.Trace as P
 import Colog.Polysemy (Log, log)
 import Data.Function (on)
-import Data.List (sortBy, sortOn)
+import Data.List (sortBy, sortOn, intersperse, intercalate)
 import Data.Either (rights, lefts)
 import Frames
 import Frames.CSV
@@ -29,7 +29,6 @@ import Data.Foldable (toList)
 import qualified Data.Foldable as F
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
-import Data.List (intercalate)
 import Control.Lens hiding (argument)
 
 piListReinjections :: ParserInfo CommandArgs
@@ -83,29 +82,40 @@ parserQualifyReinjections =
           <> help "Verbose or not"
       )
 
-cmdListReinjections :: Members '[Log String, P.State MyState, Cache, Embed IO] r
+cmdListReinjections :: Members '[Log String, P.Trace, P.State MyState, Cache, Embed IO] r
     => StreamId Mptcp
     -> Sem r RetCode
 cmdListReinjections streamId = do
   state <- P.get
   let loadedPcap = view loadedFile state
-  res <- case loadedPcap of
+  case loadedPcap of
     Nothing -> do
       log ( "please load a pcap first" :: String)
       return CMD.Continue
-    Just frame -> do
+    Just (frame :: FrameRec HostCols) -> do
+      let
+        reinjectedPacketsFrame = filterFrame (\x -> isJust $ x ^. reinjectionOf) frame
       -- log $ "Number of rows " ++ show (frameLength frame)
+        outputs = fmap showReinjections reinjectedPacketsFrame
       -- P.embed $ putStrLn $ "Number of MPTCP connections " ++ show (length mptcpStreams)
       -- P.embed $ putStrLn $ show mptcpStreams
+      P.trace $ intercalate "\n" (toList outputs)
       return CMD.Continue
-      -- where
-      --   reinjections = filterFrame (
-  return res
+      where
+        -- packetid=757 (tcp.stream 1) is a reinjection of 1 packet(s):
+        -- - packet 256 (tcp.stream 7)
+        showReinjections row = "packetid=" ++ show (row ^. packetId) ++ " (tcp.stream " ++ show (row ^. tcpStream) ++ ")\n"
+            -- TODO map over the list
+            ++ intercalate "\n" ( map showReinjection (fromJust $ row ^. reinjectionOf))
+
+        showReinjection reinjection = case toList $ filterFrame (\x -> x ^. packetId == reinjection) (frame) of
+          [] -> error "did not find original packet"
+          rows -> "- Reinjection of " ++ show reinjection ++ "(tcp.stream " ++ show ( (head rows)  ^. tcpStream) ++ ")"
 
 -- Analyzes row of reinject packets
 -- Compares arrival time of the first send of a segment with the
 -- analyzeReinjection :: (FrameRec SenderReceiverCols) -> Record SenderReceiverCols -> Double
-analyzeReinjection mergedFrame row = 
+analyzeReinjection mergedFrame row =
   let
     -- a list of packetIds
     reinjectOf = fromJust (rgetField @SndReinjectionOf row)
@@ -170,7 +180,7 @@ cmdQualifyReinjections (ArgsQualifyReinjections pcap1 streamId1 pcap2 streamId2 
   where
     -- mergedPcap
     -- reinjectedPackets = filterFrame (sndReinjectionOf) (toFrame justRecs)
-cmdQualifyReinjections _ = error "unsupported"
+cmdQualifyReinjections _ = error "should not happen"
 
 -- qualifyReinjections :: Members '[Log String, P.State MyState, Cache, Embed IO] r 
 --     => MergedPcap

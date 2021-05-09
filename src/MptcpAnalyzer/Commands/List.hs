@@ -43,22 +43,22 @@ parserSummary = ArgsParserSummary <$> switch
           )
 
 
-listTcpOpts ::  ParserInfo CommandArgs
-listTcpOpts = info (
+piListTcpOpts ::  ParserInfo CommandArgs
+piListTcpOpts = info (
    ArgsListTcpConnections <$> parserList <**> helper)
   ( progDesc "List subflows of an MPTCP connection"
   )
   where
     parserList = switch (long "detailed" <> help "detail connections")
 
--- tcpSummaryOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
--- tcpSummaryOpts = info (
+-- piTcpSummaryOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
+-- piTcpSummaryOpts = info (
 --    CMD.tcpSummary <$> parserSummary <**> helper)
 --   ( progDesc "Detail a specific TCP connection"
 --   )
 
-tcpSummaryOpts :: ParserInfo CommandArgs
-tcpSummaryOpts = info (
+piTcpSummaryOpts :: ParserInfo CommandArgs
+piTcpSummaryOpts = info (
    parserSummary <**> helper)
   ( progDesc "Detail a specific TCP connection"
   )
@@ -96,10 +96,11 @@ tcpSummaryOpts = info (
   tcp.stream 6: 11.0.0.1:35589 -> 10.0.0.2:05201
   tcp.stream 7: 11.0.0.1:50007 -> 10.0.0.2:05201
 -}
-listTcpConnectionsCmd ::
-    Members '[Log String, P.State MyState, P.Trace, Cache, Embed IO] r
-    => CommandArgs -> Sem r RetCode
-listTcpConnectionsCmd args = do
+cmdListTcpConnections ::
+  Members '[Log String, P.State MyState, P.Trace, Cache, Embed IO] r
+  => Bool -- ^ detailed
+  -> Sem r RetCode
+cmdListTcpConnections listDetailed = do
     -- TODO this part should be extracted so that
     state <- P.get
     let loadedPcap = view loadedFile state
@@ -109,27 +110,30 @@ listTcpConnectionsCmd args = do
         return CMD.Continue
       Just frame -> do
         let tcpStreams = getTcpStreams frame
-        let streamIdList = if _listTcpDetailed args then [] else tcpStreams
+        let streamIdList = if listDetailed then [] else tcpStreams
         -- log $ "Number of rows " ++ show (frameLength frame)
         P.trace $ "Number of TCP connections " ++ show (length tcpStreams)
-        _ <- P.embed $ mapM (putStrLn . describeFrame . buildTcpConnectionFromStreamId frame ) streamIdList
+        -- TODO use a trace there
+        _ <- mapM (P.trace . describeFrame . buildTcpConnectionFromStreamId frame ) streamIdList
         return CMD.Continue
     where
       describeFrame = \case
         Left msg -> msg
         Right ff -> showConnection (ffCon ff)
 
+
 {-| Display statistics for the connection:
 throughput/goodput
 -}
-tcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
-tcpSummary args = do
+tcpSummary :: Members '[Log String, P.Trace, P.State MyState, Cache, Embed IO] r
+  => StreamId Tcp -> Sem r RetCode
+tcpSummary streamId = do
     state <- P.get
     let loadedPcap = view loadedFile state
     case loadedPcap of
-      Nothing -> log ("please load a pcap first" :: String) >> return CMD.Continue
+      Nothing -> trace ("please load a pcap first" :: String) >> return CMD.Continue
       Just frame -> do
-        let _tcpstreams = getTcpStreams frame
+        -- let _tcpstreams = getTcpStreams frame
         log $ "Number of rows " ++ show (frameLength frame)
         case showConnection <$> ffCon <$> filteredFrame of
           Left err -> log $ "error happened:" ++ err
@@ -137,7 +141,7 @@ tcpSummary args = do
         -- log $ "Number of SYN packets " ++ (fmap  )
         >> return CMD.Continue
         where
-            filteredFrame = buildTcpConnectionFromStreamId frame (summaryTcpStreamId args)
+            filteredFrame = buildTcpConnectionFromStreamId frame streamId
 
 {-
 mptcp stream 0 transferred 308.0 Bytes over 45.658558 sec(308.0 Bytes per second) towards Client.
@@ -177,19 +181,4 @@ cmdMptcpSummary args = do
 --         >> return CMD.Continue
 --         where
 --             tcpCon = buildTcpConnectionFromStreamId frame (summaryTcpStreamId args)
-
--- listTcpConnectionsInFrame :: SomeFrame -> IO ()
--- listTcpConnectionsInFrame frame = do
---   putStrLn "Listing tcp connections"
---   let streamIds = getTcpStreams frame
---   mapM_ print streamIds
-
-  -- L.fold L.minimum (view age <$> ms)
-  -- L.fold
-  -- putStrLn $ show $ rcast @'[TcpStream] $ frameRow frame 0
-  -- let l =  L.fold L.nub (view tcpstream <$> frame)
--- listMptcpConnections :: SomeFrame -> MyStack IO ()
--- listMptcpConnections frame = do
---     return ()
-
 

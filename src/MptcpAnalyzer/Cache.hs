@@ -33,13 +33,10 @@ data CacheConfig = CacheConfig {
   , cacheEnabled :: Bool
 } deriving Show
 
--- type CachePlaceHolder = Int
--- TODO a remplacer par un parametre par exemple
--- type CachePlaceHolder = SomeFrame
 
 -- TODO add a cacheConfig ?
 -- TODO this should be an effect
-data  Cache m a where
+data Cache m a where
     -- should maybe be a filepath
     PutCache :: Serialize res => CacheId -> res -> Cache m Bool
     GetCache :: Serialize res => CacheId -> Cache m (Either String res)
@@ -102,9 +99,9 @@ doGetCache config cid = return $ Left "Not implemented yet"
   --     csvFilename = getFullPath config cid
 
 
--- SomeFrame
 -- TODO reuse export function ?
-doPutCache :: (Serialize a, Members '[Embed IO] r) => CacheConfig -> CacheId -> a -> Sem r Bool
+doPutCache :: (Serialize a, Members '[Embed IO] r)
+  => CacheConfig -> CacheId -> a -> Sem r Bool
 doPutCache config cid resource =
   -- writeFile
   -- writeCSV :: (ColumnHeaders ts, Foldable f, RecordToList ts, RecMapMethod ShowCSV ElField ts) => FilePath -> f (Record ts) -> IO ()

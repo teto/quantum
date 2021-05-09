@@ -37,19 +37,9 @@ consumeTextLines fp = Safe.withFile fp WriteMode $ \h ->
 
 -- | Write a header row with column names followed by a line of text
 -- for each 'Record' to the given file.
-doWriteDSV:: (ColumnHeaders ts, Foldable f, RecordToList ts,
-             RecMapMethod ShowCSV ElField ts)
-         => ParserOptions -> FilePath -> f (Record ts) -> IO ()
-doWriteDSV opts fp recs = P.runSafeT . P.runEffect $
-                   produceDSV opts recs >-> P.map (TSE.encodeUtf8 . T.pack) >-> consumeTextLines fp
-  
--- Specialize depending on StreamId
--- filterStreamPackets :: SomeFrame -> StreamId Tcp -> Maybe ConnectionRole  -> SomeFrameF Tcp
--- filterStreamPackets frame streamId role =
-
---   filterFrame
---   where
---     streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
-
-
+-- doWriteDSV:: (ColumnHeaders ts, Foldable f, RecordToList ts,
+--              RecMapMethod ShowCSV ElField ts)
+--          => ParserOptions -> FilePath -> f (Record ts) -> IO ()
+-- doWriteDSV opts fp recs = P.runSafeT . P.runEffect $
+--                    produceDSV opts recs >-> P.map (TSE.encodeUtf8 . T.pack) >-> consumeTextLines fp
 

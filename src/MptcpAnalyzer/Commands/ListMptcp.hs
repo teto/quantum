@@ -21,6 +21,7 @@ import Control.Lens hiding (argument)
 import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
+import Polysemy.Trace as P
 import Colog.Polysemy (Log, log)
 import Data.Word (Word8, Word16, Word32, Word64)
 import qualified Control.Foldl as L
@@ -55,10 +56,6 @@ listMptcpReinjectionsOpts = info (
     parserList = ArgsListSubflows <$> switch ( long "detailed" <> help "detail connections")
 
 
--- keepMptcpPackets :: SomeFrame -> SomeFrame
--- keepMptcpPackets frame = do
---     let mptcpStreams = getTcpStreams frame
-
 -- TODO return MptcpStreamId instead
 getMpTcpStreams :: SomeFrame -> [StreamIdMptcp]
 getMpTcpStreams ps =
@@ -89,15 +86,20 @@ filterMptcpConnection frame streamId =
 
 
 
-listSubflowsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
-listSubflowsCmd _args = do
-  log "not implemented yet"
+cmdListSubflows :: Members '[Log String, P.State MyState, P.Trace, Cache, Embed IO] r
+  => Bool -- ^ Detailed
+  -> Sem r RetCode
+cmdListSubflows detailed = do
+  P.trace "not implemented yet"
   return CMD.Continue
 
 {-
 -}
-listMpTcpConnectionsCmd :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
-listMpTcpConnectionsCmd _args = do
+cmdListMptcpConnections ::
+  Members [Log String, P.Trace, P.State MyState, Cache, P.Embed IO] r
+  => Bool -- ^ Detailed
+  -> Sem r RetCode
+cmdListMptcpConnections _detailed = do
     -- TODO this part should be extracted so that
     state <- P.get
     let loadedPcap = view loadedFile state
@@ -107,9 +109,9 @@ listMpTcpConnectionsCmd _args = do
         return CMD.Continue
       Just frame -> do
         -- log $ "Number of rows " ++ show (frameLength frame)
-        P.embed $ putStrLn $ "Number of MPTCP connections " ++ show (length mptcpStreams)
-        P.embed $ putStrLn $ show mptcpStreams
-        P.embed $ putStrLn $ concat $ map showEitherCon mptcpConnections
+        P.trace $ "Number of MPTCP connections " ++ show (length mptcpStreams)
+        P.trace $ show mptcpStreams
+        P.trace $ concat $ map showEitherCon mptcpConnections
         -- >>
         return CMD.Continue
         where

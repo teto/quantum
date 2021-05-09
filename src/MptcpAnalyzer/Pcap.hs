@@ -27,7 +27,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE PackageImports #-}
 module MptcpAnalyzer.Pcap
--- (SomeFrame, TsharkParams(..),
+-- (TsharkParams(..),
 --     defaultTsharkPrefs
 --     , defaultTsharkOptions
 --     , generateCsvCommand
@@ -118,8 +118,6 @@ import "mptcp-pm" Net.Tcp ( TcpFlag(..))
 
 -- shadow type to know if it was filtered or not
 -- Make it a record ?
-type ConFrame a = SomeFrame
--- type SomeFrame = Frame HostCols
 
 
 data TsharkParams = TsharkParams {
@@ -291,13 +289,6 @@ defaultTsharkPrefs = TsharkParams {
       tsharkReadFilter = Just "mptcp or tcp and not icmp"
     }
 
-buildAFrameFromStreamId :: SomeFrame -> StreamId a -> SomeFrame
-buildAFrameFromStreamId = undefined
-
--- @(StreamId Tcp)
--- return AFrame a
--- buildAFrameFromStreamId :: SomeFrame -> StreamId a -> SomeFrame
--- buildAFrameFromStreamId frame (StreamId Tcp) streamId = getTcpFrame frame streamId
 
 {- 
 -}

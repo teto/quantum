@@ -191,7 +191,7 @@ plotParserSpecific =
    )
 
     -- <*> commandGroup "Loader commands"
-    -- <> command "load-csv" CL.loadCsvOpts
+    -- <> command "load-csv" CL.piLoadCsv
 
 startupParser :: Parser CLIArguments
 startupParser = CLIArguments
@@ -242,8 +242,12 @@ opts = info (startupParser <**> helper)
 defaultPcap :: FilePath
 defaultPcap = "examples/client_2_filtered.pcapng"
 
-promptSuffix :: String
-promptSuffix = setSGRCode [SetColor Foreground Vivid Red] ++ ">"  ++ setSGRCode [Reset]
+        -- P.modify (\s -> s { _prompt = pcapFilename ++ "> ",
+        --       _loadedFile = Just frame
+        --     })
+-- setPrompt :: Members '[P.Trace] r => String -> Sem r String
+finalizePrompt :: String -> String
+finalizePrompt newPrompt = setSGRCode [SetColor Foreground Vivid Red] ++ newPrompt ++ "> " ++ setSGRCode [Reset]
 
 -- alternatively could modify defaultPrefs
 -- subparserInline + multiSuffix helpShowGlobals
@@ -263,7 +267,7 @@ main = do
   let myState = MyState {
     _stateCacheFolder = cacheFolderXdg,
     _loadedFile = Nothing,
-    _prompt = promptSuffix
+    _prompt = finalizePrompt ">"
   }
 
   options <- execParser opts
@@ -302,14 +306,15 @@ mainParser = subparser (
     <> command "help" helpParser
     <> command "quit" quit
     <> commandGroup "Loader commands"
-    <> command "load-csv" CL.loadCsvOpts
+    <> command "load-csv" CL.piLoadCsv
     <> command "load-pcap" CL.loadPcapOpts
     <> commandGroup "TCP commands"
-    <> command "tcp-summary" CLI.tcpSummaryOpts
-    <> command "list-tcp" CLI.listTcpOpts
+    <> command "tcp-summary" CLI.piTcpSummaryOpts
+    <> command "list-tcp" CLI.piListTcpOpts
     <> command "map-tcp" CLI.mapTcpOpts
     <> command "map-mptcp" CLI.mapMptcpOpts
     <> commandGroup "MPTCP commands"
+    <> command "list-reinjections" CLI.piListReinjections
     <> command "list-mptcp" CLI.listMpTcpOpts
     <> command "export" CLI.parseExportOpts
     <> command "analyze" CLI.piQualifyReinjections
@@ -319,7 +324,7 @@ mainParser = subparser (
     <> command "plot" Main.plotinfoParserGeneric
     -- Plots.piPlotTcpAttr
       -- )
-    -- <> command "help" CLI.listMpTcpConnectionsCmd
+    -- <> command "help" CLI.cmdListMptcpConnections
     )
     where
       helpParser = info (pure ArgsHelp) ( progDesc "Display help")
@@ -351,21 +356,52 @@ mainParserInfo = info (mainParser <**> helper)
 -- liftIO $ putStrLn doPrintHelp >> 
 
 -- runCommand :: CommandArgs -> CMD.RetCode
-runCommand, runPlotCommand :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
-runCommand args@ArgsLoadPcap{} = CL.loadPcap args
-runCommand args@ArgsLoadCsv{} = CL.loadCsv args
-runCommand args@ArgsParserSummary{} = CLI.tcpSummary args
-runCommand args@ArgsListSubflows{} = CLI.listSubflowsCmd args
+runCommand :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
+runCommand (ArgsLoadPcap fileToLoad) = loadPcap fileToLoad
+  -- ret <- CL.loadPcap fileToLoad
+  -- TODO modify only on success
+  -- P.modify (\s -> s { _prompt = pcapFilename ++ "> ",
+  --       _loadedFile = Just frame
+  --     })
+  -- return ret
+runCommand (ArgsLoadCsv csvFile) = CL.loadCsv csvFile
+runCommand (ArgsParserSummary _ streamId) = CLI.tcpSummary streamId
+runCommand (ArgsListSubflows detailed) = CLI.cmdListSubflows detailed
 runCommand (ArgsListReinjections streamId)  = CLI.cmdListReinjections streamId
-runCommand args@ArgsListTcpConnections{} = CLI.listTcpConnectionsCmd args
-runCommand args@ArgsListMpTcpConnections{} = CLI.listMpTcpConnectionsCmd args
+runCommand (ArgsListTcpConnections detailed) = CLI.cmdListTcpConnections detailed
+runCommand (ArgsListMpTcpConnections detailed) = CLI.cmdListMptcpConnections detailed
 runCommand (ArgsExport out) = CLI.cmdExport out
-runCommand args@ArgsPlotGeneric{} = runPlotCommand args
+runCommand (ArgsPlotGeneric mbPlotOut mbPlotTitle display plotArgs) = runPlotCommand mbPlotOut mbPlotTitle display plotArgs
 runCommand args@(ArgsMapTcpConnections _ _ _ _ _ False) = CLI.cmdMapTcpConnection args
 runCommand args@(ArgsMapTcpConnections _ _ _ _ _ True) = CLI.cmdMapMptcpConnection args
 runCommand args@ArgsQualifyReinjections{} = CLI.cmdQualifyReinjections args
 runCommand ArgsQuit = cmdQuit
 runCommand ArgsHelp = cmdHelp
+
+-- TODO move commands to their own module
+-- TODO it should update the loadedFile in State !
+-- handleParseResult
+-- loadPcap :: CMD.CommandCb
+-- loadPcap :: Members [Log, P.State MyState, Cache, Embed IO] m => [String] -> Sem m RetCode
+loadPcap :: Members [Log String, P.State MyState, Cache, P.Embed IO] m
+  => FilePath -- ^ File to load
+  -> Sem m RetCode
+loadPcap pcapFilename = do
+    log $ "loading pcap " ++ pcapFilename
+    -- s <- gets
+    -- liftIO $ withProgName "load" (
+    -- TODO fix the name of the program, by "load"
+    mFrame <- loadPcapIntoFrame defaultTsharkPrefs pcapFilename
+    -- fmap onSuccess mFrame
+    case mFrame of
+      Left _ -> return CMD.Continue
+      Right frame -> do
+        -- prompt .= pcapFilename  ++ "> "
+        P.modify (\s -> s {
+            _prompt = finalizePrompt pcapFilename,
+            _loadedFile = Just frame
+          })
+        log "Frame loaded" >> return CMD.Continue
 
 -- | Quits the program
 cmdQuit :: Members '[P.Trace] r => Sem r CMD.RetCode
@@ -380,9 +416,10 @@ cmdHelp = do
 
 -- |Command specific to plots
 -- TODO these should return a plot instead of a generated file so that one can overwrite the title
-runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
-    -- tempPath <- embed $ withTempFileEx opts "/tmp" "plot.png" $ \tmpPath hd -> do
-    -- file is not removed afterwards
+runPlotCommand :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO] r
+  => (Maybe String) -> (Maybe String) -> Bool -> ArgsPlots
+  -> Sem r CMD.RetCode
+runPlotCommand mbOut _mbTitle displayPlot specificArgs = do
     (tempPath, handle) <- P.embed $ openTempFile "/tmp" "plot.png"
     _ <- case specificArgs of
       (ArgsPlotTcpAttr pcapFilename streamId attr mbDest mptcp) -> do
@@ -440,7 +477,7 @@ runPlotCommand (ArgsPlotGeneric mbOut _mbTitle displayPlot specificArgs ) = do
     where
       getDests mbDest =          fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) mbDest)
 
-runPlotCommand _ = error "Should not happen, file a bug report"
+-- runPlotCommand _ = error "Should not happen, file a bug report"
 
 
 
