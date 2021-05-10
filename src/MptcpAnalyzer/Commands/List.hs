@@ -10,6 +10,8 @@ import MptcpAnalyzer.Types
 import "mptcp-pm" Net.Tcp (TcpFlag(..))
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Stream
+import MptcpAnalyzer.ArtificialFields
+import Net.Tcp.Stats
 
 import Prelude hiding (log)
 import Options.Applicative
@@ -53,7 +55,7 @@ piListTcpOpts = info (
 
 -- piTcpSummaryOpts :: Member Command r => ParserInfo (Sem r CMD.RetCode)
 -- piTcpSummaryOpts = info (
---    CMD.tcpSummary <$> parserSummary <**> helper)
+--    CMD.cmdTcpSummary <$> parserSummary <**> helper)
 --   ( progDesc "Detail a specific TCP connection"
 --   )
 
@@ -62,27 +64,6 @@ piTcpSummaryOpts = info (
    parserSummary <**> helper)
   ( progDesc "Detail a specific TCP connection"
   )
-
--- listTcpConnections :: [TcpConnection] -> Text
--- listTcpConnections conns =
---         streams = self.data.groupby("tcpstream")
---         (show len connections) ++ " tcp connection(s)" ++ map (\
---         where
-          -- for tcpstream, group in streams:
-          --     con = TcpConnection.build_from_dataframe(self.data, tcpstream)
-          --     self.poutput(str(con))
--- checkIfLoaded :: CMD.CommandConstraint m => [String] -> m CMD.RetCode
--- checkIfLoaded = 
-    -- putStrLn "not loaded"
-
-    -- Search for SYN flags
-    -- filterFrame
-    -- Producer Income m ()
-    -- testField = filter
-    --           ((> 50) . rgetField @Val))
-    --           (testMelt testRec1)
-    -- L.genericLength
-    -- filterFrame :: RecVec rs => (Record rs -> Bool) -> FrameRec rs -> FrameRec rs
 
 
 {-| Show a list of all connections
@@ -97,7 +78,7 @@ piTcpSummaryOpts = info (
   tcp.stream 7: 11.0.0.1:50007 -> 10.0.0.2:05201
 -}
 cmdListTcpConnections ::
-  Members '[Log String, P.State MyState, P.Trace, Cache, Embed IO] r
+  Members '[Log String, P.Trace, P.State MyState, Cache, Embed IO] r
   => Bool -- ^ detailed
   -> Sem r RetCode
 cmdListTcpConnections listDetailed = do
@@ -124,24 +105,45 @@ cmdListTcpConnections listDetailed = do
 
 {-| Display statistics for the connection:
 throughput/goodput
+
+detailed
 -}
-tcpSummary :: Members '[Log String, P.Trace, P.State MyState, Cache, Embed IO] r
-  => StreamId Tcp -> Sem r RetCode
-tcpSummary streamId = do
+cmdTcpSummary :: Members '[Log String, P.Trace, P.State MyState, Cache, Embed IO] r
+  => StreamId Tcp
+  -> Bool
+  -> Sem r RetCode
+cmdTcpSummary streamId detailed = do
     state <- P.get
     let loadedPcap = view loadedFile state
     case loadedPcap of
       Nothing -> trace ("please load a pcap first" :: String) >> return CMD.Continue
-      Just frame -> do
-        -- let _tcpstreams = getTcpStreams frame
-        log $ "Number of rows " ++ show (frameLength frame)
-        case showConnection <$> ffCon <$> filteredFrame of
-          Left err -> log $ "error happened:" ++ err
-          Right desc -> log desc
-        -- log $ "Number of SYN packets " ++ (fmap  )
-        >> return CMD.Continue
-        where
-            filteredFrame = buildTcpConnectionFromStreamId frame streamId
+      Just frame -> case buildTcpConnectionFromStreamId frame streamId of
+        Left msg -> return $ CMD.Error msg
+        Right aframe -> do
+          -- let _tcpstreams = getTcpStreams frame
+          P.trace $ showConnection (ffCon aframe)
+          log $ "Number of rows " ++ show (frameLength frame)
+          if detailed
+          then
+            trace $ showStats RoleServer
+            -- P.trace $ showStats RoleClient
+            -- P.trace ""
+          else
+            pure ()
+          -- log $ "Number of SYN packets " ++ (fmap  )
+          return CMD.Continue
+          where
+              filteredFrame = buildTcpConnectionFromStreamId frame streamId
+              -- forwardStats = showStats RoleServer
+              showStats direction = let
+                  tcpStats = getTcpStats aframe direction
+                in
+                  showTcpStats tcpStats
+
+showTcpStats :: TcpUnidirectionalStats -> String
+showTcpStats s =
+                  "- transferred " ++ ++ show (tusSndNext s - tusMinSeq s + 1 + tusReinjectedBytes s)  ++ " bytes "
+                  ++ " over " ++ show (tusEndTime s - tusStartTime s) ++ "s"
 
 {-
 mptcp stream 0 transferred 308.0 Bytes over 45.658558 sec(308.0 Bytes per second) towards Client.
@@ -154,8 +156,32 @@ tcpstream 2 transferred 9.0 Bytes out of 469.0 Bytes, accounting for 1.92%
 tcpstream 4 transferred 0.0 Bytes out of 469.0 Bytes, accounting for 0.00%
 tcpstream 6 transferred 0.0 Bytes out of 469.0 Bytes, accounting for 0.00%
 -}
-cmdMptcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
-cmdMptcpSummary args = do
+cmdMptcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r
+  => StreamId Tcp
+  -> Bool
+  -> Sem r RetCode
+cmdMptcpSummary streamId detailed = do
+  state <- P.get
+  case view loadedFile state of
+    Nothing -> trace ("please load a pcap first" :: String) >> return CMD.Continue
+    Just frame -> case buildTcpConnectionFromStreamId frame streamId of
+      Left msg -> return $ CMD.Error msg
+      Right aframe -> do
+        -- let _tcpstreams = getTcpStreams frame
+        P.trace $ showConnection (ffCon aframe)
+        log $ "Number of rows " ++ show (frameLength frame)
+        if detailed
+        then
+          trace $ showStats RoleServer
+          -- P.trace $ showStats RoleClient
+          -- P.trace ""
+        else
+          pure ()
+
+  where
+    -- dadsa
+    subflowStats = map ()
+
   -- for destination in args.dest:
   --   stats = mptcp_compute_throughput(
   --       self.data, args.mptcpstream,
@@ -163,10 +189,9 @@ cmdMptcpSummary args = do
   --       False
   --   )
 
-  return CMD.Continue
 
--- tcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserSummary -> Sem r RetCode
--- tcpSummary args = do
+-- cmdTcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserSummary -> Sem r RetCode
+-- cmdTcpSummary args = do
 --     state <- P.get
 --     let loadedPcap = view loadedFile state
 --     case loadedPcap of

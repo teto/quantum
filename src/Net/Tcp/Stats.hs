@@ -7,10 +7,13 @@ import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Frame
 import MptcpAnalyzer.Stream
 import Net.Tcp
+import Net.Mptcp
+import qualified Data.Map as Map
+
 
 import qualified Control.Foldl as L
 import Control.Lens hiding (argument)
-import Data.Word (Word32)
+import Data.Word (Word32, Word64)
 import Data.Maybe (fromJust)
 import qualified Frames as F
 import qualified Data.Foldable as F
@@ -23,14 +26,28 @@ data TcpUnidirectionalStats = TcpUnidirectionalStats {
     -- Include redundant packets contrary to '''
     tusThroughput :: Byte
 
+    , tusStartPacketId :: Word64
+    , tusEndPacketId :: Word64
     -- duration
     -- , tusDuration :: Double
-    , tusStart :: Double
-    , tusEnd :: Double
+    , tusStartTime :: Double
+    , tusEndTime :: Double
 
     -- For now = max(tcpseq) - minx(tcpseq). Should add the size of packets'''
+    -- , tusMinSeq :: Word32
+    -- , tusMaxSeq :: Word32
+
+    -- transferred bytes
+    -- , tusCumulativeBytes :: Map Word64 Word16
     , tusMinSeq :: Word32
-    , tusMaxSeq :: Word32
+    , tusSndUna :: Word32
+    , tusSndNext :: Word32
+    -- , tusReinjectedBytes :: Map Word64 Word16
+    , tusReinjectedBytes :: Word32 -- ^Amount of reinjected bytes
+    -- , tusUniqueBytes :: Word64
+
+    -- , tusMinAck :: Word32
+    -- , tusMaxAck :: Word32
 
     -- application data = goodput = useful bytes '''
     -- TODO move to its own ? / Maybe
@@ -40,7 +57,7 @@ data TcpUnidirectionalStats = TcpUnidirectionalStats {
 
     -- TODO this should be updated
     -- For now = max(tcpseq) - minx(tcpseq). Should add the size of packets'''
-    , tusGoodput :: Byte
+    -- , tusGoodput :: Byte
     }
 
 data MptcpUnidirectionalStats = MptcpUnidirectionalStats {
@@ -49,17 +66,36 @@ data MptcpUnidirectionalStats = MptcpUnidirectionalStats {
 }
 
 
+-- | Computes throughput
+getThroughput :: TcpUnidirectionalStats -> Double
+getThroughput s =
+  fromIntegral (tusSndUna s - tusMinSeq s + 1) / (tusEndTime s - tusStartTime s)
+
+-- | Computes goodput
+getGoodput :: TcpUnidirectionalStats -> Double
+getGoodput s =
+  fromIntegral (tusSndUna s - tusMinSeq s + 1 - tusReinjectedBytes s) / (tusEndTime s - tusStartTime s)
+
 -- TODO should be able to update an initial one
 --
 getTcpStats :: FrameFiltered TcpConnection Packet -> ConnectionRole -> TcpUnidirectionalStats
 getTcpStats aframe dest =
   TcpUnidirectionalStats {
     tusThroughput = 0
-    , tusStart = minTime
-    , tusEnd = maxTime
+    , tusStartPacketId = 0
+    , tusEndPacketId = 0
+    , tusStartTime = minTime
+    , tusEndTime = maxTime
+    -- TODO fill it
     , tusMinSeq = minSeq
-    , tusMaxSeq = maxSeq
-    , tusGoodput = 0
+    , tusSndUna = maxSeq -- TODO should be max of seen acks
+    , tusSndNext = maxSeq
+    , tusReinjectedBytes = 0
+    -- , tusSnd = 0
+    -- , tusCumulativeBytes = mempty
+    -- , tusMinSeq = minSeq
+    -- , tusMaxSeq = maxSeq
+    -- , tusGoodput = 0
     -- , tusGoodput = (fromIntegral $ maxSeq-minSeq)/(tusEnd - tusStart)
   }
   where
@@ -72,6 +108,8 @@ getTcpStats aframe dest =
     minTime = minimum $ F.toList $ view relTime <$> frame
 
     -- duration = maxTime - minTime
+
+
 
 -- No instance for (Ord (Frames.Frame.Frame GHC.Word.Word32))
 -- instance Ord a => Ord (Frame a)

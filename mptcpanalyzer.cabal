@@ -143,6 +143,7 @@ library libmptcpanalyzer
         , Net.Tcp.Connection
         , Net.Tcp
         , Net.Mptcp
+        , Net.Mptcp.Stats
         , Net.Mptcp.Connection
         -- reexport the rest
         , MptcpAnalyzer

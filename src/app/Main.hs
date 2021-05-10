@@ -365,7 +365,8 @@ runCommand (ArgsLoadPcap fileToLoad) = loadPcap fileToLoad
   --     })
   -- return ret
 runCommand (ArgsLoadCsv csvFile) = CL.loadCsv csvFile
-runCommand (ArgsParserSummary _ streamId) = CLI.tcpSummary streamId
+runCommand (ArgsParserSummary detailed streamId) = CLI.cmdTcpSummary streamId detailed
+runCommand (ArgsMptcpSummary detailed streamId) = CLI.cmdMptcpSummary streamId detailed
 runCommand (ArgsListSubflows detailed) = CLI.cmdListSubflows detailed
 runCommand (ArgsListReinjections streamId)  = CLI.cmdListReinjections streamId
 runCommand (ArgsListTcpConnections detailed) = CLI.cmdListTcpConnections detailed
