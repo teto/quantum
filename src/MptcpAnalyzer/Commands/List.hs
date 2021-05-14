@@ -10,8 +10,10 @@ import MptcpAnalyzer.Types
 import "mptcp-pm" Net.Tcp (TcpFlag(..))
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Stream
+import MptcpAnalyzer.Stats
 import MptcpAnalyzer.ArtificialFields
 import Net.Tcp.Stats
+import Net.Mptcp.Stats
 
 import Prelude hiding (log)
 import Options.Applicative
@@ -23,6 +25,7 @@ import Polysemy.State as P
 import Polysemy.Trace as P
 import Colog.Polysemy (Log, log)
 import Data.Either (fromRight)
+import Data.List (intercalate)
 
 import MptcpAnalyzer.Types
 
@@ -32,17 +35,6 @@ import MptcpAnalyzer.Types
 -- import qualified Control.Foldl as L
 
 -- for TcpConnection
-
-
-parserSummary :: Parser CommandArgs
-parserSummary = ArgsParserSummary <$> switch
-          ( long "full"
-         <> help "Print details for each subflow" )
-      <*> argument readStreamId (
-          metavar "STREAM_ID"
-          <> help "Stream Id (tcp.stream)"
-          -- TODO pass a default
-          )
 
 
 piListTcpOpts ::  ParserInfo CommandArgs
@@ -61,10 +53,37 @@ piListTcpOpts = info (
 
 piTcpSummaryOpts :: ParserInfo CommandArgs
 piTcpSummaryOpts = info (
-   parserSummary <**> helper)
+   piTcpSummary <**> helper)
   ( progDesc "Detail a specific TCP connection"
   )
+  where
+    piTcpSummary :: Parser CommandArgs
+    piTcpSummary = ArgsParserSummary <$> switch
+              ( long "full"
+            <> help "Print details for each subflow" )
+          <*> argument readStreamId (
+              metavar "STREAM_ID"
+              <> help "Stream Id (tcp.stream)"
+              -- TODO pass a default
+              )
 
+
+
+piMptcpSummaryOpts :: ParserInfo CommandArgs
+piMptcpSummaryOpts = info (
+   piMptcpSummary <**> helper)
+  ( progDesc "Detail a specific TCP connection"
+  )
+  where
+    piMptcpSummary :: Parser CommandArgs
+    piMptcpSummary = ArgsMptcpSummary <$> switch
+              ( long "full"
+            <> help "Print details for each subflow" )
+          <*> argument readStreamId (
+              metavar "STREAM_ID"
+              <> help "Stream Id (mptcp.stream)"
+              -- TODO pass a default
+              )
 
 {-| Show a list of all connections
 8 tcp connection(s)
@@ -95,12 +114,14 @@ cmdListTcpConnections listDetailed = do
         -- log $ "Number of rows " ++ show (frameLength frame)
         P.trace $ "Number of TCP connections " ++ show (length tcpStreams)
         -- TODO use a trace there
-        _ <- mapM (P.trace . describeFrame . buildTcpConnectionFromStreamId frame ) streamIdList
+        _ <- mapM (P.trace . describeConnection) streamIdList
         return CMD.Continue
-    where
-      describeFrame = \case
-        Left msg -> msg
-        Right ff -> showConnection (ffCon ff)
+        where
+          describeConnection streamId = 
+            case buildTcpConnectionFromStreamId frame streamId of
+              Left msg -> msg
+              -- addTcpDestToFrame 
+              Right aframe -> showConnection (ffCon aframe)
 
 
 {-| Display statistics for the connection:
@@ -142,8 +163,23 @@ cmdTcpSummary streamId detailed = do
 
 showTcpStats :: TcpUnidirectionalStats -> String
 showTcpStats s =
-                  "- transferred " ++ ++ show (tusSndNext s - tusMinSeq s + 1 + tusReinjectedBytes s)  ++ " bytes "
+                  "- transferred " ++ show (tusSndNext s - tusMinSeq s + 1 + tusReinjectedBytes s)  ++ " bytes "
                   ++ " over " ++ show (tusEndTime s - tusStartTime s) ++ "s"
+
+
+-- |
+showMptcpStats :: MptcpUnidirectionalStats -> String
+showMptcpStats s = " Mptcp stats for direction " ++ show (musDirection s) ++ " :\n"
+    ++ "- Duration " ++ show (getMptcpStatsDuration s)
+    -- getMptcpGoodput
+    ++ "- Goodput " ++ "<TODO>\n"
+    ++ "Applicative Bytes : " ++ show (musApplicativeBytes s) ++ "\n"
+    ++ "Subflow stats:\n"
+    ++ intercalate "\n" (map showSubflowStats (musSubflowStats s))
+    where
+      -- ++ show (tusStreamId)
+      showSubflowStats sfStats = "start time for stream " ++ show (tusStartTime $ tssStats sfStats) ++ " end time: " ++ show (tusEndTime $ tssStats sfStats)
+
 
 {-
 mptcp stream 0 transferred 308.0 Bytes over 45.658558 sec(308.0 Bytes per second) towards Client.
@@ -156,54 +192,32 @@ tcpstream 2 transferred 9.0 Bytes out of 469.0 Bytes, accounting for 1.92%
 tcpstream 4 transferred 0.0 Bytes out of 469.0 Bytes, accounting for 0.00%
 tcpstream 6 transferred 0.0 Bytes out of 469.0 Bytes, accounting for 0.00%
 -}
-cmdMptcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r
-  => StreamId Tcp
+cmdMptcpSummary :: Members '[Log String, P.Trace, P.State MyState, Cache, Embed IO] r
+  => StreamId Mptcp
   -> Bool
   -> Sem r RetCode
 cmdMptcpSummary streamId detailed = do
   state <- P.get
   case view loadedFile state of
     Nothing -> trace ("please load a pcap first" :: String) >> return CMD.Continue
-    Just frame -> case buildTcpConnectionFromStreamId frame streamId of
+    Just frame -> case buildMptcpConnectionFromStreamId frame streamId of
       Left msg -> return $ CMD.Error msg
       Right aframe -> do
         -- let _tcpstreams = getTcpStreams frame
+        let mptcpStats = getMptcpStats aframe RoleClient
+
         P.trace $ showConnection (ffCon aframe)
         log $ "Number of rows " ++ show (frameLength frame)
         if detailed
         then
-          trace $ showStats RoleServer
+          -- RoleServer
+          trace $ showMptcpStats mptcpStats
+          -- return CMD.Continue
           -- P.trace $ showStats RoleClient
-          -- P.trace ""
         else
           pure ()
+        return CMD.Continue
 
   where
     -- dadsa
-    subflowStats = map ()
-
-  -- for destination in args.dest:
-  --   stats = mptcp_compute_throughput(
-  --       self.data, args.mptcpstream,
-  --       destination,
-  --       False
-  --   )
-
-
--- cmdTcpSummary :: Members '[Log String, P.State MyState, Cache, Embed IO] r => ParserSummary -> Sem r RetCode
--- cmdTcpSummary args = do
---     state <- P.get
---     let loadedPcap = view loadedFile state
---     case loadedPcap of
---       Nothing -> log ("please load a pcap first" :: String) >> return CMD.Continue
---       Just frame -> do
---         let _tcpstreams = getTcpStreams frame
---         log $ "Number of rows " ++ show (frameLength frame)
---         case fmap showTcpConnection tcpCon of
---           Left err -> log $ "error happened:" ++ err
---           Right desc -> log desc
---         -- log $ "Number of SYN packets " ++ (fmap  )
---         >> return CMD.Continue
---         where
---             tcpCon = buildTcpConnectionFromStreamId frame (summaryTcpStreamId args)
-
+    -- subflowStats = map ()

@@ -2,12 +2,11 @@ module Net.Tcp.Stats
 where
 
 import MptcpAnalyzer.ArtificialFields
-import MptcpAnalyzer.Types
-import MptcpAnalyzer.Pcap
-import MptcpAnalyzer.Frame
-import MptcpAnalyzer.Stream
-import Net.Tcp
-import Net.Mptcp
+-- import MptcpAnalyzer.Types
+-- import MptcpAnalyzer.Pcap
+-- import MptcpAnalyzer.Frame
+-- import MptcpAnalyzer.Stream
+import Net.Tcp.Connection
 import qualified Data.Map as Map
 
 
@@ -60,10 +59,6 @@ data TcpUnidirectionalStats = TcpUnidirectionalStats {
     -- , tusGoodput :: Byte
     }
 
-data MptcpUnidirectionalStats = MptcpUnidirectionalStats {
-    musThroughputContribution :: Double
-    , musGoodputContribution :: Double
-}
 
 
 -- | Computes throughput
@@ -76,36 +71,6 @@ getGoodput :: TcpUnidirectionalStats -> Double
 getGoodput s =
   fromIntegral (tusSndUna s - tusMinSeq s + 1 - tusReinjectedBytes s) / (tusEndTime s - tusStartTime s)
 
--- TODO should be able to update an initial one
---
-getTcpStats :: FrameFiltered TcpConnection Packet -> ConnectionRole -> TcpUnidirectionalStats
-getTcpStats aframe dest =
-  TcpUnidirectionalStats {
-    tusThroughput = 0
-    , tusStartPacketId = 0
-    , tusEndPacketId = 0
-    , tusStartTime = minTime
-    , tusEndTime = maxTime
-    -- TODO fill it
-    , tusMinSeq = minSeq
-    , tusSndUna = maxSeq -- TODO should be max of seen acks
-    , tusSndNext = maxSeq
-    , tusReinjectedBytes = 0
-    -- , tusSnd = 0
-    -- , tusCumulativeBytes = mempty
-    -- , tusMinSeq = minSeq
-    -- , tusMaxSeq = maxSeq
-    -- , tusGoodput = 0
-    -- , tusGoodput = (fromIntegral $ maxSeq-minSeq)/(tusEnd - tusStart)
-  }
-  where
-    frame = ffFrame aframe
-    -- these return Maybes
-    minSeq = minimum (F.toList $ view tcpSeq <$> frame)
-    maxSeq = maximum $ F.toList $ view tcpSeq <$> frame
-
-    maxTime = maximum $ F.toList $ view relTime <$> frame
-    minTime = minimum $ F.toList $ view relTime <$> frame
 
     -- duration = maxTime - minTime
 

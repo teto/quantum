@@ -45,6 +45,8 @@ import Net.Mptcp
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Stream
 import MptcpAnalyzer.ArtificialFields
+import "mptcp-pm" Net.Tcp ( TcpFlag(..))
+
 import Data.Monoid (First(..))
 import qualified Data.Vector as V
 import qualified Data.Text as T
@@ -88,7 +90,6 @@ import GHC.List (foldl')
 import qualified Frames.InCore as I
 import Debug.Trace
 import qualified Data.Map as Map
-import "mptcp-pm" Net.Tcp ( TcpFlag(..))
 
 
 -- tableTypes is a Template Haskell function, which means that it is executed at compile time. It generates a data type for our CSV, so we have everything under control with our types.
@@ -114,11 +115,8 @@ import "mptcp-pm" Net.Tcp ( TcpFlag(..))
 
 
 
-
-
 -- shadow type to know if it was filtered or not
 -- Make it a record ?
-
 
 data TsharkParams = TsharkParams {
       tsharkBinary :: String,
@@ -133,11 +131,11 @@ defaultParserOptions = ParserOptions Nothing (T.pack [csvDelimiter defaultTshark
 
 -- nub => remove duplicates
 -- or just get the column
-getTcpStreams :: SomeFrame -> [StreamIdTcp]
+getTcpStreams :: FrameRec HostCols -> [StreamIdTcp]
 getTcpStreams ps = L.fold L.nub (view tcpStream <$> ps)
 
 -- | to list
-getMptcpStreams :: SomeFrame -> [StreamId Mptcp]
+getMptcpStreams :: FrameRec HostCols -> [StreamId Mptcp]
 getMptcpStreams ps = L.fold L.nub $ catMaybes $ F.toList (view mptcpStream <$> ps)
 -- filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
 
@@ -154,9 +152,9 @@ generateCsvCommand fieldNames pcapFilename tsharkParams =
     -- single-quotes, n no quotes (the default).
     -- the -2 is important, else some mptcp parameters are not exported
         start = [
-              "-r", pcapFilename,
-              "-E", "separator=" ++ [csvDelimiter tsharkParams]
-            ]
+            "-r", pcapFilename,
+            "-E", "separator=" ++ [csvDelimiter tsharkParams]
+          ]
 
         args :: [String]
         args = (start ++ opts ++ readFilter ) ++ map T.unpack  fields
@@ -292,11 +290,16 @@ defaultTsharkPrefs = TsharkParams {
 
 {- 
 -}
-getTcpFrame :: SomeFrame -> StreamId Tcp -> Either String (FrameFiltered TcpConnection Packet)
+getTcpFrame :: FrameRec HostCols -> StreamId Tcp -> Either String (FrameFiltered TcpConnection Packet)
 getTcpFrame = buildTcpConnectionFromStreamId
 
 -- | For now assume the packet is the first syn from client to server
-buildTcpConnectionFromRecord :: Packet -> TcpConnection
+buildTcpConnectionFromRecord :: (
+  IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs, TcpStream ∈ rs
+    -- rs ⊆ HostCols
+
+  )
+  => Record rs -> TcpConnection
 buildTcpConnectionFromRecord r = 
   TcpConnection {
     conTcpClientIp = r ^. ipSource
@@ -308,7 +311,9 @@ buildTcpConnectionFromRecord r =
 
 {- Builds a Tcp connection from a non filtered frame
 -}
-buildTcpConnectionFromStreamId :: SomeFrame -> StreamId Tcp -> Either String (FrameFiltered TcpConnection Packet)
+buildTcpConnectionFromStreamId ::
+  FrameRec HostCols
+  -> StreamId Tcp -> Either String (FrameFiltered TcpConnection Packet)
 buildTcpConnectionFromStreamId frame streamId =
     if frameLength synPackets < 1 then
       Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
@@ -321,16 +326,28 @@ buildTcpConnectionFromStreamId frame streamId =
 
 -- | Builds
 -- should expect a filteredFrame with MPTCP
-buildSubflowFromTcpStreamId :: FrameFiltered TcpConnection Packet -> StreamId Tcp -> Either String (FrameFiltered TcpConnection Packet)
-buildSubflowFromTcpStreamId aframe streamId =
+-- buildSubflowFromTcpStreamId :: FrameFiltered TcpConnection Packet -> StreamId Tcp -> Either String (FrameFiltered MptcpSubflow Packet)
+buildSubflowFromTcpStreamId ::
+  (
+  -- ∈
+  rs ⊆ HostCols
+  , I.RecVec rs
+  , TcpFlags ∈ rs
+  , TcpStream ∈ rs
+  , IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs, TcpStream ∈ rs
+  )
+  => FrameRec rs
+  -> StreamId Tcp
+  -> Either String (FrameFiltered MptcpSubflow (Record rs))
+buildSubflowFromTcpStreamId frame streamId =
     if frameLength synPackets < 1 then
       Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
     else
       -- TODO check who is client
-      Right $ FrameTcp sfCon streamPackets
+      Right $ FrameTcp sf streamPackets
     where
       syn0 = frameRow synPackets 0
-      streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) (ffFrame aframe)
+      streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) (frame)
       synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
       sfCon = buildTcpConnectionFromRecord syn0
       sf = MptcpSubflow {
@@ -382,22 +399,20 @@ addMptcpDest frame con =
 -- | Sets TCP role column
 -- append a column with a value role
 -- Todo accept a 'FrameFiltered'
--- (Frames.InCore.)
 -- I want to check it is included
 addTcpDestToFrame ::
-  -- (Frames.InCore.RecVec rs, TcpStream ∈ rs, IpSource ∈ rs,
-  -- TcpSrcPort ∈ rs, TcpDestPort ∈ rs)
   (
-  -- Frames.InCore.RecVec rs
-  -- , HostCols ⊆ rs
+  HostCols ⊆ rs,
+  I.RecVec rs
   -- , HostCols <: rs
   -- , HostCols ∈ rs
-  -- ,IpSource ∈ rs, IpDest ∈ rs
-  -- ,  IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs
+  ,IpSource ∈ rs, IpDest ∈ rs
+  , IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs
+  , TcpStream ∈ rs
   )
-    => Frame (Record HostCols)
+    => Frame (Record rs)
     -> TcpConnection
-    -> Frame (Record  ( TcpDest ': HostCols ))
+    -> Frame (Record  ( TcpDest ': rs ))
 addTcpDestToFrame frame con = fmap (\x -> addTcpDestToRec x (computeTcpDest x con)) streamFrame
     where
       streamFrame = filterFrame  (\x -> rgetField @TcpStream x == conTcpStreamId con) frame
@@ -425,12 +440,13 @@ addTcpDestinationsToFrame aframe =
     -- addDestinationsToFrame' _ = undefined
 
 -- append a field with a value role
-addTcpDestToRec :: (TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) => Record rs -> ConnectionRole ->  Record  ( TcpDest ': rs )
+addTcpDestToRec :: (TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs)
+  => Record rs -> ConnectionRole ->  Record  ( TcpDest ': rs )
 addTcpDestToRec x role = (Col $ role) :& x
 
 
--- | should expect a 
-buildSubflow :: SomeFrame -> StreamId Tcp -> MptcpSubflow
+-- | should expect a
+buildSubflow :: FrameRec HostCols -> StreamId Tcp -> MptcpSubflow
 buildSubflow frame (StreamId sfId) = case buildTcpConnectionFromStreamId frame (StreamId sfId) of
   Right con -> MptcpSubflow {
         sfConn = ffCon con
@@ -444,7 +460,7 @@ buildSubflow frame (StreamId sfId) = case buildTcpConnectionFromStreamId frame (
   _ -> error "should not happen"
 
 buildMptcpConnectionFromStreamId ::
-    SomeFrame
+    FrameRec HostCols
     -> StreamId Mptcp -> Either String (FrameFiltered MptcpConnection Packet)
 buildMptcpConnectionFromStreamId frame streamId = do
     -- Right $ frameLength synPackets
@@ -463,7 +479,7 @@ buildMptcpConnectionFromStreamId frame streamId = do
       }
       --  $ frameRow synPackets 0
     where
-      streamPackets :: SomeFrame
+      streamPackets :: FrameRec HostCols
       streamPackets = filterFrame  (\x -> x ^. mptcpStream == Just streamId) frame
       --
       tempFframe = FrameTcp {
@@ -498,6 +514,7 @@ buildMptcpConnectionFromStreamId frame streamId = do
 
 
 -- TODO rename to connection later
+-- filterFrame / buildFrameFromStreamId
 {- Common interface to work with TCP and MPTCP connections
 -}
 class StreamConnection a b | a -> b where

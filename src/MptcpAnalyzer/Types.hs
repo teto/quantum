@@ -144,7 +144,7 @@ deriving instance Hashable IPv6
 -- @a@ be Tcp / Mptcp
 -- @b@ could be the direction
 type PcapFrame a = Frame Packet
-type SomeFrame = PcapFrame ()
+-- type SomeFrame = PcapFrame ()
 
 
 -- TODO PcapFrame should be a monoid and a semigroup with a list of Connection []
@@ -205,7 +205,7 @@ data FrameFiltered a rs = FrameTcp {
 -- Helper to pass information across functions
 data MyState = MyState {
   _stateCacheFolder :: FilePath
-  , _loadedFile   :: Maybe SomeFrame  -- ^ cached loaded pcap
+  , _loadedFile   :: Maybe (FrameRec HostCols)  -- ^ cached loaded pcap
   , _prompt   :: String  -- ^ cached loaded pcap
 }
 

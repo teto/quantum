@@ -2,9 +2,8 @@ module Net.Mptcp.Stats
 where
 
 import MptcpAnalyzer.ArtificialFields
-import MptcpAnalyzer.Types
-import MptcpAnalyzer.Pcap
-import MptcpAnalyzer.Frame
+-- import MptcpAnalyzer.Types
+-- import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Stream
 import Net.Tcp
 import Net.Mptcp.Connection
@@ -17,24 +16,27 @@ import Data.Word (Word32, Word64)
 import Data.Maybe (fromJust)
 import qualified Frames as F
 import qualified Data.Foldable as F
-import Data.List (sortBy, sortOn)
+import Data.List (sort, sortBy, sortOn)
 
 -- | Useful to show DSN
 data TcpSubflowUnidirectionalStats = TcpSubflowUnidirectionalStats {
+  tssStats :: TcpUnidirectionalStats
+  -- tss
+  -- add DSN stats
 
   }
+-- newtype TcpSubflowUnidirectionalStats = TcpSubflowUnidirectionalStats
+
 
 -- | Holds MPTCP statistics for one direction
 data MptcpUnidirectionalStats = MptcpUnidirectionalStats {
-  musApplicativeBytes :: Word64
-  musSubflowStats :: [ TcpSubflowUnidirectionalStats ]
+  musDirection :: ConnectionRole
+  , musApplicativeBytes :: Word64
+  , musMaxDsn :: Word64
+  , musMinDsn :: Word64
+  , musSubflowStats :: [ TcpSubflowUnidirectionalStats ]
   }
 
-
-data MptcpUnidirectionalStats = MptcpUnidirectionalStats {
-  musApplicativeBytes :: Word64
-  musSubflowStats :: [ TcpUnidirectionalStats ]
-  }
 
     -- ''' application data = goodput = useful bytes '''
     -- ''' max(dsn)- min(dsn) - 1'''
@@ -50,48 +52,20 @@ data MptcpUnidirectionalStats = MptcpUnidirectionalStats {
     --     return Byte(sum(map(lambda x: x.throughput_bytes, self.subflow_stats)))
 
 
--- mptcp_compute_throughput est bourrin il calcule tout d'un coup, je veux avoir une version qui marche iterativement
-getMptcpStats :: FrameFiltered MptcpConnection Packet
-  -> ConnectionRole
-  -> TcpUnidirectionalStats
-getMptcpStats aframe dest =
-  MptcpUnidirectionalStats {
-    -- tusThroughput = 0
-    -- , tusStartPacketId = 0
-    -- , tusEndPacketId = 0
-    -- , tusStartTime = minTime
-    -- , tusEndTime = maxTime
-    -- -- TODO fill it
-    -- , tusMinSeq = minSeq
-    -- , tusSndUna = maxSeq -- TODO should be max of seen acks
-    -- , tusSndNext = maxSeq
-    -- , tusReinjectedBytes = 0
-    -- , tusSnd = 0
-    -- , tusCumulativeBytes = mempty
-    -- , tusMinSeq = minSeq
-    -- , tusMaxSeq = maxSeq
-    -- , tusGoodput = 0
-    -- , tusGoodput = (fromIntegral $ maxSeq-minSeq)/(tusEnd - tusStart)
-  }
-  where
-    frame = ffFrame aframe
-    -- these return Maybes
-    minSeq = minimum (F.toList $ view tcpSeq <$> frame)
-    maxSeq = maximum $ F.toList $ view tcpSeq <$> frame
 
-    maxTime = maximum $ F.toList $ view relTime <$> frame
-    minTime = minimum $ F.toList $ view relTime <$> frame
-
--- 
+-- undefined
 getMptcpGoodput :: MptcpUnidirectionalStats -> Double
-getMptcpGoodput s = undefined
+getMptcpGoodput s = fromIntegral (musApplicativeBytes s) / (getMptcpStatsDuration s)
 
 
 -- | return max - min across subflows
 getMptcpStatsDuration :: MptcpUnidirectionalStats -> Double
 getMptcpStatsDuration s = end - start
   where
+    start = head $ sort starts
+    end = head $ sort ends
     -- min of
-    start = sortOn tusStartTime (musSubflowStats s)
+    -- TODO get min
+    starts = map (tusStartTime . tssStats) (musSubflowStats s)
     -- take the maximum
-    end = sortOn tusStartTime (musSubflowStats s)
+    ends = map (tusEndTime . tssStats) (musSubflowStats s)

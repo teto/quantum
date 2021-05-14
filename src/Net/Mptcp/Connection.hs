@@ -25,9 +25,11 @@ data MptcpConnection = MptcpConnection {
 -- Ord to be able to use fromList
 } deriving (Show, Eq, Ord)
 
+-- | 
 data MptcpSubflow = MptcpSubflow {
       sfConn :: TcpConnection
       -- shall keep token instead ? or as a boolean ?
+      -- Todo token
       , sfMptcpDest :: ConnectionRole -- ^ Destination
       , sfPriority :: Maybe Word8 -- ^subflow priority
       , sfLocalId :: Word8  -- ^ Convert to AddressFamily

@@ -126,7 +126,6 @@ addHash aframe =
     addHash' row = Col (hash row) :& RNil
 
 
--- type MergedHostCols = PacketHash ': TcpDest ': HostCols ++ HostColsPrefixed
 type MergedHostCols = PacketHash ': '[TcpDest] V.++ HostCols V.++ HostColsPrefixed
 
 -- not a frame but hope it should be

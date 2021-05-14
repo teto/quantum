@@ -85,6 +85,9 @@ Similar software:
 | [mptcpplot]       | C based developed at NASA: [generated output example](https://roland.grc.nasa.gov/~jishac/mptcpplot/)                                                 |
 
 
+# Acknowledgements
+
+This project is founded by ![NGI pointer](img/ngi_logo.png).
 
 [mptcptrace]: https://bitbucket.org/bhesmans/mptcptrace
 [mptcpplot]: https://github.com/nasa/multipath-tcp-tools/

@@ -23,7 +23,6 @@ import Data.Map (Map, fromList, mapKeys)
 -- data Mptcp
 -- data Tcp
 -- -- data Protocol = Tcp | Mptcp
--- -- type TcpFlagList = [TcpFlag]
 
 -- -- TODO use Word instead
 -- newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord )
@@ -84,8 +83,6 @@ baseFields = fromList [
     , ("tcpSrcPort", TsharkFieldDesc "tcp.srcport" ''Word16 Nothing True)
     , ("tcpDestPort", TsharkFieldDesc "tcp.dstport" ''Word16 Nothing True)
     , ("rwnd", TsharkFieldDesc "tcp.window_size" ''Word32 Nothing True)
-    -- -- TODO use Word32 instead
-    -- -- TODO read as a list TcpFlagList
     , ("tcpFlags", TsharkFieldDesc "tcp.flags" ''TcpFlagList Nothing True)
     , ("tcpOptionKinds", TsharkFieldDesc "tcp.option_kind" ''Text Nothing True)
     , ("tcpSeq", TsharkFieldDesc "tcp.seq" ''Word32 (Just "Sequence number") True)

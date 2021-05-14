@@ -149,6 +149,7 @@ library libmptcpanalyzer
         , MptcpAnalyzer
         , MptcpAnalyzer.ArtificialFields
         , MptcpAnalyzer.Stream
+        , MptcpAnalyzer.Stats
         , MptcpAnalyzer.Loader
         , MptcpAnalyzer.Frame
         , MptcpAnalyzer.Types

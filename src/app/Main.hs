@@ -310,6 +310,7 @@ mainParser = subparser (
     <> command "load-pcap" CL.loadPcapOpts
     <> commandGroup "TCP commands"
     <> command "tcp-summary" CLI.piTcpSummaryOpts
+    <> command "mptcp-summary" CLI.piMptcpSummaryOpts
     <> command "list-tcp" CLI.piListTcpOpts
     <> command "map-tcp" CLI.mapTcpOpts
     <> command "map-mptcp" CLI.mapMptcpOpts
@@ -327,8 +328,8 @@ mainParser = subparser (
     -- <> command "help" CLI.cmdListMptcpConnections
     )
     where
-      helpParser = info (pure ArgsHelp) ( progDesc "Display help")
-      quit = info (pure ArgsQuit) ( progDesc "Quit mptcpanalyzer")
+      helpParser = info (pure ArgsHelp) (progDesc "Display help")
+      quit = info (pure ArgsQuit) (progDesc "Quit mptcpanalyzer")
 
 
 -- |Main parser
