@@ -187,7 +187,7 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
 
     hframe1 = zipFrames (addHash aframe1) frame1withDest
     hframe1dest = hframe1
-    -- hframe1dest = addTcpDestinationsToFrame hframe1
+    -- hframe1dest = addTcpDestinationsToAFrame hframe1
     hframe2 :: Frame (Record ('[PacketHash] ++ HostColsPrefixed))
     hframe2 = zipFrames (addHash aframe2) host2_frame
 

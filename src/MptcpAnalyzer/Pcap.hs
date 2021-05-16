@@ -90,6 +90,7 @@ import GHC.List (foldl')
 import qualified Frames.InCore as I
 import Debug.Trace
 import qualified Data.Map as Map
+import Data.Either (lefts, rights)
 
 
 -- tableTypes is a Template Haskell function, which means that it is executed at compile time. It generates a data type for our CSV, so we have everything under control with our types.
@@ -329,11 +330,9 @@ buildTcpConnectionFromStreamId frame streamId =
 -- buildSubflowFromTcpStreamId :: FrameFiltered TcpConnection Packet -> StreamId Tcp -> Either String (FrameFiltered MptcpSubflow Packet)
 buildSubflowFromTcpStreamId ::
   (
-  -- ∈
   rs ⊆ HostCols
   , I.RecVec rs
-  , TcpFlags ∈ rs
-  , TcpStream ∈ rs
+  , TcpFlags ∈ rs , TcpStream ∈ rs, MptcpRecvToken ∈ rs
   , IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs, TcpStream ∈ rs
   )
   => FrameRec rs
@@ -353,7 +352,8 @@ buildSubflowFromTcpStreamId frame streamId =
       sf = MptcpSubflow {
         sfConn = sfCon
         -- TODO fix
-        , sfMptcpDest = RoleServer
+        -- , sfMptcpDest = RoleServer
+        , sfRecvToken = fromJust $ syn0 ^. mptcpRecvToken
         , sfPriority = Nothing
         , sfLocalId = 0
         , sfRemoteId = 0
@@ -385,7 +385,7 @@ addMptcpDest frame con =
 
       addMptcpDest' role x = (Col role) :& x
 
-      addMptcpDestToFrame frame' sf = fmap (addMptcpDest' (sfMptcpDest sf)) frame'
+      addMptcpDestToFrame frame' sf = fmap (addMptcpDest' (getMptcpDest con sf)) frame'
 
       startingFrame = fmap setTempDests frame
       setTempDests :: Record rs -> Record ( MptcpDest ': TcpDest ': rs)
@@ -394,6 +394,11 @@ addMptcpDest frame con =
       subflows = Set.toList $ mpconSubflows con
 
 -- addMptcpDest frame _ = error "should not happen"
+getMptcpDest :: MptcpConnection -> MptcpSubflow -> ConnectionRole
+getMptcpDest mptcpCon sf = if sfRecvToken sf == mptcpServerToken mptcpCon then
+    RoleServer
+  else
+    RoleClient
 
 
 -- | Sets TCP role column
@@ -402,7 +407,7 @@ addMptcpDest frame con =
 -- I want to check it is included
 addTcpDestToFrame ::
   (
-  HostCols ⊆ rs,
+  -- HostCols ⊆ rs,
   I.RecVec rs
   -- , HostCols <: rs
   -- , HostCols ∈ rs
@@ -429,15 +434,24 @@ computeTcpDest x con  = if (rgetField @IpSource x) == (conTcpClientIp con)
 
 
 -- | TODO
-addTcpDestinationsToFrame :: FrameFiltered TcpConnection Packet -> FrameFiltered TcpConnection PacketWithTcpDest
-addTcpDestinationsToFrame aframe =
+-- See @addTcpDestToFrame@
+addTcpDestinationsToAFrame :: (
+  -- HostCols ⊆ rs,
+  I.RecVec rs
+  -- , HostCols <: rs
+  -- , HostCols ∈ rs
+  , IpSource ∈ rs, IpDest ∈ rs
+  , TcpSrcPort ∈ rs, TcpDestPort ∈ rs
+  , TcpStream ∈ rs
+
+  )
+  => FrameFiltered TcpConnection (Record rs)
+  -> FrameFiltered TcpConnection (Record (TcpDest ': rs))
+addTcpDestinationsToAFrame aframe =
   aframe { ffFrame = addDestinationsToFrame' (ffCon aframe)}
   where
     frame = ffFrame aframe
     addDestinationsToFrame' con = addTcpDestToFrame frame con
-    -- addDestinationsToFrame' con@MptcpConnection{} = addMptcpDest frame con
-    -- addDestinationsToFrame' con@MptcpConnection{} = addMptcpDest frame con
-    -- addDestinationsToFrame' _ = undefined
 
 -- append a field with a value role
 addTcpDestToRec :: (TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs)
@@ -445,19 +459,6 @@ addTcpDestToRec :: (TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort
 addTcpDestToRec x role = (Col $ role) :& x
 
 
--- | should expect a
-buildSubflow :: FrameRec HostCols -> StreamId Tcp -> MptcpSubflow
-buildSubflow frame (StreamId sfId) = case buildTcpConnectionFromStreamId frame (StreamId sfId) of
-  Right con -> MptcpSubflow {
-        sfConn = ffCon con
-        -- TODO fix
-        , sfMptcpDest = RoleServer 
-        , sfPriority = Nothing
-        , sfLocalId = 0
-        , sfRemoteId = 0
-        , sfInterface = "unknown"
-      }
-  _ -> error "should not happen"
 
 buildMptcpConnectionFromStreamId ::
     FrameRec HostCols
@@ -469,13 +470,17 @@ buildMptcpConnectionFromStreamId frame streamId = do
     else if frameLength synAckPackets < 1 then
       Left $ "No syn/ack packet found for stream" ++ show streamId ++ " First packet: "
       -- ++ show streamPackets
+    else if lefts subflows /= [] then
+      Left $ concat (lefts subflows)
     else
       -- TODO now add a check on abstime
       -- if ds.loc[server_id, "abstime"] < ds.loc[client_id, "abstime"]:
       --     log.error("Clocks are not synchronized correctly")
       -- update temporary fframe with the computed subflows
       Right tempFframe  {
-          ffCon = (ffCon tempFframe) { mpconSubflows = Set.fromList subflows }
+          ffCon = (ffCon tempFframe) {
+              mpconSubflows = Set.fromList $ map ffCon (rights subflows)
+          }
       }
       --  $ frameRow synPackets 0
     where
@@ -510,7 +515,8 @@ buildMptcpConnectionFromStreamId frame streamId = do
 
       clientMptcpVersion = synPacket ^. mptcpVersion
 
-      subflows = map (buildSubflow frame) (getTcpStreams streamPackets)
+      -- 
+      subflows = map (buildSubflowFromTcpStreamId frame) (getTcpStreams streamPackets)
 
 
 -- TODO rename to connection later
@@ -531,16 +537,8 @@ class StreamConnection a b | a -> b where
 
 scoreTcpCon :: TcpConnection -> TcpConnection -> Int
 scoreTcpCon con1 con2 =
-  -- """
   -- If every parameter is equal, returns +oo else 0
   -- TODO also match on isn in case ports got reused
-  -- """
-  -- score = 0
-  -- if (self.tcpserver_ip == other.tcpserver_ip
-  --     and self.tcpclient_ip == other.tcpclient_ip
-  --     and self.client_port == other.client_port
-  --     and self.server_port == other.server_port):
-  --     return float('inf')
 
   foldl (\acc toAdd -> acc + 10 * fromEnum toAdd) (0 :: Int) [
     conTcpClientIp con1 == conTcpClientIp con2
@@ -555,7 +553,6 @@ instance StreamConnection TcpConnection Tcp where
   buildFrameFromStreamId = buildTcpConnectionFromStreamId
   similarityScore = scoreTcpCon
   -- listConnections
-
 
 
 -- | Computes a score

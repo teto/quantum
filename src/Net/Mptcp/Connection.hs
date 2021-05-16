@@ -16,7 +16,7 @@ data MptcpConnection = MptcpConnection {
       mptcpStreamId :: StreamIdMptcp
       , mptcpServerKey :: Word64
       , mptcpClientKey :: Word64
-      , mptcpServerToken :: Word32
+      , mptcpServerToken :: Word32  -- ^ Hash of the server key
       , mptcpClientToken :: Word32
       , mptcpNegotiatedVersion :: Word8
       -- should be a subflow
@@ -25,12 +25,14 @@ data MptcpConnection = MptcpConnection {
 -- Ord to be able to use fromList
 } deriving (Show, Eq, Ord)
 
--- | 
+-- |
+-- master subflow has implicit addrid 0
 data MptcpSubflow = MptcpSubflow {
       sfConn :: TcpConnection
       -- shall keep token instead ? or as a boolean ?
       -- Todo token
-      , sfMptcpDest :: ConnectionRole -- ^ Destination
+      -- , sfMptcpDest :: ConnectionRole -- ^ Destination
+      , sfRecvToken :: Word32 -- ^ token of sendkey to authentify itself
       , sfPriority :: Maybe Word8 -- ^subflow priority
       , sfLocalId :: Word8  -- ^ Convert to AddressFamily
       , sfRemoteId :: Word8

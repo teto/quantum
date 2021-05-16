@@ -55,6 +55,7 @@ listMptcpReinjectionsOpts = info (
   where
     parserList = ArgsListSubflows <$> switch ( long "detailed" <> help "detail connections")
 
+type SomeFrame = Frame Packet
 
 -- TODO return MptcpStreamId instead
 getMpTcpStreams :: SomeFrame -> [StreamIdMptcp]

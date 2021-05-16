@@ -211,7 +211,7 @@ cmdPlotTcpAttribute field tempPath _ destinations aFrame = do
   return Continue
   where
     -- filter by dest
-    frame2 = addTcpDestinationsToFrame aFrame
+    frame2 = addTcpDestinationsToAFrame aFrame
     plotAttr dest =
         plot (line ("TCP " ++ field ++ " (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
         where

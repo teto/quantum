@@ -92,6 +92,7 @@ baseFields = fromList [
     , ("tsval", TsharkFieldDesc "tcp.options.timestamp.tsval" ''MbWord32 (Just "Timestamp val") True)
     , ("tsecr", TsharkFieldDesc "tcp.options.timestamp.tsecr" ''MbWord32 (Just "Timestamp echo-reply") True)
 
+    -- could be computed from the sendKey
     , ("mptcpExpectedToken", TsharkFieldDesc "mptcp.expected_token" ''MbMptcpExpectedToken (Just "Expected token") True)
 
     , ("mptcpStream", TsharkFieldDesc "mptcp.stream" ''MbMptcpStream Nothing False)

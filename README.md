@@ -29,6 +29,9 @@ cabal run mptcpanalyzer "load-pcap examples/client_2_filtered.pcapng"  -- +RTS
 -xc
 ```
 
+# Installation
+
+You will need a wireshark version __>= 3.0.0__ .
 Install zsh
 --zsh-completion-script
 

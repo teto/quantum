@@ -143,7 +143,7 @@ cmdTcpSummary streamId detailed = do
         Right aframe -> do
           -- let _tcpstreams = getTcpStreams frame
           P.trace $ showConnection (ffCon aframe)
-          log $ "Number of rows " ++ show (frameLength frame)
+          log $ "Number of rows " ++ show (frameLength $ ffFrame aframe)
           if detailed
           then
             trace $ showStats RoleServer
@@ -154,10 +154,11 @@ cmdTcpSummary streamId detailed = do
           -- log $ "Number of SYN packets " ++ (fmap  )
           return CMD.Continue
           where
-              filteredFrame = buildTcpConnectionFromStreamId frame streamId
+              -- aframe = buildTcpConnectionFromStreamId frame streamId
               -- forwardStats = showStats RoleServer
               showStats direction = let
-                  tcpStats = getTcpStats aframe direction
+                  aframeWithDest = addTcpDestinationsToAFrame aframe
+                  tcpStats = getTcpStats aframeWithDest direction
                 in
                   showTcpStats tcpStats
 
@@ -203,7 +204,12 @@ cmdMptcpSummary streamId detailed = do
     Just frame -> case buildMptcpConnectionFromStreamId frame streamId of
       Left msg -> return $ CMD.Error msg
       Right aframe -> do
+        let
+          -- addTcpDestinationsToAFrame
+          -- aframeWithDest = addTcpDestinationsToAFrame aframe
+
         -- let _tcpstreams = getTcpStreams frame
+        -- TODO we need to add MptcpDest
         let mptcpStats = getMptcpStats aframe RoleClient
 
         P.trace $ showConnection (ffCon aframe)

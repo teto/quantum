@@ -161,7 +161,7 @@ plotParserOwd mptcpPlot = ArgsPlotOwd <$>
 --   return Continue
 --   where
 --     -- filter by dest
---     frame2 = addTcpDestinationsToFrame aFrame
+--     frame2 = addTcpDestinationsToAFrame aFrame
 --     plotAttr dest =
 --         plot (line ("TCP seq (" ++ show dest ++ ")") [ [ (d,v) | (d,v) <- zip timeData seqData ] ])
 --         where
