@@ -75,8 +75,18 @@ Tests are run via [shelltestrunner].
 
 ##  Run the tests
 
+```
 make test-integration
+```
 
+
+# Roadmap
+
+- improve caching
+- improve autocompletion
+- live statistics/plotting
+- plugins ?
+- ability to leverage the API in ihaskell ?
 
 # Related tools
 

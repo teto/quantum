@@ -9,21 +9,24 @@
     # poetry.url = "github:teto/poetry2nix/fix_tag";
 
     flake-utils.url = "github:numtide/flake-utils";
+
+    hls.url = "github:haskell/haskell-language-server/nix-flakes";
   };
 
-  outputs = { self, nixpkgs, flake-utils, poetry, replica }@inputs:
-    flake-utils.lib.eachDefaultSystem (system: let
+  outputs = { self, nixpkgs, flake-utils, poetry, replica, ... }@inputs:
+    flake-utils.lib.eachSystem ["x86_64-linux"] (system: let
 
-      compilerName = "ghc8104";
+      compilerVersion = "8104";
       pkgs = nixpkgs.legacyPackages."${system}";
 
-      myHaskellPackages = pkgs.haskell.packages."${compilerName}";
+      myHaskellPackages = pkgs.haskell.packages."ghc${compilerVersion}";
 
       hsEnv = myHaskellPackages.ghcWithPackages(hs: [
         # hs.cairo
         # hs.diagrams
-        hs.haskell-language-server
-        myHaskellPackages.cabal-install
+        # haskell-language-server-884
+        inputs.hls.packages."${system}"."haskell-language-server-${compilerVersion}"
+        hs.cabal-install
         # myHaskellPackages.stylish-haskell
         hs.hasktags
         # myHaskellPackages.hlint
@@ -42,15 +45,12 @@
 
       buildInputs = with pkgs; [
         cairo # for chart-cairo
-        dhall-json
+        dhall-json  # for dhall-to-json
         glib
         hsEnv
         pkg-config
         zlib
         replica.packages."${system}".build
-        # inputs.replica
-        # replica
-
       ];
 
       # see https://discourse.nixos.org/t/shared-libraries-error-with-cabal-repl-in-nix-shell/8921/9

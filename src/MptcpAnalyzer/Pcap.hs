@@ -351,7 +351,7 @@ buildSubflowFromTcpStreamId frame streamId =
       sf = MptcpSubflow {
         sfConn = sfCon
         -- TODO ignore if it's master token
-        , sfRecvToken = fromJust $ syn0 ^. mptcpRecvToken
+        , sfJoinToken = syn0 ^. mptcpRecvToken
         , sfPriority = Nothing
         , sfLocalId = 0
         , sfRemoteId = 0
@@ -392,7 +392,10 @@ addMptcpDest frame con =
       subflows = Set.toList $ mpconSubflows con
 
 getMptcpDest :: MptcpConnection -> MptcpSubflow -> ConnectionRole
-getMptcpDest mptcpCon sf = if sfRecvToken sf == mptcpServerToken mptcpCon then
+getMptcpDest mptcpCon sf = case sfJoinToken sf of
+  -- master subflow, dest is by definition the server
+  Nothing -> RoleServer
+  Just token -> if token == mptcpServerToken mptcpCon then
     RoleServer
   else
     RoleClient

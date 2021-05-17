@@ -32,7 +32,7 @@ data MptcpSubflow = MptcpSubflow {
       -- shall keep token instead ? or as a boolean ?
       -- Todo token
       -- , sfMptcpDest :: ConnectionRole -- ^ Destination
-      , sfRecvToken :: Word32 -- ^ token of sendkey to authentify itself
+      , sfJoinToken :: Maybe Word32 -- ^ token of sendkey to authentify itself, Nothing -> Master subflow
       , sfPriority :: Maybe Word8 -- ^subflow priority
       , sfLocalId :: Word8  -- ^ Convert to AddressFamily
       , sfRemoteId :: Word8
