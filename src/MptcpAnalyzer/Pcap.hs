@@ -197,8 +197,6 @@ exportToCsv params pcapPath path tmpFileHandle = do
     putStrLn $ "Exporting fields " ++ show fields
     putStrLn $ "Command run: " ++ show (RawCommand bin args)
     -- TODO write header
-    -- withCreateProcess (proc cmd args) { ... }  $ \stdin stdout stderr ph -> do
-    -- runInteractiveProcess
     -- TODO redirect stdout towards the out handle
     hSetBuffering tmpFileHandle LineBuffering
     hSeek tmpFileHandle AbsoluteSeek 0 >> T.hPutStrLn tmpFileHandle fieldHeader 
@@ -349,10 +347,10 @@ buildSubflowFromTcpStreamId frame streamId =
       streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) (frame)
       synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
       sfCon = buildTcpConnectionFromRecord syn0
+      -- rcvToken
       sf = MptcpSubflow {
         sfConn = sfCon
-        -- TODO fix
-        -- , sfMptcpDest = RoleServer
+        -- TODO ignore if it's master token
         , sfRecvToken = fromJust $ syn0 ^. mptcpRecvToken
         , sfPriority = Nothing
         , sfLocalId = 0
@@ -393,7 +391,6 @@ addMptcpDest frame con =
       addMptcpDestToRec x role = (Col $ role) :& x
       subflows = Set.toList $ mpconSubflows con
 
--- addMptcpDest frame _ = error "should not happen"
 getMptcpDest :: MptcpConnection -> MptcpSubflow -> ConnectionRole
 getMptcpDest mptcpCon sf = if sfRecvToken sf == mptcpServerToken mptcpCon then
     RoleServer
@@ -440,9 +437,7 @@ addTcpDestinationsToAFrame :: (
   I.RecVec rs
   -- , HostCols <: rs
   -- , HostCols ∈ rs
-  , IpSource ∈ rs, IpDest ∈ rs
-  , TcpSrcPort ∈ rs, TcpDestPort ∈ rs
-  , TcpStream ∈ rs
+  , IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs, TcpStream ∈ rs
 
   )
   => FrameFiltered TcpConnection (Record rs)
@@ -556,7 +551,6 @@ instance StreamConnection TcpConnection Tcp where
 
 
 -- | Computes a score
--- scoreTcpCon con1@MptcpConnection{} con2@MptcpConnection{} = error "not implemented yet"
 scoreMptcpCon :: MptcpConnection -> MptcpConnection -> Int
 scoreMptcpCon con1 con2 =
   let keyScore = if (mptcpServerKey con1 == mptcpServerKey con2 && mptcpClientKey con1 == mptcpClientKey con2) then

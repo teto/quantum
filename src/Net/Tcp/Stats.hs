@@ -101,12 +101,6 @@ getGoodput s =
  
 --     return seq_range, seq_max, seq_min
 
--- TODO do a variant with an already filtered one
--- getTcpUnidirectionalStats :: SomeFrameF Tcp ConnectionRole ->  -> TcpUnidirectionalStats
--- getTcpUnidirectionalStats frame streamId = do
-
--- getTcpUnidirectionalStats :: SomeFrame -> StreamId -> ConnectionRole -> TcpUnidirectionalStats
--- getTcpUnidirectionalStats frame streamId role = TcpUnidirectionalStats 0 0 0 0 0 0 0
 
   -- where
   --   packetStreams = filterStreamPackets frame streamId (Just role)
