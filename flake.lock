@@ -261,16 +261,15 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1620589846,
-        "narHash": "sha256-YoXWECBgkM6vIyfZRrZzv9Vs7YRHZDHd15/tZ7igzCM=",
-        "owner": "teto",
+        "lastModified": 1621361081,
+        "narHash": "sha256-ZANOXqN6oRKgIBG+tGpjlZzws/7fW9JHX91k1qwNqiI=",
+        "owner": "berewt",
         "repo": "REPLica",
-        "rev": "85a580a45811a106a5135cc3065ee5c1b9c038a6",
+        "rev": "4ea91757cefb563b47bc1c61ba3e580104ce51b0",
         "type": "github"
       },
       "original": {
-        "owner": "teto",
-        "ref": "nix",
+        "owner": "berewt",
         "repo": "REPLica",
         "type": "github"
       }
