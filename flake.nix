@@ -23,6 +23,8 @@
         bytebuild = unmarkBroken (dontCheck hold.bytebuild);
         wide-word = unmarkBroken (dontCheck hold.wide-word);
 
+        co-log-polysemy = doJailbreak (hold.co-log-polysemy);
+
         netlink = (overrideSrc hold.netlink {
           # src = builtins.fetchGit {
           #   # url = https://github.com/ongy/netlink-hs;
@@ -35,10 +37,26 @@
             sha256 = "sha256-qopa1ED4Bqk185b1AXZ32BG2s80SHDSkCODyoZfnft0=";
           };
         });
+
+        mptcp-pm = overrideSrc hold.mptcp-pm {
+          src = pkgs.fetchFromGitHub {
+            owner = "teto";
+            repo = "mptcp-pm";
+            rev = "0cd4cad9bab5713ebbe529e194bddb08948825d7";
+            sha256 = "1wig8nw2rxgq86y88m1f1qf93z5yckidf1cs31ribmhqa1hs300p";
+          };
+        };
+
       };
 
       compilerVersion = "8104";
-      pkgs = nixpkgs.legacyPackages."${system}";
+
+      # pkgs = nixpkgs.legacyPackages."${system}";
+      pkgs = import nixpkgs {
+          inherit system;
+          # overlays = pkgs.lib.attrValues (self.overlays);
+          config = { allowUnfree = true; allowBroken = true; };
+        };
 
       myHaskellPackages = pkgs.haskell.packages."ghc${compilerVersion}";
 
@@ -60,7 +78,26 @@
 
       # packages.mptcpanalyzer = nixpkgs.legacyPackages.x86_64-linux.hello;
       # callCabal2nixWithOptions
-      packages.mptcpanalyzer = myHaskellPackages.callCabal2nix "mptcpanalyzer" ./. {};
+      # packages.mptcpanalyzer = myHaskellPackages.callCabal2nix "mptcpanalyzer" ./. {};
+      packages.mptcpanalyzer = pkgs.haskellPackages.developPackage {
+        root = ./.;
+        name = "mptcpanalyzer";
+        returnShellEnv = false;
+        withHoogle = true;
+        overrides = haskellOverlay;
+        # modifier = drv:
+        #   pkgs.haskell.lib.addBuildTools drv (with pkgs;
+        #   [
+        #     # ghcid
+        #     # haskellPackages.cabal-install
+        #     # haskellPackages.c2hs
+        #     haskellPackages.stylish-haskell
+        #     haskellPackages.hlint
+        #     # haskellPackages.haskell-language-server
+        #     haskellPackages.hasktags
+        #     hls.packages."${system}"."haskell-language-server-${compilerVersion}"
+          # ]);
+      };
 
       # packages.mptcpanalyzer = pkgs.stdenv.mkDerivation rec {
       #   name = "mptcpanalyzer";
@@ -90,6 +127,26 @@
       # };
 
       defaultPackage = packages.mptcpanalyzer;
+      # packages.mptcppm =
+      # devShell = pkgs.haskellPackages.developPackage {
+      #   root = ./.;
+      #   name = "mptcp-pm";
+      #   returnShellEnv = false;
+      #   withHoogle = true;
+      #   overrides = haskellOverlay;
+      #   modifier = drv:
+      #     pkgs.haskell.lib.addBuildTools drv (with pkgs;
+      #     [
+      #       # ghcid
+      #       haskellPackages.cabal-install
+      #       haskellPackages.c2hs
+      #       haskellPackages.stylish-haskell
+      #       haskellPackages.hlint
+      #       # haskellPackages.haskell-language-server
+      #       haskellPackages.hasktags
+      #       hls.packages."${system}"."haskell-language-server-${compilerVersion}"
+      #     ]);
+      # };
 
       devShell = pkgs.mkShell {
         name = "dev-shell";

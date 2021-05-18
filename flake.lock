@@ -63,11 +63,11 @@
     },
     "flake-utils_4": {
       "locked": {
-        "lastModified": 1619345332,
-        "narHash": "sha256-qHnQkEp1uklKTpx3MvKtY6xzgcqXDsz5nLilbbuL+3A=",
+        "lastModified": 1620759905,
+        "narHash": "sha256-WiyWawrgmyN0EdmiHyG2V+fqReiVi8bM9cRdMaKQOFg=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "2ebf2558e5bf978c7fb8ea927dfaed8fefab2e28",
+        "rev": "b543720b25df6ffdfcf9227afafc5b8c1fabfae8",
         "type": "github"
       },
       "original": {
@@ -101,11 +101,11 @@
         "pre-commit-hooks": "pre-commit-hooks"
       },
       "locked": {
-        "lastModified": 1621213439,
-        "narHash": "sha256-Y2mEu6pk/YpiX+zyPRiRYP5ya/6lil8023ETIPshlak=",
+        "lastModified": 1621339826,
+        "narHash": "sha256-Hl0iki/KOpOAfr02t2AqDsG8nc+FJ/fv7ZBZBDKdZBI=",
         "owner": "haskell",
         "repo": "haskell-language-server",
-        "rev": "47d5a942686f71d7233761022fcf5309c6332519",
+        "rev": "f94725a562945c27e61b176a482d7f29c2fa02fd",
         "type": "github"
       },
       "original": {
@@ -126,11 +126,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1620557364,
-        "narHash": "sha256-VYUq5lUWR4t8bmQVmnI+tVTfCL6ohGHD+m0jF5gdhcQ=",
+        "lastModified": 1621286848,
+        "narHash": "sha256-ZQaRlsVYj9JL2ZXqViQO4uU8qmOP9e28uhzq0+vwwrU=",
         "owner": "idris-lang",
         "repo": "Idris2",
-        "rev": "416cf6af3e746c65b0ac5bafcc7f739ca568d435",
+        "rev": "2f66f3e006bbbe73605db30cdb8c2464d41bb49c",
         "type": "github"
       },
       "original": {
@@ -204,9 +204,12 @@
     },
     "nixpkgs_4": {
       "locked": {
-        "narHash": "sha256-ktysr/ZX40/A1cNWc9aEZGIWtVnLS3NWU4bv/uaaqSo=",
-        "path": "/home/teto/nixpkgs",
-        "type": "path"
+        "lastModified": 1621290140,
+        "narHash": "sha256-J26tkCmjDejI3cdu1GSf3UR+uH3NGYrAzz9spyUnXNM=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "c9587434922830fa2657febf05adb91dc866713d",
+        "type": "github"
       },
       "original": {
         "id": "nixpkgs",
