@@ -30,6 +30,7 @@
           #   # url = https://github.com/ongy/netlink-hs;
           #   url = https://github.com/teto/netlink-hs;
           # };
+          version = "1.1.2.0";
           src = pkgs.fetchFromGitHub {
             owner = "teto";
             repo = "netlink-hs";
@@ -43,7 +44,7 @@
             owner = "teto";
             repo = "mptcp-pm";
             rev = "0cd4cad9bab5713ebbe529e194bddb08948825d7";
-            sha256 = "1wig8nw2rxgq86y88m1f1qf93z5yckidf1cs31ribmhqa1hs300p";
+            sha256 = "sha256-7JhrMrv9ld12nx8LyfOuOPTBb7RyWIwSWNB9vWDe/g0=";
           };
         };
 
@@ -76,27 +77,12 @@
 
     in rec {
 
-      # packages.mptcpanalyzer = nixpkgs.legacyPackages.x86_64-linux.hello;
-      # callCabal2nixWithOptions
-      # packages.mptcpanalyzer = myHaskellPackages.callCabal2nix "mptcpanalyzer" ./. {};
       packages.mptcpanalyzer = pkgs.haskellPackages.developPackage {
         root = ./.;
         name = "mptcpanalyzer";
         returnShellEnv = false;
         withHoogle = true;
         overrides = haskellOverlay;
-        # modifier = drv:
-        #   pkgs.haskell.lib.addBuildTools drv (with pkgs;
-        #   [
-        #     # ghcid
-        #     # haskellPackages.cabal-install
-        #     # haskellPackages.c2hs
-        #     haskellPackages.stylish-haskell
-        #     haskellPackages.hlint
-        #     # haskellPackages.haskell-language-server
-        #     haskellPackages.hasktags
-        #     hls.packages."${system}"."haskell-language-server-${compilerVersion}"
-          # ]);
       };
 
       # packages.mptcpanalyzer = pkgs.stdenv.mkDerivation rec {
@@ -150,11 +136,16 @@
 
       devShell = pkgs.mkShell {
         name = "dev-shell";
-        buildInputs = [
-          # poetry.packages."${system}".poetry
-          defaultPackage.inputDerivation
+        buildInputs = with pkgs; [
+          # defaultPackage.inputDerivation
           replica.packages."${system}".build
           inputs.hls.packages."${system}"."haskell-language-server-${compilerVersion}"
+          cairo # for chart-cairo
+          dhall-json  # for dhall-to-json
+          glib
+          hsEnv
+          pkg-config
+          zlib
         ];
       };
 
