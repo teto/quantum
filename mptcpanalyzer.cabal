@@ -76,7 +76,7 @@ common shared-properties
        , vinyl
        , vector
        , haskeline >= 0.8.0.0
-       , mptcp-pm >= 0.0.4
+       , mptcp-pm >= 0.0.3
        , pipes-safe
        , pipes-parse
 
