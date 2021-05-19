@@ -30,9 +30,10 @@ getTcpStats ::
   -> ConnectionRole -> TcpUnidirectionalStats
 getTcpStats aframe dest =
   TcpUnidirectionalStats {
-    tusThroughput = 0
-    , tusStartPacketId = 0
+    -- tusThroughput = 0
+    tusStartPacketId = 0
     , tusEndPacketId = 0
+    , tusNrPackets = frameLength frame
     , tusStartTime = minTime
     , tusEndTime = maxTime
     -- TODO fill it
@@ -41,18 +42,14 @@ getTcpStats aframe dest =
     , tusSndNext = maxSeq
     , tusReinjectedBytes = 0
     -- , tusSnd = 0
-    -- , tusCumulativeBytes = mempty
-    -- , tusMinSeq = minSeq
-    -- , tusMaxSeq = maxSeq
-    -- , tusGoodput = 0
-    -- , tusGoodput = (fromIntegral $ maxSeq-minSeq)/(tusEnd - tusStart)
+    -- , tusNumberOfPackets = mempty
   }
   where
-    -- TODO filtrer par direction
     frame = F.filterFrame (\x -> x ^. tcpDest == dest) (ffFrame aframe)
-    -- streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
 
     -- these return Maybes
+    -- I need to find its id and add tcpSize afterwards
+    -- TODO use     minimumBy
     minSeq = minimum (F.toList $ view tcpSeq <$> frame)
     maxSeq = maximum $ F.toList $ view tcpSeq <$> frame
 

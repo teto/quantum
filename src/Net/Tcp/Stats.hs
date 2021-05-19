@@ -23,10 +23,11 @@ type Byte = Int
 data TcpUnidirectionalStats = TcpUnidirectionalStats {
     -- sum of tcplen / should be the same for tcp/mptcp
     -- Include redundant packets contrary to '''
-    tusThroughput :: Byte
+    -- tusThroughput :: Byte
 
-    , tusStartPacketId :: Word64
+    tusStartPacketId :: Word64
     , tusEndPacketId :: Word64
+    , tusNrPackets :: Int
     -- duration
     -- , tusDuration :: Double
     , tusStartTime :: Double

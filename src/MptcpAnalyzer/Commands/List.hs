@@ -12,17 +12,21 @@ import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Stream
 import MptcpAnalyzer.Stats
 import MptcpAnalyzer.ArtificialFields
-import Net.Tcp.Stats
+import Net.Tcp
 import Net.Mptcp.Stats
 
+import Frames.CSV
 import Prelude hiding (log)
 import Options.Applicative
 import Frames
+import qualified Frames as F
+import qualified Frames.InCore as F
 import Control.Lens hiding (argument)
 import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
-import Polysemy.State as P
+import qualified Polysemy.State as P
 import Polysemy.Trace as P
+import qualified Polysemy.Embed as P
 import Colog.Polysemy (Log, log)
 import Data.Either (fromRight)
 import Data.List (intercalate)
@@ -145,27 +149,46 @@ cmdTcpSummary streamId detailed = do
           P.trace $ showConnection (ffCon aframe)
           log $ "Number of rows " ++ show (frameLength $ ffFrame aframe)
           if detailed
-          then
-            trace $ showStats RoleServer
-            -- P.trace $ showStats RoleClient
-            -- P.trace ""
+          then do
+            res <- showStats aframe RoleServer
+            P.trace $ res
+            res2 <- showStats aframe RoleClient
+            P.trace $ res2
           else
             pure ()
           -- log $ "Number of SYN packets " ++ (fmap  )
           return CMD.Continue
-          where
-              -- aframe = buildTcpConnectionFromStreamId frame streamId
-              -- forwardStats = showStats RoleServer
-              showStats direction = let
-                  aframeWithDest = addTcpDestinationsToAFrame aframe
-                  tcpStats = getTcpStats aframeWithDest direction
-                in
-                  showTcpStats tcpStats
+          -- where
+          --     -- aframe = buildTcpConnectionFromStreamId frame streamId
+          --     -- forwardStats = showStats RoleServer
+          --     showStats direction = let
+          --         aframeWithDest = addTcpDestinationsToAFrame aframe
+          --         tcpStats = getTcpStats aframeWithDest direction
+          --       in do
+          --         showTcpStats tcpStats
+          --         P.embed $ writeCSV "debug.csv" (ffFrame aframeWithDest)
+
+-- |just
+showStats :: Members '[Log String, P.Trace, P.State MyState, Cache, Embed IO] r
+  => FrameFiltered TcpConnection Packet
+  -> ConnectionRole
+  -> Sem r String
+showStats aframe dest = let
+    aframeWithDest = addTcpDestinationsToAFrame aframe
+    tcpStats = getTcpStats aframeWithDest dest
+
+    destFrame = F.filterFrame (\x -> x ^. tcpDest == dest) (ffFrame aframeWithDest)
+
+  in do
+    P.embed $ writeDSV defaultParserOptions ("debug-" ++ show dest ++ ".csv") destFrame
+    return $ showTcpStats tcpStats ++ "   (" ++ show (frameLength destFrame) ++ " packets)"
+
 
 showTcpStats :: TcpUnidirectionalStats -> String
 showTcpStats s =
                   "- transferred " ++ show (tusSndNext s - tusMinSeq s + 1 + tusReinjectedBytes s)  ++ " bytes "
-                  ++ " over " ++ show (tusEndTime s - tusStartTime s) ++ "s"
+                  ++ " over " ++ show (tusEndTime s - tusStartTime s) ++ "s: "
+                  ++ " Throughput " ++ show (getThroughput s) ++ "b/s"
 
 
 -- |
