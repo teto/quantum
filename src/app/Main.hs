@@ -10,6 +10,7 @@ TemplateHaskell for Katip :(
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -62,8 +63,9 @@ import System.Directory
 import Prelude hiding (concat, init, log)
 import Options.Applicative
 import Options.Applicative.Help (parserHelp)
-import Colog.Core.IO (logStringStdout)
-import Colog.Polysemy (Log, log, runLogAction)
+-- import Colog.Core.IO (logStringStdout)
+-- import Colog.Polysemy (Log)
+import Colog.Polysemy.Formatting
 import Graphics.Rendering.Chart.Easy hiding (argument)
 import Graphics.Rendering.Chart.Backend.Cairo
 import Frames.InCore (toFrame)
@@ -113,9 +115,10 @@ import Data.Maybe (fromMaybe, catMaybes)
 import Data.Either (fromLeft)
 import Frames.CSV (writeDSV)
 import Frames (recMaybe, Frame, Record)
+import System.IO (stderr)
+import Formatting
 
-
-data Severity = TraceS | DebugS | InfoS | ErrorS deriving (Read, Show, Eq)
+-- data Severity = TraceS | DebugS | InfoS | ErrorS deriving (Read, Show, Eq)
 
 data CLIArguments = CLIArguments {
   _input :: Maybe FilePath
@@ -218,7 +221,7 @@ startupParser = CLIArguments
           ( long "log-level"
          <> help "Log level"
          <> showDefault
-         <> Options.Applicative.value InfoS
+         <> Options.Applicative.value Info
          <> metavar "LOG_LEVEL" )
       -- optional arguments
       <*> many ( argument str (
@@ -254,8 +257,10 @@ finalizePrompt newPrompt = setSGRCode [SetColor Foreground Vivid Red] ++ newProm
 defaultParserPrefs :: ParserPrefs
 defaultParserPrefs = prefs $ showHelpOnEmpty <> showHelpOnError
 
-main :: IO ()
+main :: HasCallStack => IO ()
 main = do
+  logEnvStderr <- newLogEnv stderr
+  putStrLn "Starting mptcpanalyzer"
 
   cacheFolderXdg <- getXdgDirectory XdgCache "mptcpanalyzer2"
   -- TODO check if creation fails ?
@@ -272,7 +277,7 @@ main = do
 
   options <- execParser opts
 
-  putStrLn "Commands"
+  putStrLn "Commands:"
   print $ extraCommands options
 
   let haskelineSettings = defaultSettings {
@@ -285,13 +290,18 @@ main = do
       , cacheEnabled = True
     }
 
+  -- & cmap (renderThreadTimeMessage logEnvStderr)
+  -- $ runLogAction @IO logStringStdout (inputLoop (extraCommands options))
   _ <- runInputT haskelineSettings $
           runFinal @(InputT IO)
           $ P.embedToFinal . P.runEmbedded lift
           $ P.traceToIO
           $ P.runState myState
           $ runMockCache cacheConfig
-          $ runLogAction @IO logStringStdout (inputLoop (extraCommands options))
+          $ runLogAction @IO logTextStderr (inputLoop (extraCommands options))
+
+      -- -- Set the level of logging we want (for more control see 'filterLogs')
+      -- & setLogLevel Debug
   return ()
 
 
@@ -357,7 +367,8 @@ mainParserInfo = info (mainParser <**> helper)
 -- liftIO $ putStrLn doPrintHelp >> 
 
 -- runCommand :: CommandArgs -> CMD.RetCode
-runCommand :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO] r => CommandArgs -> Sem r CMD.RetCode
+runCommand :: (WithLog r, Members '[Cache, P.Trace, P.State MyState, P.Embed IO] r)
+  => CommandArgs -> Sem r CMD.RetCode
 runCommand (ArgsLoadPcap fileToLoad) = loadPcap fileToLoad
   -- ret <- CL.loadPcap fileToLoad
   -- TODO modify only on success
@@ -374,6 +385,7 @@ runCommand (ArgsListTcpConnections detailed) = CLI.cmdListTcpConnections detaile
 runCommand (ArgsListMpTcpConnections detailed) = CLI.cmdListMptcpConnections detailed
 runCommand (ArgsExport out) = CLI.cmdExport out
 runCommand (ArgsPlotGeneric mbPlotOut mbPlotTitle display plotArgs) = runPlotCommand mbPlotOut mbPlotTitle display plotArgs
+-- runCommand args@(ArgsMapTcpConnections pcap1 pcap2 streamId verbose False) = CLI.cmdMapTcpConnection args
 runCommand args@(ArgsMapTcpConnections _ _ _ _ _ False) = CLI.cmdMapTcpConnection args
 runCommand args@(ArgsMapTcpConnections _ _ _ _ _ True) = CLI.cmdMapMptcpConnection args
 runCommand args@ArgsQualifyReinjections{} = CLI.cmdQualifyReinjections args
@@ -385,40 +397,36 @@ runCommand ArgsHelp = cmdHelp
 -- handleParseResult
 -- loadPcap :: CMD.CommandCb
 -- loadPcap :: Members [Log, P.State MyState, Cache, Embed IO] m => [String] -> Sem m RetCode
-loadPcap :: Members [Log String, P.State MyState, Cache, P.Embed IO] m
+loadPcap :: (WithLog r, Members '[P.State MyState, Cache, P.Embed IO] r)
   => FilePath -- ^ File to load
-  -> Sem m RetCode
+  -> Sem r RetCode
 loadPcap pcapFilename = do
-    log $ "loading pcap " ++ pcapFilename
-    -- s <- gets
-    -- liftIO $ withProgName "load" (
-    -- TODO fix the name of the program, by "load"
+    logInfo ("loading pcap " % shown) pcapFilename
     mFrame <- loadPcapIntoFrame defaultTsharkPrefs pcapFilename
     -- fmap onSuccess mFrame
     case mFrame of
       Left _ -> return CMD.Continue
       Right frame -> do
-        -- prompt .= pcapFilename  ++ "> "
         P.modify (\s -> s {
             _prompt = finalizePrompt pcapFilename,
             _loadedFile = Just frame
           })
-        log "Frame loaded" >> return CMD.Continue
+        logInfo "Frame loaded" >> return CMD.Continue
 
 -- | Quits the program
 cmdQuit :: Members '[P.Trace] r => Sem r CMD.RetCode
 cmdQuit = trace "Thanks for flying with mptcpanalyzer" >> return CMD.Exit
 
 -- | Prints the help when requested
-cmdHelp :: Members '[Log String, P.Trace, P.State MyState] r => Sem r CMD.RetCode
+cmdHelp :: Members '[P.Trace, P.State MyState] r => Sem r CMD.RetCode
 cmdHelp = do
   -- TODO display help / use trace instead
-  log $ show $ parserHelp defaultParserPrefs mainParser
+  trace $ show $ parserHelp defaultParserPrefs mainParser
   return CMD.Continue
 
 -- |Command specific to plots
 -- TODO these should return a plot instead of a generated file so that one can overwrite the title
-runPlotCommand :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO] r
+runPlotCommand :: (WithLog r, Members '[Cache, P.Trace, P.State MyState, P.Embed IO] r)
   => (Maybe String) -> (Maybe String) -> Bool -> ArgsPlots
   -> Sem r CMD.RetCode
 runPlotCommand mbOut _mbTitle displayPlot specificArgs = do
@@ -426,7 +434,7 @@ runPlotCommand mbOut _mbTitle displayPlot specificArgs = do
     _ <- case specificArgs of
       (ArgsPlotTcpAttr pcapFilename streamId attr mbDest mptcp) -> do
         let destinations = getDests mbDest
-        log $ "MPTCP plot" ++ show (plotMptcp specificArgs)
+        logDebug ( "MPTCP plot" % shown) (plotMptcp specificArgs)
 
         res <- if plotMptcp specificArgs then do
               eFrame <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcapFilename (StreamId streamId)
@@ -442,7 +450,7 @@ runPlotCommand mbOut _mbTitle displayPlot specificArgs = do
         return res
       -- Destinations
       (ArgsPlotOwd pcap1 pcap2 streamId1 streamId2 dest) -> do
-        log $ "owd plot"
+        logInfo "owd plot"
         -- if plotOwdMptcp specificArgs then do
         --       eFrame <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcapFilename (StreamId streamId)
         --       case eFrame of
@@ -484,8 +492,9 @@ runPlotCommand mbOut _mbTitle displayPlot specificArgs = do
 
 
 -- TODO use genericRunCommand
-runIteration :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO] r
-  => Maybe String -> Sem r CMD.RetCode
+runIteration :: (WithLog r, Members '[Cache, P.Trace, P.State MyState, P.Embed IO] r)
+  => Maybe String
+  -> Sem r CMD.RetCode
 runIteration fullCmd = do
     cmdCode <- case fmap Prelude.words fullCmd of
         Nothing -> do
@@ -498,41 +507,39 @@ runIteration fullCmd = do
             (Failure failure) -> do
                 -- last arg is progname
                 let (h, exit) = renderFailure failure "prompt>"
-                log $ h
-                log $ "Passed args " ++ show args
+                -- logDebug h
+                logDebug ("Passed args " % shown) (args)
                 return $ CMD.Error $ "could not parse: " ++ show failure
             (CompletionInvoked _compl) -> return CMD.Continue
             (Success parsedArgs) -> runCommand parsedArgs
 
     -- TODO no 
     case cmdCode of
-        CMD.Exit -> log "Exiting" >> return CMD.Exit
+        CMD.Exit -> P.trace "Exiting" >> return CMD.Exit
         CMD.Error msg -> do
-          log $ "Last command failed with message:\n" ++ show msg
+          P.trace $ "Last command failed with message:\n" ++ show msg
           return $ CMD.Error msg
         behavior -> return behavior
 
 -- | Main loop of the program, will run commands in turn
--- TODO turn it into a library
--- [P.Final (InputT IO), Log, Cache, P.State MyState, P.Embed IO] ()
--- , P.Embed IO
-inputLoop :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO, P.Final (InputT IO)] r
+inputLoop :: (WithLog r, Members '[Cache, P.Trace, P.State MyState, P.Embed IO, P.Final (InputT IO)] r)
     => [String] -> Sem r ()
 -- inputLoop (xs:rest) = pure ()
 inputLoop args =
   go args
   where
-    go :: Members '[Log String, Cache, P.Trace, P.State MyState, P.Embed IO, P.Final (InputT IO)] r => [String] -> Sem r ()
+    go :: (WithLog r, Members '[Cache, P.Trace, P.State MyState, P.Embed IO, P.Final (InputT IO)] r)
+      => [String] -> Sem r ()
     go (xs:rest) = runIteration (Just xs) >>= \case
         CMD.Exit -> trace "Exiting"
         _ -> do
-          log $ "Last command failed with message:\n"
+          logError "Last command failed with message:\n"
           inputLoop rest
     go [] = do
       s <- P.get
       minput <- P.embedFinal $ getInputLine (view prompt s)
       runIteration minput >>= \case
-        CMD.Exit -> log "Exiting"
+        CMD.Exit -> trace "Exiting"
         -- _ -> pure ()
         _ -> inputLoop []
 

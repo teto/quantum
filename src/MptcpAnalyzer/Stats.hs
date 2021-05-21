@@ -18,14 +18,17 @@ import Data.Either (fromRight)
 import MptcpAnalyzer.Pcap
 import Data.Set (toList)
 import Data.Maybe (catMaybes)
-import Data.Word (Word64)
+import Data.Word (Word32, Word64)
+import Data.Ord (comparing)
 
 -- TODO should be able to update an initial one
 -- type Packet = Record HostCols
 
+-- type rs = 
+
 -- ⊆
 getTcpStats ::
-  (TcpSeq F.∈ rs, TcpDest F.∈ rs, F.RecVec rs, RelTime F.∈ rs)
+  (TcpSeq F.∈ rs, TcpDest F.∈ rs, F.RecVec rs, TcpLen F.∈ rs, RelTime F.∈ rs)
   => FrameFiltered TcpConnection (F.Record rs)
   -> ConnectionRole -> TcpUnidirectionalStats
 getTcpStats aframe dest =
@@ -38,8 +41,8 @@ getTcpStats aframe dest =
     , tusEndTime = maxTime
     -- TODO fill it
     , tusMinSeq = minSeq
-    , tusSndUna = maxSeq -- TODO should be max of seen acks
-    , tusSndNext = maxSeq
+    , tusSndUna = maxSeqRow ^. tcpSeq + (fromIntegral $ maxSeqRow ^. tcpLen) :: Word32 -- TODO should be max of seen acks
+    , tusSndNext = maxSeqRow ^. tcpSeq + (fromIntegral $ maxSeqRow ^. tcpLen ) :: Word32
     , tusReinjectedBytes = 0
     -- , tusSnd = 0
     -- , tusNumberOfPackets = mempty
@@ -51,14 +54,19 @@ getTcpStats aframe dest =
     -- I need to find its id and add tcpSize afterwards
     -- TODO use     minimumBy
     minSeq = minimum (F.toList $ view tcpSeq <$> frame)
-    maxSeq = maximum $ F.toList $ view tcpSeq <$> frame
+    -- maxSeq = maximum $ F.toList $ view tcpSeq <$> frame
+
+    -- $ F.toList $ view tcpSeq <$> frame
+    maxSeqRow = F.maximumBy (comparing (\x -> x ^. tcpSeq)) frame
+
+    -- compareRows x y = if (x ^. tcpSeq) (y ^. tcpSeq)
 
     maxTime = maximum $ F.toList $ view relTime <$> frame
     minTime = minimum $ F.toList $ view relTime <$> frame
 
 -- | TcpSubflowUnidirectionalStats
 getSubflowStats ::
-  (TcpSeq F.∈ rs, F.RecVec rs, RelTime F.∈ rs
+  (TcpSeq F.∈ rs, F.RecVec rs, RelTime F.∈ rs, TcpLen F.∈ rs
     , IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs, TcpStream ∈ rs
   -- , TcpDest F.∈ rs
   )
@@ -82,6 +90,7 @@ getMptcpStats ::
   (
    -- TcpDest F.∈ rs
   MptcpDsn F.∈ rs, TcpSeq F.∈ rs, IpDest F.∈ rs, IpSource F.∈ rs
+  , TcpLen F.∈ rs
   , TcpDestPort F.∈ rs, MptcpRecvToken F.∈ rs
   , TcpFlags F.∈ rs, TcpSrcPort F.∈ rs, TcpStream F.∈ rs, RelTime F.∈ rs
   , rs F.⊆ HostCols

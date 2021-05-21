@@ -48,7 +48,6 @@ filenameFromCacheId :: CacheId -> FilePath
 filenameFromCacheId cid =
     cachePrefix cid ++ intercalate "_" basenames ++ myHash ++ cacheSuffix cid
     where
-        -- takeBaseName
         basenames = map takeBaseName $ cacheDeps cid
         -- TODO
         myHash = "hash"

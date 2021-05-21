@@ -10,7 +10,6 @@ import Net.Mptcp.Connection
 import qualified Data.Map as Map
 
 
-import qualified Control.Foldl as L
 import Control.Lens hiding (argument)
 import Data.Word (Word32, Word64)
 import Data.Maybe (fromJust)

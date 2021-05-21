@@ -14,7 +14,6 @@ import Net.Mptcp
 -- import Net.Mptcp.Types (MptcpConnection(..), MptcpSubflow, showMptcpConnection)
 
 import "mptcp-pm" Net.Tcp (TcpFlag(..))
-import Prelude hiding (log)
 import Options.Applicative
 import Frames
 import Control.Lens hiding (argument)
@@ -22,7 +21,8 @@ import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
 import Polysemy.Trace as P
-import Colog.Polysemy (Log, log)
+-- import Colog.Polysemy (Log)
+import Colog.Polysemy.Formatting
 import Data.Word (Word8, Word16, Word32, Word64)
 import qualified Control.Foldl as L
 import qualified Data.Set as Set
@@ -87,7 +87,7 @@ filterMptcpConnection frame streamId =
 
 
 
-cmdListSubflows :: Members '[Log String, P.State MyState, P.Trace, Cache, Embed IO] r
+cmdListSubflows :: (WithLog r, Members '[P.State MyState, P.Trace, Cache, Embed IO] r)
   => Bool -- ^ Detailed
   -> Sem r RetCode
 cmdListSubflows detailed = do
@@ -97,7 +97,7 @@ cmdListSubflows detailed = do
 {-
 -}
 cmdListMptcpConnections ::
-  Members [Log String, P.Trace, P.State MyState, Cache, P.Embed IO] r
+  (WithLog r, Members [P.Trace, P.State MyState, Cache, P.Embed IO] r)
   => Bool -- ^ Detailed
   -> Sem r RetCode
 cmdListMptcpConnections _detailed = do
@@ -106,7 +106,7 @@ cmdListMptcpConnections _detailed = do
     let loadedPcap = view loadedFile state
     case loadedPcap of
       Nothing -> do
-        log ( "please load a pcap first" :: String)
+        P.trace "please load a pcap first"
         return CMD.Continue
       Just frame -> do
         -- log $ "Number of rows " ++ show (frameLength frame)

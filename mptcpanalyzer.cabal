@@ -23,7 +23,10 @@ Flag WithPolysemy {
   Default:     True
 }
 
-
+Flag Dev {
+  Description: Relax constraints
+  Default:     True
+}
 
 -- aeson to (de)serialize to json
 -- text is used to convert from string and in aeson
@@ -36,42 +39,35 @@ common shared-properties
       , cereal
       , co-log-core
       , co-log-polysemy
+      , co-log-polysemy-formatting
+      , formatting
       , readable
       , polysemy
       , hashable
       , bytestring
-      , hvega
       , ip
       -- , netlink >= 1.1.1.0
-       , transformers-base
-       , transformers
+      -- for liftIO
        , mtl
        , template-haskell
-       , exceptions
-       , ghc-prim
+       -- , ghc-prim
+       -- for L.nub / L.fold
        , foldl
        , text
        -- microlens taken from Frames
        -- , microlens
        , lens
-       -- for merge
-       , aeson
-       , aeson-pretty
-       , aeson-extra
-       -- , monad-control
        , pipes
        , process
-       -- to help with merging json content
-       -- , unordered-containers
        -- to create temp folder/files
        , temporary
-       , singletons
+       -- , singletons
        , filepath
        -- , repline
        , Frames
        -- could be interesting in the future
         -- , Frames-map-reduce
-        , Cabal
+       , Cabal
        , directory
        , vinyl
        , vector
@@ -80,17 +76,11 @@ common shared-properties
        , pipes-safe
        , pipes-parse
 
-        -- for plotting that's what is used in Frames
-      -- diagrams is not ready for 8.10
-      -- , diagrams
+       -- for plotting that's what is used in Frames
        , Chart >= 1.5
        -- , Chart-diagrams >= 1.5
        , Chart-cairo
        , wide-word
-
-       -- diagrams-cairo
-       -- , diagrams-rasterific >= 1.3
-       -- , diagrams-lib >= 1.3
     default-language: Haskell2010
     -- -fno-warn-unused-imports
     -- -fforce-recomp  makes it build twice
@@ -98,19 +88,25 @@ common shared-properties
         ghc-options: -fplugin=Polysemy.Plugin
         build-depends: polysemy-plugin
 
+    if flag(Dev)
+        ghc-options:
+          -fprof-auto
+          -ddump-splices
+          -ddump-to-file
+          -ddump-timings
+        -- TODO remove
+          -Wno-unused-imports
+        -- build-depends: polysemy-plugin
+          -fno-warn-unused-binds
+          -fno-warn-unused-matches
+
     -- -ddump-splices to dump TH code
     ghc-options:
         -Wall
-        -fno-warn-unused-binds
-        -fno-warn-unused-matches
         -Wpartial-fields
-        -fprof-auto
-        -ddump-splices -ddump-to-file
         -- -dth-dec-file
-        -Wno-unused-imports
-        -ddump-timings
-        -O0
         -fwrite-ide-info
+        -O0
         -hiedir=.hie
         -- -fplugin=Polysemy.Plugin
     default-extensions:
@@ -121,6 +117,7 @@ common shared-properties
         , FlexibleContexts
         , GADTs
         , LambdaCase
+        , OverloadedStrings
         , PolyKinds
         , RankNTypes
         , ScopedTypeVariables

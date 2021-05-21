@@ -17,12 +17,20 @@ import Options.Applicative
 import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
-import Colog.Polysemy (Log, log)
+import Polysemy.Trace as P
+-- import Colog.Polysemy (Log, log)
+import Colog.Polysemy.Formatting
+import Formatting
 import Data.Function (on)
 import Data.List (sortBy, sortOn)
+import Data.Text (intercalate)
+import qualified Data.Text as TS
 import Data.Either (rights, lefts)
 import System.Console.Haskeline
 import System.Console.ANSI
+
+tshow :: Show a => a -> TS.Text
+tshow = TS.pack . Prelude.show
 
 mapTcpOpts :: ParserInfo CommandArgs
 mapTcpOpts = info (
@@ -39,7 +47,7 @@ mapMptcpOpts = info (
 parserMapConnection :: Bool -> Parser CommandArgs
 parserMapConnection forMptcp =
   -- if forMptcp then
-    ArgsMapTcpConnections <$> 
+    ArgsMapTcpConnections <$>
   -- else
   --   ArgsMapMptcpConnections <$> toto
   -- where
@@ -86,55 +94,58 @@ parserMapConnection forMptcp =
 
 
 -- TODO this could be made polymorphic using StreamConnection
-cmdMapTcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
+cmdMapTcpConnection :: (WithLog r, Members '[P.State MyState, P.Trace, Cache, Embed IO] r )
+  => CommandArgs -> Sem r RetCode
 cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _) = do
-  log $ "Mapping tcp connections"
+  logInfo "Mapping tcp connections"
   res <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId)
   res2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
   case (res, res2) of
     (Right aframe, Right frame) -> do
       let streamsToCompare = (getTcpStreams frame)
       let consToCompare = map (buildTcpConnectionFromStreamId frame) (getTcpStreams frame)
-      log $ "Best match for " ++ show (ffCon aframe) ++ " is "
-      log $ "Comparing with stream " ++ show streamsToCompare
+      logInfo ("Best match for " % shown % " is ") (ffCon aframe)
+      logInfo ("Comparing with stream " % shown) streamsToCompare
       -- TODO sort results and print them
       let sortedScores = mapTcpConnection aframe frame
       -- TODO only display X first take 5
-      mapM_ displayScore sortedScores
+      P.trace $ TS.unpack $ intercalate "\n" $ map displayScore sortedScores
       -- display failures
-      mapM_ displayFailure (lefts consToCompare)
+      P.trace $ TS.unpack $ intercalate "\n" $ map displayFailure (lefts consToCompare)
       return CMD.Continue
+      where
+        displayScore (con, score) = "Score for connection " <> showConnectionText con <> ": " <> tshow score
+        displayFailure err = "Couldn't compute score for tcp.stream  " <> tshow err
     _ -> return $ CMD.Error "An error happened"
-  where
 
-    displayScore (con, score) = log $ "Score for connection " ++ showConnection con ++ ": " ++ show score
-    displayFailure err = log $ "Couldn't compute score for tcp.stream  " ++ show err
 cmdMapTcpConnection _ = error "not supported"
 
-cmdMapMptcpConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
+cmdMapMptcpConnection :: (WithLog r, Members '[P.State MyState, P.Trace, Cache, Embed IO] r)
+  => CommandArgs -> Sem r RetCode
 cmdMapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit True) = do
-  log $ "Mapping mptcp connections"
+  logInfo "Mapping mptcp connections"
   res <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap1 (StreamId streamId)
   res2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
   case (res, res2) of
     (Right aframe, Right frame) -> do
       let streamsToCompare = (getMptcpStreams frame)
       let consToCompare = map (buildTcpConnectionFromStreamId frame) (getTcpStreams frame)
-      log $ "Best match for " ++ show (ffCon aframe) ++ " is "
-      log $ "Comparing with stream " ++ show streamsToCompare
+      logInfo ("Best match for " % shown % " is ") (ffCon aframe)
+      logDebug ("Comparing with stream " % shown) streamsToCompare
       -- let scores = map (evalScore (ffCon aframe)) (rights consToCompare)
       -- let sortedScores = (sortOn snd scores)
       let sortedScores = mapMptcpConnection aframe frame
-      mapM_ displayScore sortedScores
-      mapM_ displayFailure (lefts consToCompare)
+      P.trace $ TS.unpack $ intercalate "\n" $ map displayScore sortedScores
+      P.trace $ TS.unpack $ intercalate "\n" $ map displayFailure (lefts consToCompare)
       return CMD.Continue
-    _ -> return $ CMD.Error "An error happened"
-  where
-    evalScore con1 (FrameTcp con2 _) = (con2, similarityScore con1 con2)
+      where
+        evalScore con1 (FrameTcp con2 _) = (con2, similarityScore con1 con2)
 
-    displayScore (con, score) = log $ "Score for connection " ++ show (mptcpStreamId con) 
-        ++ ": " ++ setSGRCode [SetColor Foreground Vivid Red] ++ show score ++ setSGRCode [Reset] ++ "\n"
-        ++ showConnection con ++ "\n"
-    displayFailure err = log $ "Couldn't compute score for mptcp.stream " ++ show err
+        -- setSGRCode [SetColor Foreground Vivid Red] <>
+        -- <> setSGRCode [Reset]
+        displayScore (con, score) = "Score for connection " <> tshow (mptcpStreamId con)
+            <> ": " <> tshow score <> "\n" <> showConnectionText con <> "\n"
+        displayFailure err = "Couldn't compute score for mptcp.stream " <> tshow err
+    _ -> return $ CMD.Error "An error happened"
 
 cmdMapMptcpConnection _ = error "not supported"

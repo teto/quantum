@@ -34,6 +34,7 @@ import Net.Mptcp
 import Prelude hiding (filter, lookup, repeat, log)
 import Options.Applicative
 import Polysemy
+import qualified Polysemy.Trace as P
 import Frames
 import Frames.CSV
 
@@ -53,7 +54,9 @@ import qualified Pipes.Prelude as P
 import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
-import Colog.Polysemy (Log, log)
+-- import Colog.Polysemy (Log, log)
+import Colog.Polysemy.Formatting
+import Formatting
 import System.Process hiding (runCommand)
 import System.Exit
 -- import Data.Time.LocalTime
@@ -188,22 +191,22 @@ plotParserOwd mptcpPlot = ArgsPlotOwd <$>
 --   ("absTime", "absTime2", Text)
 --   ]
 
-cmdPlotTcpOwd :: Members [Log String, P.State MyState, Cache, Embed IO] m =>
-          FilePath -- ^ temporary file to save plot to
-          -> Handle
-          -> [ConnectionRole]
-          -> TcpConnection
-          -> MergedPcap
-          -- -> FrameFiltered Packet
-          -- -> FrameFiltered (Record HostColsPrefixed)
-          -> Sem m RetCode
+cmdPlotTcpOwd :: (WithLog m, Members [P.Trace, P.State MyState, Cache, Embed IO] m)
+  => FilePath -- ^ temporary file to save plot to
+  -> Handle
+  -> [ConnectionRole]
+  -> TcpConnection
+  -> MergedPcap
+  -- -> FrameFiltered Packet
+  -- -> FrameFiltered (Record HostColsPrefixed)
+  -> Sem m RetCode
 cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
-  log $ "plotting OWDs "
+  logInfo "plotting OWDs "
   -- look at https://hackage.haskell.org/package/vinyl-0.13.0/docs/Data-Vinyl-Functor.html#t::.
   -- could use showRow as well
   P.embed $ dumpRec $ head justRecs
-  P.embed $ putStrLn $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
-  P.embed $ putStrLn $ (concat . showFields) (head justRecs)
+  P.trace $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
+  P.trace $ (concat . showFields) (head justRecs)
   -- P.embed $ putStrLn $ "retyped column" ++ (concat . showFields) (newCol)
   embed $ toFile def tempPath $ do
       layout_title .= "TCP One-way delays"

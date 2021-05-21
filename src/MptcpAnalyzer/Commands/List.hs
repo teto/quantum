@@ -14,6 +14,7 @@ import MptcpAnalyzer.Stats
 import MptcpAnalyzer.ArtificialFields
 import Net.Tcp
 import Net.Mptcp.Stats
+import MptcpAnalyzer.Types
 
 import Frames.CSV
 import Prelude hiding (log)
@@ -27,11 +28,12 @@ import qualified Polysemy as P
 import qualified Polysemy.State as P
 import Polysemy.Trace as P
 import qualified Polysemy.Embed as P
-import Colog.Polysemy (Log, log)
+-- import Colog.Polysemy (Log, log)
 import Data.Either (fromRight)
 import Data.List (intercalate)
+import Colog.Polysemy.Formatting
+import Formatting
 
-import MptcpAnalyzer.Types
 
 -- import qualified Pipes.Prelude as P
 -- import Pipes (Producer, (>->))
@@ -101,7 +103,7 @@ piMptcpSummaryOpts = info (
   tcp.stream 7: 11.0.0.1:50007 -> 10.0.0.2:05201
 -}
 cmdListTcpConnections ::
-  Members '[Log String, P.Trace, P.State MyState, Cache, Embed IO] r
+  (WithLog r, Members '[P.Trace, P.State MyState, Cache, Embed IO] r)
   => Bool -- ^ detailed
   -> Sem r RetCode
 cmdListTcpConnections listDetailed = do
@@ -110,7 +112,7 @@ cmdListTcpConnections listDetailed = do
     let loadedPcap = view loadedFile state
     case loadedPcap of
       Nothing -> do
-        log ( "please load a pcap first" :: String)
+        trace "please load a pcap first"
         return CMD.Continue
       Just frame -> do
         let tcpStreams = getTcpStreams frame
@@ -133,7 +135,7 @@ throughput/goodput
 
 detailed
 -}
-cmdTcpSummary :: Members '[Log String, P.Trace, P.State MyState, Cache, Embed IO] r
+cmdTcpSummary :: (WithLog r, Members '[P.Trace, P.State MyState, Cache, Embed IO] r)
   => StreamId Tcp
   -> Bool
   -> Sem r RetCode
@@ -147,7 +149,7 @@ cmdTcpSummary streamId detailed = do
         Right aframe -> do
           -- let _tcpstreams = getTcpStreams frame
           P.trace $ showConnection (ffCon aframe)
-          log $ "Number of rows " ++ show (frameLength $ ffFrame aframe)
+          logInfo ( "Number of rows "  % hex) (frameLength $ ffFrame aframe)
           if detailed
           then do
             res <- showStats aframe RoleServer
@@ -169,7 +171,7 @@ cmdTcpSummary streamId detailed = do
           --         P.embed $ writeCSV "debug.csv" (ffFrame aframeWithDest)
 
 -- |just
-showStats :: Members '[Log String, P.Trace, P.State MyState, Cache, Embed IO] r
+showStats :: (WithLog r, Members '[P.Trace, P.State MyState, Cache, Embed IO] r)
   => FrameFiltered TcpConnection Packet
   -> ConnectionRole
   -> Sem r String
@@ -216,7 +218,7 @@ tcpstream 2 transferred 9.0 Bytes out of 469.0 Bytes, accounting for 1.92%
 tcpstream 4 transferred 0.0 Bytes out of 469.0 Bytes, accounting for 0.00%
 tcpstream 6 transferred 0.0 Bytes out of 469.0 Bytes, accounting for 0.00%
 -}
-cmdMptcpSummary :: Members '[Log String, P.Trace, P.State MyState, Cache, Embed IO] r
+cmdMptcpSummary :: (WithLog r, Members '[P.Trace, P.State MyState, Cache, Embed IO] r)
   => StreamId Mptcp
   -> Bool
   -> Sem r RetCode
@@ -236,7 +238,7 @@ cmdMptcpSummary streamId detailed = do
         let mptcpStats = getMptcpStats aframe RoleClient
 
         P.trace $ showConnection (ffCon aframe)
-        log $ "Number of rows " ++ show (frameLength frame)
+        logDebug ("Number of rows " % hex) (frameLength frame)
         if detailed
         then
           -- RoleServer
@@ -246,7 +248,3 @@ cmdMptcpSummary streamId detailed = do
         else
           pure ()
         return CMD.Continue
-
-  where
-    -- dadsa
-    -- subflowStats = map ()

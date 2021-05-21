@@ -8,7 +8,6 @@ import MptcpAnalyzer.Pcap
 
 import Control.Lens ((^.), view)
 import Prelude hiding (log)
-import Colog.Polysemy (Log, log)
 import Polysemy (Sem, Members, Embed)
 import Polysemy.State as P
 import Frames.CSV (writeCSV)
@@ -27,7 +26,7 @@ parseExportOpts = info (
 
 {-| Export loaded file
 -}
-cmdExport :: Members '[Log String, P.State MyState, Cache, Embed IO] r
+cmdExport :: Members '[P.State MyState, Cache, Embed IO] r
     => FilePath
     -> Sem r RetCode
 cmdExport args = do

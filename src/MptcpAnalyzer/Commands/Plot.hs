@@ -37,7 +37,10 @@ import qualified Pipes.Prelude as P
 import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
-import Colog.Polysemy (Log, log)
+import Polysemy.Trace as P
+-- import Colog.Polysemy (Log, log)
+import Colog.Polysemy.Formatting
+import Formatting
 import System.Process hiding (runCommand)
 import System.Exit
 -- import Data.Time.LocalTime
@@ -191,13 +194,13 @@ instance PlotValue Word32 where
 
 
 -- destinations is an array of destination
-cmdPlotTcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
-          String -- Tcp attr
-          -> FilePath -- ^ temporary file to save plot to
-          -> Handle
-          -> [ConnectionRole]
-          -> FrameFiltered TcpConnection Packet
-          -> Sem m RetCode
+cmdPlotTcpAttribute :: (WithLog m, Members [P.State MyState, Cache, Embed IO] m)
+  => String -- Tcp attr
+  -> FilePath -- ^ temporary file to save plot to
+  -> Handle
+  -> [ConnectionRole]
+  -> FrameFiltered TcpConnection Packet
+  -> Sem m RetCode
 cmdPlotTcpAttribute field tempPath _ destinations aFrame = do
 
 -- inCore converts into a producer
@@ -256,19 +259,19 @@ getData frame attr =
 
 -- type Lens s t a b
 -- case
-cmdPlotMptcpAttribute :: Members [Log String,  P.State MyState, Cache, Embed IO] m =>
-          String -- Tcp attr
-          -> FilePath -- ^ temporary file to save plot to
-          -> Handle
-          -> [ConnectionRole]
-          -> FrameFiltered MptcpConnection Packet
-          -> Sem m RetCode
+cmdPlotMptcpAttribute :: (WithLog m, Members [P.State MyState, P.Trace, Cache, Embed IO] m) =>
+    String -- Tcp attr
+    -> FilePath -- ^ temporary file to save plot to
+    -> Handle
+    -> [ConnectionRole]
+    -> FrameFiltered MptcpConnection Packet
+    -> Sem m RetCode
 cmdPlotMptcpAttribute field tempPath _ destinations aFrame = do
 
 -- inCore converts into a producer
-  log $ "show con " ++ show (ffCon aFrame)
-  embed $ putStrLn $ T.unpack $ showConnectionText (ffCon aFrame)
-  log $ "number of packets" ++ show (frameLength (ffFrame aFrame))
+  logDebug ("show con " % shown) (ffCon aFrame)
+  P.trace $ T.unpack $ showConnectionText (ffCon aFrame)
+  P.trace $ "number of packets" ++ show (frameLength (ffFrame aFrame))
   -- TODO remove
   embed $ writeCSV "debug.csv" (ffFrame aFrame)
   embed $ writeCSV "dest.csv" (frameDest)

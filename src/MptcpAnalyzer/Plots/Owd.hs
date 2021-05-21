@@ -31,7 +31,7 @@ import qualified Pipes.Prelude as P
 import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
-import Colog.Polysemy (Log, log)
+-- import Colog.Polysemy (Log, log)
 import System.Process hiding (runCommand)
 import System.Exit
 -- import Data.Time.LocalTime
