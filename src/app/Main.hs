@@ -65,6 +65,7 @@ import Options.Applicative
 import Options.Applicative.Help (parserHelp)
 -- import Colog.Core.IO (logStringStdout)
 -- import Colog.Polysemy (Log)
+import Colog.Actions
 import Colog.Polysemy.Formatting
 import Graphics.Rendering.Chart.Easy hiding (argument)
 import Graphics.Rendering.Chart.Backend.Cairo
@@ -298,7 +299,7 @@ main = do
           $ P.traceToIO
           $ P.runState myState
           $ runMockCache cacheConfig
-          $ runLogAction @IO logTextStderr (inputLoop (extraCommands options))
+          $ runLogAction @IO richMessageAction (inputLoop (extraCommands options))
 
       -- -- Set the level of logging we want (for more control see 'filterLogs')
       -- & setLogLevel Debug

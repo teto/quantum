@@ -37,6 +37,7 @@ common shared-properties
       , containers
       -- polysemybased logger
       , cereal
+      , co-log
       , co-log-core
       , co-log-polysemy
       , co-log-polysemy-formatting
