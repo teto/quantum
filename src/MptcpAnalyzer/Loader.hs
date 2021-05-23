@@ -10,8 +10,6 @@ import Prelude hiding (log)
 import Control.Monad.Trans (liftIO)
 import System.Exit (ExitCode(..))
 -- import Colog.Polysemy (Log, log)
-import Colog.Polysemy.Formatting
-import Formatting
 import Polysemy (Sem, Members, Embed)
 import Polysemy.State as P
 import Distribution.Simple.Utils (withTempFileEx, TempFileOptions(..))
@@ -21,6 +19,8 @@ import Net.Tcp
 import Net.Mptcp
 import qualified Frames.InCore
 
+import Polysemy.Log (Log)
+import qualified Polysemy.Log as Log
 
 
 
@@ -29,37 +29,36 @@ import qualified Frames.InCore
 loadPcapIntoFrame ::
     (Frames.InCore.RecVec a
     , Frames.CSV.ReadRec a
-    , WithLog m
-    , Members [Cache, Embed IO ] m)
+    , Members [Log, Cache, Embed IO ] m)
     => TsharkParams
     -> FilePath
     -> Sem m (Either String (FrameRec a))
 loadPcapIntoFrame params path = do
-    logInfo ("Start loading pcap " % shown) path
+    Log.info $ "Start loading pcap " <> tshow path
     x <- getCache cacheId
     case x of
       Right frame -> do
-          logDebug (shown % " in cache") cacheId
+          Log.debug $ tshow cacheId <> " in cache"
           return $ Right frame
       Left err -> do
-          logDebug ("cache miss: " % shown) err
-          logDebug "Calling tshark"
+          Log.debug $ "cache miss: " <> tshow  err
+          Log.debug "Calling tshark"
           (tempPath , exitCode, stdErr) <- liftIO $ withTempFileEx opts "/tmp" "mptcp.csv" (exportToCsv params path)
           if exitCode == ExitSuccess
               then do
-                logDebug ("exported to file " % shown ) tempPath
+                Log.debug $ "exported to file " <> tshow tempPath
                 frame <- liftIO $ loadRows tempPath
-                logDebug ( "Number of rows after loading " % hex) (frameLength frame)
+                Log.debug $ "Number of rows after loading " <> tshow (frameLength frame)
                 cacheRes <- putCache cacheId frame
                 -- use ifThenElse instead
                 if cacheRes then
-                  logInfo "Saved into cache"
+                  Log.info "Saved into cache"
                 else
                   pure ()
                 return $ Right frame
               else do
-                logInfo ("Error happened: " % shown) exitCode
-                logInfo shown stdErr
+                Log.info $ "Error happened: " <> tshow exitCode
+                Log.info $ tshow stdErr
                 return $ Left stdErr
 
     where
@@ -88,7 +87,7 @@ loadPcapIntoFrame params path = do
 
 -- buildTcpFrameFromFrame
 -- \ Build a frame with only packets belonging to @streamId@
-buildAFrameFromStreamIdTcp :: (WithLog m, Members [Cache, Embed IO ] m)
+buildAFrameFromStreamIdTcp :: (Members [Log, Cache, Embed IO ] m)
     => TsharkParams
     -> FilePath
     -> StreamId Tcp
@@ -99,13 +98,13 @@ buildAFrameFromStreamIdTcp params pcapFilename streamId = do
       Left err -> Left err
       Right frame -> buildTcpConnectionFromStreamId frame streamId
 
-buildAFrameFromStreamIdMptcp :: (WithLog m, Members [Cache, Embed IO ] m)
+buildAFrameFromStreamIdMptcp :: (Members [Log, Cache, Embed IO ] m)
     => TsharkParams
     -> FilePath
     -> StreamId Mptcp
     -> Sem m (Either String (FrameFiltered MptcpConnection Packet))
 buildAFrameFromStreamIdMptcp params pcapFilename streamId = do
-  logDebug  ("Building frame for mptcp stream " % shown) streamId
+  Log.debug  ("Building frame for mptcp stream " <> tshow streamId)
   res <- loadPcapIntoFrame params pcapFilename
   return $ case res of
     Left err -> Left err

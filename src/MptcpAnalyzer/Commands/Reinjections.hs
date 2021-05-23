@@ -16,9 +16,6 @@ import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
 import Polysemy.Trace as P
--- import Colog.Polysemy (Log, log)
-import Colog.Polysemy.Formatting
-import Formatting
 import Data.Function (on)
 import Data.List (sortBy, sortOn, intersperse, intercalate)
 import Data.Either (rights, lefts)
@@ -32,6 +29,9 @@ import qualified Data.Foldable as F
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
 import Control.Lens hiding (argument)
+
+import Polysemy.Log (Log)
+import qualified Polysemy.Log as Log
 
 piListReinjections :: ParserInfo CommandArgs
 piListReinjections = info (
@@ -84,7 +84,7 @@ parserQualifyReinjections =
           <> help "Verbose or not"
       )
 
-cmdListReinjections :: (WithLog r, Members '[P.Trace, P.State MyState, Cache, Embed IO] r)
+cmdListReinjections :: (Members '[Log, P.Trace, P.State MyState, Cache, Embed IO] r)
     => StreamId Mptcp
     -> Sem r RetCode
 cmdListReinjections streamId = do
@@ -141,7 +141,7 @@ analyzeReinjection mergedFrame row =
   in
     delta
 
-cmdQualifyReinjections :: (WithLog r, Members '[P.State MyState, Cache, P.Trace, Embed IO] r)
+cmdQualifyReinjections :: (Members '[Log, P.State MyState, Cache, P.Trace, Embed IO] r)
   => CommandArgs -> Sem r RetCode
 cmdQualifyReinjections (ArgsQualifyReinjections pcap1 streamId1 pcap2 streamId2 verbose ) = do
   eframe1 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap1 streamId1

@@ -19,9 +19,8 @@ import System.Exit (ExitCode(..))
 import Polysemy (Sem, Members, Embed)
 import qualified Polysemy.State as P
 import qualified Polysemy.Trace as P
--- import Colog.Polysemy (Log, log)
-import Colog.Polysemy.Formatting
-import Formatting
+import Polysemy.Log (Log)
+import qualified Polysemy.Log as Log
 
 loadPcapArgs :: Parser CommandArgs
 loadPcapArgs =  ArgsLoadPcap <$> argument str (metavar "PCAP" <> completeWith ["toto", "tata"]
@@ -51,7 +50,7 @@ loadPcapOpts = info (loadPcapArgs <**> helper)
 
 
 
-loadCsv :: (WithLog m, Members '[P.Trace, P.State MyState, Cache, Embed IO] m)
+loadCsv :: (Members '[Log, P.Trace, P.State MyState, Cache, Embed IO] m)
     => FilePath   -- ^ csv file to load
     -> Sem m CMD.RetCode
 loadCsv csvFilename  = do
@@ -61,6 +60,6 @@ loadCsv csvFilename  = do
     -- TODO restore
     -- loadedFile .= Just frame
     P.modify (\s -> s { _loadedFile = Just frame })
-    logInfo ( "Number of rows " % hex)  (frameLength frame)
-    logDebug "Frame loaded" >> return CMD.Continue
+    Log.info $ "Number of rows " <> tshow  (frameLength frame)
+    Log.debug "Frame loaded" >> return CMD.Continue
 

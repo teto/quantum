@@ -24,8 +24,6 @@ import Data.Ord (comparing)
 -- TODO should be able to update an initial one
 -- type Packet = Record HostCols
 
--- type rs = 
-
 -- ⊆
 getTcpStats ::
   (TcpSeq F.∈ rs, TcpDest F.∈ rs, F.RecVec rs, TcpLen F.∈ rs, RelTime F.∈ rs)
@@ -34,14 +32,16 @@ getTcpStats ::
 getTcpStats aframe dest =
   TcpUnidirectionalStats {
     -- tusThroughput = 0
-    tusStartPacketId = 0
+    tusStartPacketId = frameRow frame 0
     , tusEndPacketId = 0
     , tusNrPackets = frameLength frame
     , tusStartTime = minTime
     , tusEndTime = maxTime
     -- TODO fill it
     , tusMinSeq = minSeq
-    , tusSndUna = maxSeqRow ^. tcpSeq + (fromIntegral $ maxSeqRow ^. tcpLen) :: Word32 -- TODO should be max of seen acks
+
+    -- TODO should be max of seen acks
+    , tusSndUna = maxSeqRow ^. tcpSeq + (fromIntegral $ maxSeqRow ^. tcpLen) :: Word32
     , tusSndNext = maxSeqRow ^. tcpSeq + (fromIntegral $ maxSeqRow ^. tcpLen ) :: Word32
     , tusReinjectedBytes = 0
     -- , tusSnd = 0

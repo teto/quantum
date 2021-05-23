@@ -104,6 +104,8 @@ This project is founded by ![NGI pointer](img/ngi_logo.png).
 
 [mptcptrace]: https://bitbucket.org/bhesmans/mptcptrace
 [mptcpplot]: https://github.com/nasa/multipath-tcp-tools/
+[hk-img]: https://img.shields.io/hackage/v/mptcpanalyzer.svg?logo=haskell
+[hk]: https://hackage.haskell.org/package/mptcpanalyzer
 wireshark-mptcp: https://www.wireshark.org/docs/dfref/m/mptcp.html
 polysemy: https://hackage.haskell.org/package/polysemy
 visidata: https://www.visidata.org/

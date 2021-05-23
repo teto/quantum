@@ -19,8 +19,6 @@ import qualified Polysemy as P
 import Polysemy.State as P
 import Polysemy.Trace as P
 -- import Colog.Polysemy (Log, log)
-import Colog.Polysemy.Formatting
-import Formatting
 import Data.Function (on)
 import Data.List (sortBy, sortOn)
 import Data.Text (intercalate)
@@ -28,9 +26,11 @@ import qualified Data.Text as TS
 import Data.Either (rights, lefts)
 import System.Console.Haskeline
 import System.Console.ANSI
+import Polysemy.Log (Log)
+import qualified Polysemy.Log as Log
 
-tshow :: Show a => a -> TS.Text
-tshow = TS.pack . Prelude.show
+-- tshow :: Show a => a -> TS.Text
+-- tshow = TS.pack . Prelude.show
 
 mapTcpOpts :: ParserInfo CommandArgs
 mapTcpOpts = info (
@@ -94,18 +94,18 @@ parserMapConnection forMptcp =
 
 
 -- TODO this could be made polymorphic using StreamConnection
-cmdMapTcpConnection :: (WithLog r, Members '[P.State MyState, P.Trace, Cache, Embed IO] r )
+cmdMapTcpConnection :: (Members '[Log, P.State MyState, P.Trace, Cache, Embed IO] r )
   => CommandArgs -> Sem r RetCode
 cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _) = do
-  logInfo "Mapping tcp connections"
+  Log.info "Mapping tcp connections"
   res <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId)
   res2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
   case (res, res2) of
     (Right aframe, Right frame) -> do
       let streamsToCompare = (getTcpStreams frame)
       let consToCompare = map (buildTcpConnectionFromStreamId frame) (getTcpStreams frame)
-      logInfo ("Best match for " % shown % " is ") (ffCon aframe)
-      logInfo ("Comparing with stream " % shown) streamsToCompare
+      Log.info $ "Best match for " <> tshow (ffCon aframe) <> " is "
+      Log.info $ "Comparing with stream " <> tshow streamsToCompare
       -- TODO sort results and print them
       let sortedScores = mapTcpConnection aframe frame
       -- TODO only display X first take 5
@@ -120,18 +120,18 @@ cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _)
 
 cmdMapTcpConnection _ = error "not supported"
 
-cmdMapMptcpConnection :: (WithLog r, Members '[P.State MyState, P.Trace, Cache, Embed IO] r)
+cmdMapMptcpConnection :: (Members '[Log, P.State MyState, P.Trace, Cache, Embed IO] r)
   => CommandArgs -> Sem r RetCode
 cmdMapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit True) = do
-  logInfo "Mapping mptcp connections"
+  Log.info "Mapping mptcp connections"
   res <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap1 (StreamId streamId)
   res2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
   case (res, res2) of
     (Right aframe, Right frame) -> do
       let streamsToCompare = (getMptcpStreams frame)
       let consToCompare = map (buildTcpConnectionFromStreamId frame) (getTcpStreams frame)
-      logInfo ("Best match for " % shown % " is ") (ffCon aframe)
-      logDebug ("Comparing with stream " % shown) streamsToCompare
+      Log.info $ "Best match for " <> tshow (ffCon aframe) <> " is "
+      Log.debug ("Comparing with stream " <> tshow streamsToCompare)
       -- let scores = map (evalScore (ffCon aframe)) (rights consToCompare)
       -- let sortedScores = (sortOn snd scores)
       let sortedScores = mapMptcpConnection aframe frame

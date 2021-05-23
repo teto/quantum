@@ -147,6 +147,8 @@ type PcapFrame a = Frame Packet
 -- type SomeFrame = PcapFrame ()
 
 
+tshow :: Show a => a -> TS.Text
+tshow = TS.pack . Prelude.show
 -- TODO PcapFrame should be a monoid and a semigroup with a list of Connection []
 
 -- Named ConnectionTcp to not clash with mptcppm's one ?

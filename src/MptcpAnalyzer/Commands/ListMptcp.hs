@@ -21,14 +21,15 @@ import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
 import Polysemy.Trace as P
--- import Colog.Polysemy (Log)
-import Colog.Polysemy.Formatting
 import Data.Word (Word8, Word16, Word32, Word64)
 import qualified Control.Foldl as L
 import qualified Data.Set as Set
 import qualified Pipes.Prelude as PP
 import Data.Maybe (fromJust, catMaybes)
 import Data.Either (fromRight)
+
+import Polysemy.Log (Log)
+import qualified Polysemy.Log as Log
 
 listMpTcpOpts :: ParserInfo CommandArgs
 listMpTcpOpts = info (
@@ -87,7 +88,7 @@ filterMptcpConnection frame streamId =
 
 
 
-cmdListSubflows :: (WithLog r, Members '[P.State MyState, P.Trace, Cache, Embed IO] r)
+cmdListSubflows :: (Members '[Log, P.State MyState, P.Trace, Cache, Embed IO] r)
   => Bool -- ^ Detailed
   -> Sem r RetCode
 cmdListSubflows detailed = do
@@ -97,7 +98,7 @@ cmdListSubflows detailed = do
 {-
 -}
 cmdListMptcpConnections ::
-  (WithLog r, Members [P.Trace, P.State MyState, Cache, P.Embed IO] r)
+  (Members [Log, P.Trace, P.State MyState, Cache, P.Embed IO] r)
   => Bool -- ^ Detailed
   -> Sem r RetCode
 cmdListMptcpConnections _detailed = do

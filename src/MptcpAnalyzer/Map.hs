@@ -18,7 +18,7 @@ import Options.Applicative
 import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
-import Colog.Polysemy (Log, log)
+-- import Colog.Polysemy (Log, log)
 import Data.Function (on)
 import Data.List (sortBy, sortOn)
 import Data.Either (rights, lefts)

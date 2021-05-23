@@ -39,8 +39,10 @@ common shared-properties
       , cereal
       , co-log
       , co-log-core
-      , co-log-polysemy
-      , co-log-polysemy-formatting
+      -- , co-log-polysemy
+      -- , co-log-polysemy-formatting
+      , polysemy-log
+      , polysemy-log-co
       , formatting
       , readable
       , polysemy

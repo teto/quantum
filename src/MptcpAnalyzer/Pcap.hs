@@ -430,7 +430,7 @@ computeTcpDest x con  = if (rgetField @IpSource x) == (conTcpClientIp con)
                 && (rgetField @TcpDestPort x) == (conTcpServerPort con)
                 -- TODO should error if not the same streamId
                 -- && (rgetField @TcpStream x) == (conTcpStreamId con)
-        then RoleClient else RoleServer
+        then RoleServer else RoleClient
 
 
 -- | TODO

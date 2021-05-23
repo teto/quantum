@@ -1,5 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Net.Mptcp.Connection
+module Net.Mptcp.Connection (
+  MptcpConnection(..)
+  , MptcpSubflow(..)
+  , showMptcpConnectionText
+)
 where
 import Net.IP
 import Net.Tcp
@@ -39,6 +43,9 @@ data MptcpSubflow = MptcpSubflow {
       --conTcp TODO remove could be deduced from srcIp / dstIp ?
       , sfInterface :: Text -- ^Interface of Maybe ? why a maybe ?
     } deriving (Show, Eq, Ord)
+
+tshow :: Show a => a -> TS.Text
+tshow = TS.pack . Prelude.show
 
 showMptcpConnectionText :: MptcpConnection -> Text
 showMptcpConnectionText con =

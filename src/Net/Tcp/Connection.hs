@@ -1,5 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Net.Tcp.Connection
+module Net.Tcp.Connection (
+  TcpConnection(..)
+  , showTcpConnectionText
+)
 where
 import Net.IP
 import Data.Word (Word8, Word16, Word32, Word64)
@@ -15,9 +18,9 @@ data TcpConnection = TcpConnection {
   , conTcpStreamId :: StreamIdTcp -- ^ @tcp.stream@ in wireshark
   } deriving (Show, Eq, Ord)
 
+
 tshow :: Show a => a -> TS.Text
 tshow = TS.pack . Prelude.show
-
 
 showTcpConnectionText :: TcpConnection -> Text
 showTcpConnectionText con =

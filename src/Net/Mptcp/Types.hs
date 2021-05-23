@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Net.Mptcp.Types
 where
 

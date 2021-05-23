@@ -6,7 +6,8 @@ where
 import Polysemy (Sem, Members, interpret)
 import qualified Polysemy.Embed as P
 import qualified Polysemy.State as P
-import Colog.Polysemy (Log)
+import Polysemy.Log (Log)
+import qualified Polysemy.Log as Log
 
 import MptcpAnalyzer.Commands.Definitions
 import MptcpAnalyzer.Cache
@@ -25,7 +26,7 @@ import qualified MptcpAnalyzer.Commands.Plot as PL
 -- makeSem ''Command
 
 
-printHelpTemp :: Members '[Log String, Cache, P.Embed IO] r => Sem r RetCode
+printHelpTemp :: Members '[Log, Cache, P.Embed IO] r => Sem r RetCode
 printHelpTemp = do
   P.embed $ putStrLn "temporary help"
   return Continue

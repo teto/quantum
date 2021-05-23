@@ -39,8 +39,6 @@ import qualified Polysemy as P
 import Polysemy.State as P
 import Polysemy.Trace as P
 -- import Colog.Polysemy (Log, log)
-import Colog.Polysemy.Formatting
-import Formatting
 import System.Process hiding (runCommand)
 import System.Exit
 -- import Data.Time.LocalTime
@@ -57,6 +55,8 @@ import Data.List (filter)
 import qualified Data.Map as Map
 import Data.String
 import Data.Vinyl.TypeLevel
+import Polysemy.Log (Log)
+import qualified Polysemy.Log as Log
 
 -- data PlotTypes = PlotTcpAttribute {
 --     pltAttrField :: Text
@@ -194,7 +194,7 @@ instance PlotValue Word32 where
 
 
 -- destinations is an array of destination
-cmdPlotTcpAttribute :: (WithLog m, Members [P.State MyState, Cache, Embed IO] m)
+cmdPlotTcpAttribute :: (Members [Log, P.State MyState, Cache, Embed IO] m)
   => String -- Tcp attr
   -> FilePath -- ^ temporary file to save plot to
   -> Handle
@@ -259,7 +259,7 @@ getData frame attr =
 
 -- type Lens s t a b
 -- case
-cmdPlotMptcpAttribute :: (WithLog m, Members [P.State MyState, P.Trace, Cache, Embed IO] m) =>
+cmdPlotMptcpAttribute :: (Members [Log, P.State MyState, P.Trace, Cache, Embed IO] m) =>
     String -- Tcp attr
     -> FilePath -- ^ temporary file to save plot to
     -> Handle
@@ -269,7 +269,7 @@ cmdPlotMptcpAttribute :: (WithLog m, Members [P.State MyState, P.Trace, Cache, E
 cmdPlotMptcpAttribute field tempPath _ destinations aFrame = do
 
 -- inCore converts into a producer
-  logDebug ("show con " % shown) (ffCon aFrame)
+  Log.debug $ "show con " <> tshow (ffCon aFrame)
   P.trace $ T.unpack $ showConnectionText (ffCon aFrame)
   P.trace $ "number of packets" ++ show (frameLength (ffFrame aFrame))
   -- TODO remove

@@ -54,9 +54,6 @@ import qualified Pipes.Prelude as P
 import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
--- import Colog.Polysemy (Log, log)
-import Colog.Polysemy.Formatting
-import Formatting
 import System.Process hiding (runCommand)
 import System.Exit
 -- import Data.Time.LocalTime
@@ -69,6 +66,8 @@ import Frames.ShowCSV (showCSV)
 import qualified Data.Set as Set
 import Debug.Trace
 import GHC.TypeLits (Symbol)
+import Polysemy.Log (Log)
+import qualified Polysemy.Log as Log
 
 -- data PlotTypes = PlotTcpAttribute {
 --     pltAttrField :: Text
@@ -191,7 +190,7 @@ plotParserOwd mptcpPlot = ArgsPlotOwd <$>
 --   ("absTime", "absTime2", Text)
 --   ]
 
-cmdPlotTcpOwd :: (WithLog m, Members [P.Trace, P.State MyState, Cache, Embed IO] m)
+cmdPlotTcpOwd :: (Members [Log, P.Trace, P.State MyState, Cache, Embed IO] m)
   => FilePath -- ^ temporary file to save plot to
   -> Handle
   -> [ConnectionRole]
@@ -201,7 +200,7 @@ cmdPlotTcpOwd :: (WithLog m, Members [P.Trace, P.State MyState, Cache, Embed IO]
   -- -> FrameFiltered (Record HostColsPrefixed)
   -> Sem m RetCode
 cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
-  logInfo "plotting OWDs "
+  Log.info "plotting OWDs "
   -- look at https://hackage.haskell.org/package/vinyl-0.13.0/docs/Data-Vinyl-Functor.html#t::.
   -- could use showRow as well
   P.embed $ dumpRec $ head justRecs
