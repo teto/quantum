@@ -105,6 +105,7 @@ getMptcpStats (FrameTcp mptcpConn frame) dest =
     , musApplicativeBytes = getSeqRange maxDsn minDsn
     , musMaxDsn = maxDsn
     , musMinDsn = minDsn
+    -- we need the stream id / FrameFiltered MptcpSubflow (Record rs)
     , musSubflowStats = map (getStats dest)  (toList $ mpconSubflows $ mptcpConn)
   }
   where
@@ -118,8 +119,8 @@ getMptcpStats (FrameTcp mptcpConn frame) dest =
 
     -- frame = addTcpDestToFrame $ ffFrame aframe
     -- these return Maybes
-    minSeq = minimum (F.toList $ view tcpSeq <$> frame)
-    maxSeq = maximum $ F.toList $ view tcpSeq <$> frame
+    -- minSeq = minimum (F.toList $ view tcpSeq <$> frame)
+    -- maxSeq = maximum $ F.toList $ view tcpSeq <$> frame
 
     maxTime = maximum $ F.toList $ view relTime <$> frame
     minTime = minimum $ F.toList $ view relTime <$> frame

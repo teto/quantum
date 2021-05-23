@@ -33,7 +33,7 @@ data MptcpUnidirectionalStats = MptcpUnidirectionalStats {
   , musApplicativeBytes :: Word64
   , musMaxDsn :: Word64
   , musMinDsn :: Word64
-  , musSubflowStats :: [ TcpSubflowUnidirectionalStats ]
+  , musSubflowStats :: [ (TcpSubflowUnidirectionalStats) ]
   }
 
 

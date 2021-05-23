@@ -180,7 +180,7 @@ showTcpStats s =
 
 -- |
 showMptcpStats :: MptcpUnidirectionalStats -> String
-showMptcpStats s = " Mptcp stats for direction " ++ show (musDirection s) ++ " :\n"
+showMptcpStats s = " Mptcp stats towards " ++ show (musDirection s) ++ " :\n"
     ++ "- Duration " ++ show (getMptcpStatsDuration s)
     -- getMptcpGoodput
     ++ "- Goodput " ++ "<TODO>\n"
@@ -189,7 +189,7 @@ showMptcpStats s = " Mptcp stats for direction " ++ show (musDirection s) ++ " :
     ++ intercalate "\n" (map showSubflowStats (musSubflowStats s))
     where
       -- ++ show (tusStreamId)
-      showSubflowStats sfStats = "start time for stream " ++ show (tusStartTime $ tssStats sfStats) ++ " end time: " ++ show (tusEndTime $ tssStats sfStats)
+      showSubflowStats sfStats = "stream " ++ show (tusStartTime $ tssStats sfStats) ++ " end time: " ++ show (tusEndTime $ tssStats sfStats)
 
 
 {-

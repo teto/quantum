@@ -65,7 +65,7 @@ data TcpUnidirectionalStats = TcpUnidirectionalStats {
 -- | Computes throughput
 getThroughput :: TcpUnidirectionalStats -> Double
 getThroughput s =
-  fromIntegral (tusSndUna s - tusMinSeq s + 1) / (tusEndTime s - tusStartTime s)
+  fromIntegral (tusSndUna s - tusMinSeq s - 1) / (tusEndTime s - tusStartTime s)
 
 -- | Computes goodput
 getGoodput :: TcpUnidirectionalStats -> Double
