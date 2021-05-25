@@ -106,6 +106,8 @@ common shared-properties
     -- -ddump-splices to dump TH code
     ghc-options:
         -Wall
+        -Werror=missing-methods
+        -Werror=warn-missing-methods
         -Wpartial-fields
         -- -dth-dec-file
         -fwrite-ide-info
@@ -217,7 +219,9 @@ executable mptcpanalyzer
     main-is: app/Main.hs
     hs-source-dirs: src/
     -- -fprof-auto
-    ghc-options: -threaded -rtsopts -O0
+    ghc-options: 
+      -threaded -rtsopts -O0
+
 
 Test-Suite test
   -- 2 types supported, exitcode is based on ... exit codes ....

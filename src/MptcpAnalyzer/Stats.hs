@@ -20,40 +20,48 @@ import Data.Set (toList)
 import Data.Maybe (catMaybes)
 import Data.Word (Word32, Word64)
 import Data.Ord (comparing)
+import qualified Data.Map as Map
 
 -- TODO should be able to update an initial one
 -- type Packet = Record HostCols
 
 -- ⊆
-getTcpStats ::
-  (TcpSeq F.∈ rs, TcpDest F.∈ rs, F.RecVec rs, TcpLen F.∈ rs, RelTime F.∈ rs)
+getTcpStats :: (
+  TcpSeq F.∈ rs, TcpDest F.∈ rs, F.RecVec rs, TcpLen F.∈ rs, RelTime F.∈ rs
+  , PacketId F.∈ rs
+  )
   => FrameFiltered TcpConnection (F.Record rs)
   -> ConnectionRole -> TcpUnidirectionalStats
 getTcpStats aframe dest =
-  TcpUnidirectionalStats {
-    -- tusThroughput = 0
-    tusStartPacketId = frameRow frame 0
-    , tusEndPacketId = 0
-    , tusNrPackets = frameLength frame
-    , tusStartTime = minTime
-    , tusEndTime = maxTime
-    -- TODO fill it
-    , tusMinSeq = minSeq
+  if frameLength frame == 0 then
+    mempty
+  else
+    TcpUnidirectionalStats {
+      -- tusThroughput = 0
+      tusStartPacketId = 0 -- (frameRow frame 0) ^. packetId
+      , tusEndPacketId = 0 -- (frameRow frame (frameLength frame - 1)) ^. packetId
+      , tusNrPackets = frameLength frame
+      , tusStartTime = minTime
+      , tusEndTime = maxTime
+      -- TODO fill it
+      , tusMinSeq = minSeq
 
-    -- TODO should be max of seen acks
-    , tusSndUna = maxSeqRow ^. tcpSeq + (fromIntegral $ maxSeqRow ^. tcpLen) :: Word32
-    , tusSndNext = maxSeqRow ^. tcpSeq + (fromIntegral $ maxSeqRow ^. tcpLen ) :: Word32
-    , tusReinjectedBytes = 0
-    -- , tusSnd = 0
-    -- , tusNumberOfPackets = mempty
-  }
+      -- TODO should be max of seen acks
+      , tusSndUna = maxSeqRow ^. tcpSeq + (fromIntegral $ maxSeqRow ^. tcpLen) :: Word32
+      , tusSndNext = maxSeqRow ^. tcpSeq + (fromIntegral $ maxSeqRow ^. tcpLen ) :: Word32
+      , tusReinjectedBytes = 0
+      -- , tusSnd = 0
+      -- , tusNumberOfPackets = mempty
+    }
   where
     frame = F.filterFrame (\x -> x ^. tcpDest == dest) (ffFrame aframe)
 
     -- these return Maybes
     -- I need to find its id and add tcpSize afterwards
     -- TODO use     minimumBy
-    minSeq = minimum (F.toList $ view tcpSeq <$> frame)
+    minSeq = case (F.toList $ view tcpSeq <$> frame) of
+      [] -> 0
+      l -> minimum l
     -- maxSeq = maximum $ F.toList $ view tcpSeq <$> frame
 
     -- $ F.toList $ view tcpSeq <$> frame
@@ -67,6 +75,7 @@ getTcpStats aframe dest =
 -- | TcpSubflowUnidirectionalStats
 getSubflowStats ::
   (TcpSeq F.∈ rs, F.RecVec rs, RelTime F.∈ rs, TcpLen F.∈ rs
+  , PacketId F.∈ rs
     , IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs, TcpStream ∈ rs
   -- , TcpDest F.∈ rs
   )
@@ -91,6 +100,7 @@ getMptcpStats ::
    -- TcpDest F.∈ rs
   MptcpDsn F.∈ rs, TcpSeq F.∈ rs, IpDest F.∈ rs, IpSource F.∈ rs
   , TcpLen F.∈ rs
+  , PacketId F.∈ rs
   , TcpDestPort F.∈ rs, MptcpRecvToken F.∈ rs
   , TcpFlags F.∈ rs, TcpSrcPort F.∈ rs, TcpStream F.∈ rs, RelTime F.∈ rs
   , rs F.⊆ HostCols
@@ -106,7 +116,7 @@ getMptcpStats (FrameTcp mptcpConn frame) dest =
     , musMaxDsn = maxDsn
     , musMinDsn = minDsn
     -- we need the stream id / FrameFiltered MptcpSubflow (Record rs)
-    , musSubflowStats = map (getStats dest)  (toList $ mpconSubflows $ mptcpConn)
+    , musSubflowStats = Map.fromList $ map (\sf -> (sf, getStats dest sf))  (toList $ mpconSubflows $ mptcpConn)
   }
   where
     -- buildTcpConnectionFromStreamId :: SomeFrame -> StreamId Tcp -> Either String (FrameFiltered TcpConnection Packet)

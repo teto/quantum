@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DerivingVia #-}
 module Net.Tcp.Stats
 where
 
@@ -58,9 +61,55 @@ data TcpUnidirectionalStats = TcpUnidirectionalStats {
     -- TODO this should be updated
     -- For now = max(tcpseq) - minx(tcpseq). Should add the size of packets'''
     -- , tusGoodput :: Byte
+    } 
+    -- deriving Semigroup via WrappedMonoid TcpUnidirectionalStats
+
+-- deriving instance Semigroup TcpUnidirectionalStats
+-- deriving instance Monoid TcpUnidirectionalStats
+
+instance Semigroup TcpUnidirectionalStats where
+   -- (<>) :: a -> a -> a
+   -- TODO this does nothing
+   (<>) a b = TcpUnidirectionalStats {
+      -- tusThroughput = 0
+      tusStartPacketId = 0 -- (frameRow frame 0) ^. packetId
+      , tusEndPacketId = 0 -- (frameRow frame (frameLength frame - 1)) ^. packetId
+      , tusNrPackets = 0
+      , tusStartTime = 0
+      , tusEndTime = 0
+      -- TODO fill it
+      , tusMinSeq = 0
+
+      -- TODO should be max of seen acks
+      , tusSndUna = 0
+      , tusSndNext = 0
+      , tusReinjectedBytes = 0
+      -- , tusSnd = 0
+      -- , tusNumberOfPackets = mempty
     }
 
+instance Monoid TcpUnidirectionalStats where
+  mempty = TcpUnidirectionalStats {
+      -- tusThroughput = 0
+      tusStartPacketId = 0 -- (frameRow frame 0) ^. packetId
+      , tusEndPacketId = 0 -- (frameRow frame (frameLength frame - 1)) ^. packetId
+      , tusNrPackets = 0
+      , tusStartTime = 0
+      , tusEndTime = 0
+      -- TODO fill it
+      , tusMinSeq = 0
 
+      -- TODO should be max of seen acks
+      , tusSndUna = 0
+      , tusSndNext = 0
+      , tusReinjectedBytes = 0
+      -- , tusSnd = 0
+      -- , tusNumberOfPackets = mempty
+    }
+
+getTcpSeqRange :: TcpUnidirectionalStats -> Double
+getTcpSeqRange s =
+  fromIntegral (tusSndUna s - tusMinSeq s - 1)
 
 -- | Computes throughput
 getThroughput :: TcpUnidirectionalStats -> Double

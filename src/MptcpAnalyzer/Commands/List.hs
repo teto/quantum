@@ -13,6 +13,7 @@ import MptcpAnalyzer.Stream
 import MptcpAnalyzer.Stats
 import MptcpAnalyzer.ArtificialFields
 import Net.Tcp
+import Net.Mptcp
 import Net.Mptcp.Stats
 import MptcpAnalyzer.Types
 
@@ -32,7 +33,7 @@ import Data.Either (fromRight)
 import Data.List (intercalate)
 import Polysemy.Log (Log)
 import qualified Polysemy.Log as Log
-
+import qualified Data.Map as Map
 
 piListTcpOpts ::  ParserInfo CommandArgs
 piListTcpOpts = info (
@@ -178,21 +179,37 @@ showTcpStats s =
                   ++ " Throughput " ++ show (getThroughput s) ++ "b/s"
 
 
--- |
+{-
+Returns something
+mptcp stream 0 transferred 469.0 Bytes over 45.831181 sec(456.0 Bytes per second) towards Server.
+tcpstream 0 transferred 460.0 Bytes out of 469.0 Bytes, accounting for 98.08%
+tcpstream 2 transferred 9.0 Bytes out of 469.0 Bytes, accounting for 1.92%
+tcpstream 4 transferred 0.0 Bytes out of 469.0 Bytes, accounting for 0.00%
+tcpstream 6 transferred 0.0 Bytes out of 469.0 Bytes, accounting for 0.00%
+-}
 showMptcpStats :: MptcpUnidirectionalStats -> String
 showMptcpStats s = " Mptcp stats towards " ++ show (musDirection s) ++ " :\n"
-    ++ "- Duration " ++ show (getMptcpStatsDuration s)
+    ++ "- Duration " ++ show (getMptcpStatsDuration s) ++ "\n"
     -- getMptcpGoodput
-    ++ "- Goodput " ++ "<TODO>\n"
+    ++ "- Goodput " ++ show (getMptcpGoodput s)
+    ++ "<TODO>\n"
     ++ "Applicative Bytes : " ++ show (musApplicativeBytes s) ++ "\n"
     ++ "Subflow stats:\n"
-    ++ intercalate "\n" (map showSubflowStats (musSubflowStats s))
+    ++ intercalate "\n" (map showSubflowStats (Map.toList $ musSubflowStats s))
     where
       -- ++ show (tusStreamId)
-      showSubflowStats sfStats = "stream " ++ show (tusStartTime $ tssStats sfStats) ++ " end time: " ++ show (tusEndTime $ tssStats sfStats)
-
+      showSubflowStats (sf, sfStats) = let
+          tcpStats = tssStats sfStats
+          seqRange = getTcpSeqRange tcpStats
+          totalApplicationBytes = musApplicativeBytes s
+        in "stream " ++ show (conTcpStreamId (sfConn sf))
+          ++ ": transferred " ++ show seqRange ++ " out of " ++ show totalApplicationBytes
+          ++ " between "
+          ++ show (tusStartTime $ tcpStats) ++ " end time: " ++ show (tusEndTime $ tssStats sfStats)
+          ++ " , accouting for " ++ show (seqRange / (fromIntegral totalApplicationBytes)) ++ " %"
 
 {-
+Returns:
 mptcp stream 0 transferred 308.0 Bytes over 45.658558 sec(308.0 Bytes per second) towards Client.
 tcpstream 0 transferred 308.0 Bytes out of 308.0 Bytes, accounting for 100.00%
 tcpstream 2 transferred 0.0 Bytes out of 308.0 Bytes, accounting for 0.00%
@@ -220,16 +237,16 @@ cmdMptcpSummary streamId detailed = do
 
         -- let _tcpstreams = getTcpStreams frame
         -- TODO we need to add MptcpDest
-        let mptcpStats = getMptcpStats aframe RoleClient
+        let mptcpStatsClient = getMptcpStats aframe RoleClient
+        let mptcpStatsServer = getMptcpStats aframe RoleServer
 
         P.trace $ showConnection (ffCon aframe)
         Log.debug $ "Number of rows " <> tshow (frameLength frame)
         if detailed
         then
           -- RoleServer
-          trace $ showMptcpStats mptcpStats
-          -- return CMD.Continue
-          -- P.trace $ showStats RoleClient
+          trace $ showMptcpStats mptcpStatsClient
+          -- trace $ showMptcpStats mptcpStatsServer
         else
           pure ()
         return CMD.Continue

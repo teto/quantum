@@ -16,9 +16,13 @@ import Data.Maybe (fromJust)
 import qualified Frames as F
 import qualified Data.Foldable as F
 import Data.List (sort, sortBy, sortOn)
+import Data.Map (Map, fromList, mapKeys)
+import qualified Data.Map as Map
+import Control.Lens
 
 -- | Useful to show DSN
 data TcpSubflowUnidirectionalStats = TcpSubflowUnidirectionalStats {
+  -- tssStats :: TcpUnidirectionalStats
   tssStats :: TcpUnidirectionalStats
   -- tss
   -- add DSN stats
@@ -33,7 +37,7 @@ data MptcpUnidirectionalStats = MptcpUnidirectionalStats {
   , musApplicativeBytes :: Word64
   , musMaxDsn :: Word64
   , musMinDsn :: Word64
-  , musSubflowStats :: [ (TcpSubflowUnidirectionalStats) ]
+  , musSubflowStats :: Map MptcpSubflow TcpSubflowUnidirectionalStats
   }
 
 
@@ -50,21 +54,19 @@ data MptcpUnidirectionalStats = MptcpUnidirectionalStats {
     --     ''' sum of total bytes transferred '''
     --     return Byte(sum(map(lambda x: x.throughput_bytes, self.subflow_stats)))
 
-
-
 -- undefined
 getMptcpGoodput :: MptcpUnidirectionalStats -> Double
-getMptcpGoodput s = fromIntegral (musApplicativeBytes s) / (getMptcpStatsDuration s)
+getMptcpGoodput s = fromIntegral (musApplicativeBytes s) / ((getMptcpStatsDuration s) ^. _1)
 
 
 -- | return max - min across subflows
-getMptcpStatsDuration :: MptcpUnidirectionalStats -> Double
-getMptcpStatsDuration s = end - start
+getMptcpStatsDuration :: MptcpUnidirectionalStats -> (Double, Double, Double)
+getMptcpStatsDuration s = (end - start, start, end)
   where
     start = head $ sort starts
-    end = head $ sort ends
+    end = last $ sort ends
     -- min of
     -- TODO get min
-    starts = map (tusStartTime . tssStats) (musSubflowStats s)
+    starts = map (tusStartTime . tssStats) (Map.elems $ musSubflowStats s)
     -- take the maximum
-    ends = map (tusEndTime . tssStats) (musSubflowStats s)
+    ends = map (tusEndTime . tssStats) (Map.elems $ musSubflowStats s)

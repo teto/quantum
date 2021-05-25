@@ -447,6 +447,7 @@ runIteration fullCmd = do
           return CMD.Continue
         Just args -> do
           -- TODO parse
+          Log.info $ "Running " <> tshow args
           let parserResult = execParserPure defaultParserPrefs mainParserInfo args
           case parserResult of
             (Failure failure) -> do
@@ -478,7 +479,6 @@ inputLoop args =
     go (xs:rest) = runIteration (Just xs) >>= \case
         CMD.Exit -> trace "Exiting"
         _ -> do
-          Log.error "Last command failed with message:\n"
           inputLoop rest
     go [] = do
       s <- P.get
