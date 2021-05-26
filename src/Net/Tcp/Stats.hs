@@ -17,6 +17,8 @@ import qualified Data.Map as Map
 import Control.Lens hiding (argument)
 import Data.Word (Word32, Word64)
 import Data.Maybe (fromJust)
+-- import Data.ByteUnits
+
 import qualified Frames as F
 import qualified Data.Foldable as F
 
@@ -107,6 +109,8 @@ instance Monoid TcpUnidirectionalStats where
       -- , tusNumberOfPackets = mempty
     }
 
+
+-- byteValue
 getTcpSeqRange :: TcpUnidirectionalStats -> Double
 getTcpSeqRange s =
   fromIntegral (tusSndUna s - tusMinSeq s - 1)

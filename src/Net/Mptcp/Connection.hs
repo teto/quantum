@@ -55,7 +55,7 @@ showMptcpConnectionText con =
     -- showIp = Net.IP.encode
     -- tshowSubflow = tshow . showSubflow
 
-    -- todo show server key/
+    -- todo show version
     tpl :: Text
     tpl = "Server key/token: " <> tshow (mptcpServerKey con) <> "/" <> tshow ( mptcpServerToken con)
         <> "\nClient key/token: " <> tshow (mptcpClientKey con) <> "/" <> tshow ( mptcpClientToken con)

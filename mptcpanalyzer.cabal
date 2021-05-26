@@ -34,6 +34,7 @@ Flag Dev {
 common shared-properties
     build-depends: base >= 4.12 && < 4.20
       , optparse-applicative
+      , byteunits
       , containers
       -- polysemybased logger
       , cereal

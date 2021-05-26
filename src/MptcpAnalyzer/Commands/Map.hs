@@ -92,6 +92,8 @@ parserMapConnection forMptcp =
 --   else
 --     cmdMapTcpConnection args
 
+printInRed :: String -> String
+printInRed val = setSGRCode [SetColor Foreground Vivid Red] ++ val ++ setSGRCode [Reset]
 
 -- TODO this could be made polymorphic using StreamConnection
 cmdMapTcpConnection :: (Members '[Log, P.State MyState, P.Trace, Cache, Embed IO] r )
@@ -114,7 +116,8 @@ cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _)
       P.trace $ TS.unpack $ intercalate "\n" $ map displayFailure (lefts consToCompare)
       return CMD.Continue
       where
-        displayScore (con, score) = "Score for connection " <> showConnectionText con <> ": " <> tshow score
+        displayScore (con, score) = "Score for connection " <> showConnectionText con
+            <> ": " <> TS.pack (printInRed $ show score)
         displayFailure err = "Couldn't compute score for tcp.stream  " <> tshow err
     _ -> return $ CMD.Error "An error happened"
 
