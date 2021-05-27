@@ -101,17 +101,17 @@
         "pre-commit-hooks": "pre-commit-hooks"
       },
       "locked": {
-        "lastModified": 1621339826,
-        "narHash": "sha256-Hl0iki/KOpOAfr02t2AqDsG8nc+FJ/fv7ZBZBDKdZBI=",
+        "lastModified": 1621613574,
+        "narHash": "sha256-ytSvpKT5qfXYrckY26/01K3RTF4a5Plv9K5io9045PM=",
         "owner": "haskell",
         "repo": "haskell-language-server",
-        "rev": "f94725a562945c27e61b176a482d7f29c2fa02fd",
+        "rev": "37e0551b0d411e345e250a6ed287103640524a62",
         "type": "github"
       },
       "original": {
         "owner": "haskell",
-        "ref": "nix-flakes",
         "repo": "haskell-language-server",
+        "rev": "37e0551b0d411e345e250a6ed287103640524a62",
         "type": "github"
       }
     },
@@ -173,11 +173,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1621073999,
-        "narHash": "sha256-Cp99YreSFedcWovxNmO8g8qFYltQQJPRLfuot6Z7iGE=",
+        "lastModified": 1621840840,
+        "narHash": "sha256-o6h6+d5ZwrFmOTe+ma9s1Z9kyHsCW1C84IA8RZ9/fIU=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "83d907fd760d9ee4f49b4b7e4b1c6682f137b573",
+        "rev": "ea7d4aa9b8225abd6147339f0d56675d6f1f0fd1",
         "type": "github"
       },
       "original": {
@@ -222,11 +222,11 @@
         "nixpkgs": "nixpkgs_3"
       },
       "locked": {
-        "lastModified": 1620696204,
-        "narHash": "sha256-u27dYVrTmISZpBEWF5XssvNZ1iGlSD0nqalkUMJzXhs=",
+        "lastModified": 1621564136,
+        "narHash": "sha256-cXhv2lcpxz9muSKsJ0+r5q8YUGYIUARsPUFFWfcuiAQ=",
         "owner": "nix-community",
         "repo": "poetry2nix",
-        "rev": "2d27d44397242b28c3f0081e0432e4f6c951f3a1",
+        "rev": "a5d82ecb020e6c058c0a515520a4e22133278b92",
         "type": "github"
       },
       "original": {
@@ -264,11 +264,11 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1621361081,
-        "narHash": "sha256-ZANOXqN6oRKgIBG+tGpjlZzws/7fW9JHX91k1qwNqiI=",
+        "lastModified": 1622056447,
+        "narHash": "sha256-wBASjzRp91PJvwF3L3vD09ExMUazMOpHL4eFcFudtx4=",
         "owner": "berewt",
         "repo": "REPLica",
-        "rev": "4ea91757cefb563b47bc1c61ba3e580104ce51b0",
+        "rev": "e6abb84d5ee791e4c5ff2cd5abd307686ca7c53f",
         "type": "github"
       },
       "original": {

@@ -170,6 +170,7 @@ plotStreamParser _validAttributes mptcpPlot = ArgsPlotTcpAttr <$>
         <> Options.Applicative.value mptcpPlot
         <> help ""
       )
+      <**> helper
 
 -- | A typeclass abstracting the functions we need
 -- to be able to plot against an axis of type a

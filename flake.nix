@@ -10,7 +10,7 @@
 
     flake-utils.url = "github:numtide/flake-utils";
 
-    hls.url = "github:haskell/haskell-language-server/nix-flakes";
+    hls.url = "github:haskell/haskell-language-server?rev=37e0551b0d411e345e250a6ed287103640524a62";
   };
 
   outputs = { self, nixpkgs, flake-utils, poetry, replica, ... }@inputs:
@@ -24,6 +24,7 @@
         wide-word = unmarkBroken (dontCheck hold.wide-word);
 
         co-log-polysemy = doJailbreak (hold.co-log-polysemy);
+        # hls-lint-plugin = doJailbreak (hold.hls-lint-plugin);
 
         netlink = (overrideSrc hold.netlink {
           # src = builtins.fetchGit {

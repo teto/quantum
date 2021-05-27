@@ -58,22 +58,25 @@ $ cabal build
 - [polysemy](polysemy) to handle effects
 - [Frames](frames) to analyze data
 - [haskell-chart](haskell-chart) with the svg backend
-- [wireshark](wireshark-mptcp) to convert packet captures (.pcapng) to csv
-files.
+- [wireshark](wireshark-mptcp) to convert packet captures (.pcapng) to csv files.
 
-## Tests
-
-Tests are run via [shelltestrunner].
 
 ## Debug splices
 
 `-ddump-splices -ddump-to-file -dth-dec-file`
 
 
-
 # How to contribute ?
 
+`nix develop`
+
 ##  Run the tests
+
+Tests are run via [REPLica].
+
+```
+make tests
+```
 
 ```
 make test-integration
@@ -106,6 +109,7 @@ This project is founded by ![NGI pointer](img/ngi_logo.png).
 [mptcpplot]: https://github.com/nasa/multipath-tcp-tools/
 [hk-img]: https://img.shields.io/hackage/v/mptcpanalyzer.svg?logo=haskell
 [hk]: https://hackage.haskell.org/package/mptcpanalyzer
+[replica]: https://github.com/berewt/REPLica
 wireshark-mptcp: https://www.wireshark.org/docs/dfref/m/mptcp.html
 polysemy: https://hackage.haskell.org/package/polysemy
 visidata: https://www.visidata.org/

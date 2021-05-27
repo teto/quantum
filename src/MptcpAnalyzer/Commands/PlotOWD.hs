@@ -215,8 +215,8 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
 
 
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
-  embed $ writeDSV defaultParserOptions "debug.csv" (toFrame justRecs)
-  embed $ writeDSV defaultParserOptions "converted.csv" sndRcvFrame
+  embed $ writeDSV defaultParserOptions "tcp-owd-debug.csv" (toFrame justRecs)
+  embed $ writeDSV defaultParserOptions "tcp-owd-converted.csv" sndRcvFrame
   -- P.embed $ putStrLn $ "OWDs:" ++ show owd
   -- so for now we assume an innerJoin (but fix it later)
 
@@ -251,10 +251,8 @@ cmdPlotMptcpOwd :: (
   -> [ConnectionRole]
   -> TcpConnection
   -> MergedPcap
-  -- -> FrameFiltered Packet
-  -- -> FrameFiltered (Record HostColsPrefixed)
   -> Sem m RetCode
-cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
+cmdPlotMptcpOwd tempPath _ destinations con mergedRes = do
   Log.info "plotting MPTCP OWDs "
   -- look at https://hackage.haskell.org/package/vinyl-0.13.0/docs/Data-Vinyl-Functor.html#t::.
   -- could use showRow as well
@@ -263,15 +261,15 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
   P.trace $ (concat . showFields) (head justRecs)
   -- P.embed $ putStrLn $ "retyped column" ++ (concat . showFields) (newCol)
   embed $ toFile def tempPath $ do
-      layout_title .= "TCP One-way delays"
+      layout_title .= "MPTCP One-way delays"
       -- TODO generate for mptcp plot
       -- for each subflow, plot the MptcpDest
       mapM_ plotAttr  [ x | x <- destinations]
 
 
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
-  embed $ writeDSV defaultParserOptions "debug.csv" (toFrame justRecs)
-  embed $ writeDSV defaultParserOptions "converted.csv" sndRcvFrame
+  embed $ writeDSV defaultParserOptions "mptcp-owd-debug.csv" (toFrame justRecs)
+  embed $ writeDSV defaultParserOptions "mptcp-owd-converted.csv" sndRcvFrame
   -- P.embed $ putStrLn $ "OWDs:" ++ show owd
   -- so for now we assume an innerJoin (but fix it later)
 
@@ -287,7 +285,7 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
       plot (line lineLabel [ [ (d,v) | (d,v) <- zip timeData owd ] ])
 
         where
-          lineLabel = "TCP seq " ++ showConnection con ++ " (towards " ++ showConnectionRole dest ++ ")"
+          lineLabel = "Subflow DSNs " ++ showConnection con ++ " (towards " ++ showConnectionRole dest ++ ")"
           unidirectionalFrame = filterFrame (\x -> x ^. tcpDest == dest) sndRcvFrame
 
           timeData = traceShow ("timedata length=" ++ show (frameLength unidirectionalFrame)) toList $ view sndAbsTime <$> unidirectionalFrame

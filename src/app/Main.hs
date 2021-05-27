@@ -69,7 +69,7 @@ import Frames.InCore (toFrame)
 import System.Console.Haskeline
 import System.Console.ANSI
 import Control.Lens ((^.), view)
-
+import System.Exit
 import MptcpAnalyzer.Pcap (defaultTsharkPrefs, defaultTsharkOptions, defaultParserOptions)
 import Pipes hiding (Proxy)
 import System.Process hiding (runCommand)
@@ -233,8 +233,6 @@ main = do
       , cacheEnabled = True
     }
 
-  -- & cmap (renderThreadTimeMessage logEnvStderr)
-  -- $ runLogAction @IO logStringStdout (inputLoop (extraCommands options))
   _ <- runInputT haskelineSettings $
           runFinal @(InputT IO)
           $ P.embedToFinal . P.runEmbedded lift
@@ -242,7 +240,6 @@ main = do
           $ P.runState myState
           $ runMockCache cacheConfig
           $ interpretLogStdout $
-          -- $ runLogAction @IO richMessageAction 
             (inputLoop (extraCommands options))
 
       -- -- Set the level of logging we want (for more control see 'filterLogs')
@@ -450,12 +447,17 @@ runIteration fullCmd = do
           Log.info $ "Running " <> tshow args
           let parserResult = execParserPure defaultParserPrefs mainParserInfo args
           case parserResult of
+            -- Failure (ParserFailure ParserHelp)
             (Failure failure) -> do
                 -- last arg is progname
-                let (h, exit) = renderFailure failure "prompt>"
+                let (h, exit) = renderFailure failure ""
                 -- Log.debug h
+                P.trace $ h
+                Log.debug $ "Exit code " <> tshow exit
                 Log.debug $ "Passed args " <> tshow args
-                return $ CMD.Error $ "could not parse: " ++ show failure
+                return $ case exit of
+                    ExitSuccess -> CMD.Continue
+                    ExitFailure _exitCode -> CMD.Error $ "could not parse: " ++ show failure
             (CompletionInvoked _compl) -> return CMD.Continue
             (Success parsedArgs) -> runCommand parsedArgs
 
@@ -463,7 +465,7 @@ runIteration fullCmd = do
     case cmdCode of
         CMD.Exit -> P.trace "Exiting" >> return CMD.Exit
         CMD.Error msg -> do
-          P.trace $ "Last command failed with message:\n" ++ show msg
+          P.trace $ "CmdCode: Last command failed with message:\n" ++ show msg
           return $ CMD.Error msg
         behavior -> return behavior
 
