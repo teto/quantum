@@ -6,25 +6,19 @@ import MptcpAnalyzer.ArtificialFields
 import Data.Word (Word32)
 
 data PlotSettings = PlotSettings {
-  ploTitle :: String
-  , ploLabelx :: String
-  , ploLabely :: String
+  plsOut :: Maybe String
+  , plsTitle :: Maybe String
+  , plsDisplay :: Bool
+  -- , ploLabelx :: String
+  -- , ploLabely :: String
   -- Tshark config ? why
+  --
+  , plsMptcp :: Bool -- mptcp
   }
       -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
 
-
---
+-- (Maybe String) (Maybe String) Bool
 data ArgsPlots = 
-  -- ArgsPlots  {
-  --     plotOut :: Maybe String
-  --     -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
-  --     -- , plotDisplay ::
-  --     -- , plotTcpStreamId :: StreamId Tcp
-  --     , plotTitle :: Maybe String
-  --     , plotToClipboard :: Maybe Bool
-  --     , plotDisplay :: Bool
-  -- }
 
     -- actually valid for MPTCP too
     ArgsPlotTcpAttr {
@@ -34,17 +28,20 @@ data ArgsPlots =
       , plotStreamId :: Word32
       , plotTcpAttr :: String
       , plotDest :: Maybe ConnectionRole
-      , plotMptcp :: Bool -- ^ hidden option
+      -- , plotMptcp :: Bool -- ^ hidden option
     }
-    | ArgsPlotOwd {
-      plotOwdPcap1 :: FilePath
-      , plotOwdPcap2 :: FilePath
-      -- try to pattern match on the StreamId
-      , plotOwdStreamId1 :: Word32
-      , plotOwdStreamId2 :: Word32
-      , plotOwdDest :: Maybe ConnectionRole
-      -- , plotOwdMptcp :: Bool -- ^ hidden option
-    }
+    -- |
+    -- @pcap1 pcap2 stream1 stream2 destinations whether its tcp or mptcp
+    | ArgsPlotOwd FilePath FilePath Word32 Word32 (Maybe ConnectionRole)
+    -- | ArgsPlotOwd {
+    --   plotOwdPcap1 :: FilePath
+    --   , plotOwdPcap2 :: FilePath
+    --   -- try to pattern match on the StreamId
+    --   , plotOwdStreamId1 :: Word32
+    --   , plotOwdStreamId2 :: Word32
+    --   , plotOwdDest :: Maybe ConnectionRole
+    --   -- , plotOwdMptcp :: Bool -- ^ hidden option
+    -- }
     --
     --
     -- ArgsPlotMptcpAttr {

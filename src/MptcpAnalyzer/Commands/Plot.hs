@@ -9,6 +9,7 @@ import MptcpAnalyzer.Plots.Types
 import MptcpAnalyzer.Commands.Definitions
 import MptcpAnalyzer.Cache
 import MptcpAnalyzer.Commands.Definitions as CMD
+import MptcpAnalyzer.Commands.PlotOWD
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Loader
 import Tshark.Fields (baseFields, TsharkFieldDesc (fieldLabel))
@@ -64,8 +65,6 @@ import qualified Polysemy.Log as Log
 --     -- Drops first 3 packets of the dataframe assuming they are syn
 --   }
 
--- data PlotSettings =  PlotSettings {
---   }
 -- Plot MPTCP subflow attributes over time
 
 -- piPlotParserTcpAttr :: Parser PlotTypes
@@ -73,23 +72,86 @@ import qualified Polysemy.Log as Log
 --       ( help "Choose an mptcp attribute to plot"
 --       <> metavar "FIELD" )
 
--- piPlotTcpAttr :: ParserInfo CommandArgs
--- piPlotTcpAttr = info (ArgsPlotGeneric <$> plotStreamParser)
---   ( progDesc "Generate a plot"
---   )
+
+parserPlotSettings :: Bool -> Parser PlotSettings
+parserPlotSettings mptcpPlot = PlotSettings 
+    <$> optional (strOption
+      ( long "out" <> short 'o'
+      <> help "Save filename of the plot."
+      <> metavar "OUT" ))
+    -- <*> optional ( strOption
+      -- ( long "title" <> short 't'
+      -- <> help "Overrides the default plot title."
+      -- <> metavar "TITLE" ))
+    -- <*> optional (switch
+      -- ( long "primary"
+      -- <> help "Copy to X clipboard, requires `xsel` to be installed"
+      -- ))
+    <*> optional ( strOption
+      ( long "title" <> short 't'
+      <> help "Overrides the default plot title."
+      <> metavar "TITLE" ))
+    <*> (switch
+      ( long "display"
+      <> help "Uses xdg-open to display plot"
+      ))
+      <*> option auto (
+          metavar "MPTCP"
+        -- internal is stronger than --belive, hides from all descriptions
+        <> internal
+        <> Options.Applicative.value mptcpPlot
+        <> help ""
+      )
+    -- <*> (switch
+    --   ( long "protocol"
+    --   <> help "Uses xdg-open to display plot"
+    --   ))
 
 
 -- |
 -- @param 
-piPlotTcpAttrParser ::  ParserInfo ArgsPlots
-piPlotTcpAttrParser = info (plotStreamParser validTcpAttributes False)
-  ( progDesc "Plot TCP attr"
+-- TODO specialize ArgsPlots for TCP ?
+piPlotTcpMainParser :: ParserInfo CommandArgs
+piPlotTcpMainParser = info parserPlotTcpMain
+  ( progDesc " TCP Plots"
   )
 
+-- -> Bool -- ^ for mptcp yes or no
+parserPlotTcpMain :: Parser CommandArgs
+parserPlotTcpMain  = ArgsPlotGeneric <$> (parserPlotSettings False) 
+    <*> hsubparser (
+      command "attr" (info (plotStreamParser validTcpAttributes False) (progDesc "toto"))
+      <> command "owd" (piPlotTcpOwd)
+      )
+
+
+parserPlotMptcpMain :: Parser CommandArgs
+parserPlotMptcpMain  = ArgsPlotGeneric <$> (parserPlotSettings False) 
+    <*> hsubparser (
+      command "attr" (info (plotStreamParser validTcpAttributes False) (progDesc "toto"))
+      <> command "owd" (piPlotTcpOwd)
+      )
+
+-- shared by tcp / mptcp
+-- parserPlotGeneric :: Parser ArgsPlots
+-- parserPlotGeneric  = plotStreamParser validTcpAttributes False
+      -- <*> option auto (
+      --     metavar "MPTCP"
+      --   -- internal is stronger than --belive, hides from all descriptions
+      --   <> internal
+      --   <> Options.Applicative.value mptcpPlot
+      --   <> help ""
+      -- )
+
+-- piPlotTcpAttrParser :: ParserInfo ArgsPlots
+-- piPlotTcpAttrParser = info (plotStreamParser validTcpAttributes False)
+--   ( progDesc "Plot TCP attr"
+--   )
+
 -- |
--- @param 
-piPlotMptcpAttrParser ::  ParserInfo ArgsPlots
-piPlotMptcpAttrParser = info (
+-- @param
+piPlotMptcpParser :: ParserInfo ArgsPlots
+piPlotMptcpParser = info (
   plotStreamParser validMptcpAttributes True
   )
   ( progDesc "Plot MPTCP attr"
@@ -163,13 +225,13 @@ plotStreamParser _validAttributes mptcpPlot = ArgsPlotTcpAttr <$>
         -- <> Options.Applicative.value RoleServer
         <> help ""
       ))
-      <*> option auto (
-          metavar "MPTCP"
-        -- internal is stronger than --belive, hides from all descriptions
-        <> internal
-        <> Options.Applicative.value mptcpPlot
-        <> help ""
-      )
+      -- <*> option auto (
+      --     metavar "MPTCP"
+      --   -- internal is stronger than --belive, hides from all descriptions
+      --   <> internal
+      --   <> Options.Applicative.value mptcpPlot
+      --   <> help ""
+      -- )
       <**> helper
 
 -- | A typeclass abstracting the functions we need

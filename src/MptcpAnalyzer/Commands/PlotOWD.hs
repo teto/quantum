@@ -75,8 +75,6 @@ import qualified Polysemy.Log as Log
 --     -- Drops first 3 packets of the dataframe assuming they are syn
 --   }
 
--- data PlotSettings =  PlotSettings {
---   }
 -- Plot MPTCP subflow attributes over time
 
 -- piPlotParserTcpAttr :: Parser PlotTypes
@@ -84,18 +82,10 @@ import qualified Polysemy.Log as Log
 --       ( help "Choose an mptcp attribute to plot"
 --       <> metavar "FIELD" )
 
--- piPlotTcpAttr :: ParserInfo CommandArgs
--- piPlotTcpAttr = info (ArgsPlotGeneric <$> plotParserOwd)
---   ( progDesc "Generate a plot"
---   )
-
-
 -- |
 -- @param
 piPlotTcpOwd ::  ParserInfo ArgsPlots
-piPlotTcpOwd = info (plotParserOwd False)
-  ( progDesc "Plot TCP attr"
-  )
+piPlotTcpOwd = info (plotParserOwd False) (progDesc "Plot TCP owd")
 
 
 
@@ -103,8 +93,9 @@ piPlotTcpOwd = info (plotParserOwd False)
 plotParserOwd ::
     -- [String]
     Bool -- ^ for mptcp yes or no
-    -> Parser ArgsPlots
-plotParserOwd mptcpPlot = ArgsPlotOwd <$>
+    ->
+    Parser ArgsPlots
+plotParserOwd _mptcpPlot = ArgsPlotOwd <$>
       -- this ends up being not optional !
       strArgument (
           metavar "PCAP1"
@@ -131,6 +122,7 @@ plotParserOwd mptcpPlot = ArgsPlotOwd <$>
         -- <> Options.Applicative.value RoleServer
         <> help ""
       ))
+      -- <**> help
       -- <*> option auto (
       --     metavar "MPTCP"
       --   -- internal is stronger than --belive, hides from all descriptions

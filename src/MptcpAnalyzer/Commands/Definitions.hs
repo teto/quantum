@@ -37,7 +37,9 @@ data CommandArgs =
     | ArgsMptcpSummary Bool (StreamId Mptcp)
     | ArgsExport FilePath   -- ^ argsExportFilename
     -- | plotOut
-    | ArgsPlotGeneric (Maybe String) (Maybe String) Bool ArgsPlots
+    -- Bool Whether we have to display
+    -- Bool Whether it's TCP
+    | ArgsPlotGeneric PlotSettings ArgsPlots
     -- {
     --   plotOut :: Maybe String 
   -- --     , plotToClipboard :: Maybe Bool

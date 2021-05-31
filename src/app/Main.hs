@@ -97,45 +97,29 @@ data CLIArguments = CLIArguments {
 loggerName :: String
 loggerName = "main"
 
-
-plotParserGeneric :: Parser CommandArgs
-plotParserGeneric = ArgsPlotGeneric 
-      <$> optional (strOption
-      ( long "out" <> short 'o'
-      <> help "Name of the output plot."
-      <> metavar "OUT" ))
-    -- <*> optional ( strOption
-      -- ( long "title" <> short 't'
-      -- <> help "Overrides the default plot title."
-      -- <> metavar "TITLE" ))
-    -- <*> optional (switch
-      -- ( long "primary"
-      -- <> help "Copy to X clipboard, requires `xsel` to be installed"
-      -- ))
-    <*> optional ( strOption
-      ( long "title" <> short 't'
-      <> help "Overrides the default plot title."
-      <> metavar "TITLE" ))
-    <*> (switch
-      ( long "display"
-      <> help "Uses xdg-open to display plot"
-      ))
-      <*> plotParserSpecific
-
 deriving instance Read Log.Severity
 
-plotinfoParserGeneric :: ParserInfo CommandArgs
-plotinfoParserGeneric = info (plotParserGeneric)
-  ( progDesc "Generate a plot"
-  )
+-- plotParserGeneric :: Parser CommandArgs
+-- plotParserGeneric = ArgsPlotGeneric
+--       -- <$> parserPlotSettings
+--       <$> plotParserSpecific
 
-plotParserSpecific :: Parser ArgsPlots
-plotParserSpecific =
-  subparser (
-    command "tcp" (Plots.piPlotTcpAttrParser)
-    <> command "mptcp" (Plots.piPlotMptcpAttrParser)
-    <> command "owd" (Plots.piPlotTcpOwd)
-   )
+
+-- piParserGeneric :: ParserInfo CommandArgs
+-- piParserGeneric = info (
+--     -- plotParserGeneric
+--     plotParserSpecific
+--   )
+--   ( progDesc "Generate a plot"
+--   )
+
+-- plotParserSpecific :: Parser CommandArgs
+-- plotParserSpecific =
+--   hsubparser (
+--     command "tcp" (ArgsPlotGeneric <$> (parserPlotSettings False) <*> Plots.piPlotTcpMainParser)
+--     <> command "mptcp" (ArgsPlotGeneric <$> (parserPlotSettings True) <*> Plots.piPlotMptcpParser)
+--     -- <> command "owd" (Plots.piPlotTcpOwd)
+--    )
 
     -- <*> commandGroup "Loader commands"
     -- <> command "load-csv" CL.piLoadCsv
@@ -271,13 +255,12 @@ mainParser = subparser (
     <> command "list-mptcp" CLI.listMpTcpOpts
     <> command "export" CLI.parseExportOpts
     <> command "analyze" CLI.piQualifyReinjections
-    <> commandGroup "TCP plots"
+    -- <> commandGroup "TCP plots"
     -- TODO here we should pass a subparser
     -- <> subparser (
-    <> command "plot" Main.plotinfoParserGeneric
-    -- Plots.piPlotTcpAttr
-      -- )
-    -- <> command "help" CLI.cmdListMptcpConnections
+    -- Main.piParserGeneric
+    <> command "plot-tcp" ( info (Plots.parserPlotTcpMain) (progDesc "hello"))
+    <> command "plot-mptcp" ( info (Plots.parserPlotMptcpMain) (progDesc "hello"))
     )
     where
       helpParser = info (pure ArgsHelp) (progDesc "Display help")
@@ -326,7 +309,7 @@ runCommand (ArgsListReinjections streamId)  = CLI.cmdListReinjections streamId
 runCommand (ArgsListTcpConnections detailed) = CLI.cmdListTcpConnections detailed
 runCommand (ArgsListMpTcpConnections detailed) = CLI.cmdListMptcpConnections detailed
 runCommand (ArgsExport out) = CLI.cmdExport out
-runCommand (ArgsPlotGeneric mbPlotOut mbPlotTitle display plotArgs) = runPlotCommand mbPlotOut mbPlotTitle display plotArgs
+runCommand (ArgsPlotGeneric plotSettings plotArgs) = runPlotCommand plotSettings plotArgs
 -- runCommand args@(ArgsMapTcpConnections pcap1 pcap2 streamId verbose False) = CLI.cmdMapTcpConnection args
 runCommand args@(ArgsMapTcpConnections _ _ _ _ _ False) = CLI.cmdMapTcpConnection args
 runCommand args@(ArgsMapTcpConnections _ _ _ _ _ True) = CLI.cmdMapMptcpConnection args
@@ -369,16 +352,16 @@ cmdHelp = do
 -- |Command specific to plots
 -- TODO these should return a plot instead of a generated file so that one can overwrite the title
 runPlotCommand :: (Members '[Log, Cache, P.Trace, P.State MyState, P.Embed IO] r)
-  => (Maybe String) -> (Maybe String) -> Bool -> ArgsPlots
+  => PlotSettings -> ArgsPlots
   -> Sem r CMD.RetCode
-runPlotCommand mbOut _mbTitle displayPlot specificArgs = do
+runPlotCommand (PlotSettings mbOut _mbTitle displayPlot mptcpPlot) specificArgs = do
     (tempPath, handle) <- P.embed $ openTempFile "/tmp" "plot.png"
     _ <- case specificArgs of
-      (ArgsPlotTcpAttr pcapFilename streamId attr mbDest mptcp) -> do
+      (ArgsPlotTcpAttr pcapFilename streamId attr mbDest) -> do
         let destinations = getDests mbDest
-        Log.debug $ "MPTCP plot" <> tshow (plotMptcp specificArgs)
+        Log.debug $ "MPTCP plot" <> tshow mptcpPlot
 
-        res <- if plotMptcp specificArgs then do
+        res <- if mptcpPlot then do
               eFrame <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcapFilename (StreamId streamId)
               case eFrame of
                 Left err -> return $ CMD.Error err
