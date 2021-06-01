@@ -36,6 +36,7 @@ import MptcpAnalyzer.Map
 
 import Frames as F
 import Frames.Joins
+import Data.List (sortBy, sortOn, intersperse, intercalate)
 import Data.Vinyl
 import Data.Vinyl.TypeLevel
 import Data.Vinyl.TypeLevel as V --(type (++), Snd)
@@ -52,6 +53,10 @@ import Data.Foldable (toList)
 import Control.Lens
 import Frames.Melt          (RDeleteAll, ElemOf)
 import Data.Either (fromRight)
+
+import qualified Pipes as Pipes
+import qualified Pipes.Prelude as Pipes
+import qualified Data.Foldable as F
 
 -- convert_to_sender_receiver
 -- merge_tcp_dataframes_known_streams(
@@ -141,6 +146,15 @@ mergedPcapToFrame mergedRes = let
   in
     (toFrame justRecs, [])
 
+
+writeMergedPcap :: FilePath -> MergedPcap -> IO ()
+writeMergedPcap outPath mergedPcap = do
+  -- showReinjects frame =
+    -- unlines (intercalate sep (columnHeaders (Proxy :: Proxy (Record rs))) : rows)
+    writeFile outPath content
+    where
+      content = intercalate "," rows
+      rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) mergedPcap)
 
 -- | Merge of 2 frames
 mergeMptcpConnectionsFromKnownStreams ::
@@ -232,10 +246,10 @@ convertToSenderReceiver oframe = do
     -- then rename into sndTime, rcvTime
     -- TODO
     sendFrame RoleClient
-      -- <> recvFrame RoleServer
+      <> recvFrame RoleServer
   else
     sendFrame RoleServer
-      -- <> recvFrame RoleClient
+      <> recvFrame RoleClient
 
   where
     -- tframe :: [Maybe MergedHostCols]
@@ -277,18 +291,6 @@ convertToSenderReceiver oframe = do
         (rget @TcpDest r) :& (rappend senderCols receiverCols)
         -- convert ("first host") to sender/receiver
         -- TODO this could be improved
-
-
-          -- F.rcast @SenderReceiverCols ((
-          --   -- retypeColumns @'[ '("absTime", "snd_absTime", Double), '("test_absTime", "rcv_absTime", Double) ] r)
-          --   retypeColumn @PacketId @SndPacketId
-          --   . retypeColumn @TestPacketId @RcvPacketId
-          --   . retypeColumn @AbsTime @SndAbsTime
-          --   . retypeColumn @TestAbsTime @RcvAbsTime
-          --   . retypeColumn @IpSource @SndIpSource
-          --   . retypeColumn @IpDest @SndIpDest
-          --   ) r)
-
 
 
 -- | Add a One-Way-Delay column to the results

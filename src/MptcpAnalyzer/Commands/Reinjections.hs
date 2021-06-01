@@ -16,6 +16,7 @@ import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
 import Polysemy.Trace as P
+import qualified Polysemy.Log as Log
 import Data.Function (on)
 import Data.List (sortBy, sortOn, intersperse, intercalate)
 import Data.Either (rights, lefts)
@@ -26,12 +27,12 @@ import Data.Maybe
 import Control.Lens ((^.))
 import Data.Foldable (toList)
 import qualified Data.Foldable as F
-import qualified Pipes as P
-import qualified Pipes.Prelude as P
+import qualified Pipes as Pipes
+import qualified Pipes.Prelude as Pipes
 import Control.Lens hiding (argument)
 
 import Polysemy.Log (Log)
-import qualified Polysemy.Log as Log
+import qualified Debug.Trace as D
 
 piListReinjections :: ParserInfo CommandArgs
 piListReinjections = info (
@@ -126,7 +127,7 @@ analyzeReinjection mergedFrame row =
     -- it is a frame
 
     originalPkt :: Record SenderReceiverCols
-    originalPkt = let 
+    originalPkt = let
           originalFrame = filterFrame (\x -> x ^. sndPacketId == initialPktId) mergedFrame
       in case frameLength (originalFrame) of
       0 -> error "empty frame"
@@ -148,12 +149,12 @@ cmdQualifyReinjections (ArgsQualifyReinjections pcap1 streamId1 pcap2 streamId2 
   eframe2 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap2 streamId2
   res <- case (eframe1, eframe2 ) of
     (Right aframe1, Right aframe2) ->
-        -- TODO need to convert to senderReceiver
         let
           mergedRes = mergeMptcpConnectionsFromKnownStreams aframe1 aframe2
+
           mbRecs = map recMaybe mergedRes
-          justRecs = catMaybes mbRecs
-          -- myFrame ::
+          -- packets that could be mapped in both pcaps
+          -- justRecs = catMaybes mbRecs
           myFrame = convertToSenderReceiver mergedRes
 
           reinjectedPacketsFrame = filterFrame (\x -> isJust $ x ^. sndReinjectionOf) myFrame
@@ -166,9 +167,13 @@ cmdQualifyReinjections (ArgsQualifyReinjections pcap1 streamId1 pcap2 streamId2 
             -- unlines (intercalate sep (columnHeaders (Proxy :: Proxy (Record rs))) : rows)
             intercalate "," rows
             where
-              rows = P.toList (F.mapM_ (P.yield . show ) frame)
+              rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) frame)
 
         in do
+          -- Log.info $ "Result of the analysis; reinjections:" <> tshow (showReinjects justRecs)
+          P.embed $ writeMergedPcap ("mergedRes-"  ++ ".csv") mergedRes
+          P.embed $ writeDSV defaultParserOptions ("sndrcv-merged-"  ++ ".csv") myFrame
+
           trace $ "Result of the analysis; reinjections:" ++ showReinjects reinjects
           trace $ "Merged mptcp connection" ++ showFrame "," reinjectedPacketsFrame
 

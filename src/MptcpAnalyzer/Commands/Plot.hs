@@ -129,7 +129,7 @@ parserPlotMptcpMain :: Parser CommandArgs
 parserPlotMptcpMain  = ArgsPlotGeneric <$> (parserPlotSettings False) 
     <*> hsubparser (
       command "attr" (info (plotStreamParser validTcpAttributes False) (progDesc "toto"))
-      <> command "owd" (piPlotTcpOwd)
+      <> command "owd" (info (plotParserOwd True) (progDesc "Plot MPTCP owd"))
       )
 
 -- shared by tcp / mptcp

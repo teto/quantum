@@ -23,5 +23,7 @@ viewFrame frame = do
   putStrLn $ showHeader frame
   mapM_ (putStrLn . showRow) frame
 
+
+
 --
 -- embed $ writeCSV "debug.csv" (ffFrame aFrame)
