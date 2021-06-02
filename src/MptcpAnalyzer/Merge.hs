@@ -184,6 +184,7 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
 
 
 -- | Merge of 2 frames
+-- inspired by merge_tcp_dataframes_known_streams
 mergeTcpConnectionsFromKnownStreams ::
   FrameFiltered TcpConnection Packet
   -> FrameFiltered TcpConnection Packet
@@ -235,7 +236,18 @@ type SenderReceiverCols =  TcpDest ': SenderCols V.++ ReceiverCols
 -- FrameMergedOriented
 -- inspirted by convert_to_sender_receiver
 -- TODO this should be for a TCP frame
--- for now ignore deal with frame directly rather than FrameFiltered
+--
+-- In the mergedpcap we have mapped packets from 2 hosts. We then have to decide
+-- between the 2 hosts which one acted as a client and which one as the server.
+--
+-- @param j
+--  Convert dataframe from  X_HOST1 ': X_HOST2 to X_SENDER ': X_RECEIVER
+--  Each mapping PACKET_HOST_1 <-> PACKET_HOST_2 is associated with its destination Server/Client
+--  We thus need to find out which host acted as a Client or Server;
+--  then we can select packets whose destination is the Server
+--  and for those packets set the Sender to HOST1 or HOST2
+--
+-- 1/ we compare the abstime of the first packet (TODO we could select the role instead ?!)
 convertToSenderReceiver ::
   MergedPcap
   -> FrameRec SenderReceiverCols
@@ -245,11 +257,13 @@ convertToSenderReceiver oframe = do
     -- host1 is the client
     -- then rename into sndTime, rcvTime
     -- TODO
-    sendFrame RoleClient
-      <> recvFrame RoleServer
+    -- convertHost1AsClient
+    setHost1AsSenderForDest RoleServer
+    <> setHost2AsSenderForDest  RoleClient
   else
-    sendFrame RoleServer
-      <> recvFrame RoleClient
+    -- convertHost1AsServer
+    setHost1AsSenderForDest RoleServer
+      <> setHost2AsSenderForDest  RoleClient
 
   where
     -- tframe :: [Maybe MergedHostCols]
@@ -258,19 +272,27 @@ convertToSenderReceiver oframe = do
     jframe :: FrameRec MergedHostCols
     jframe = toFrame $ catMaybes $ toList tframe
     firstRow = frameRow jframe 0
+
+    --
+    -- convertToSenderReceiver' :: ConnectionRole -> ConnectionRole
+    -- convertToSenderReceiver' h1role
+
+    -- convertHost1AsClient = 
+
     -- instead of taking firstRow we should compare the minima in case there are retransmissions
     delta :: Double
-    delta =  (firstRow ^. testAbsTime)
+    delta =  (firstRow ^. testAbsTime) - (firstRow ^. absTime)
 
-    totoFrame :: ConnectionRole -> FrameRec MergedHostCols
-    totoFrame h1role = (filterFrame (\x -> x ^. tcpDest == h1role) jframe)
+    selectDest :: ConnectionRole -> FrameRec MergedHostCols
+    selectDest dest = (filterFrame (\x -> x ^. tcpDest == dest) jframe)
 
     -- em fait le retype va ajouter la colonne a la fin seulement
     -- zipFrames
-    sendFrame, recvFrame :: ConnectionRole -> FrameRec SenderReceiverCols
-    sendFrame h1role = fmap convertToSender (totoFrame h1role)
+    setHost1AsSenderForDest, setHost2AsSenderForDest  :: ConnectionRole -> FrameRec SenderReceiverCols
+    setHost1AsSenderForDest dest = fmap convertToSender (selectDest dest)
 
-    recvFrame h1role = fmap convertToReceiver (totoFrame (if h1role == RoleClient then RoleServer else RoleClient))
+    -- (if h1role == RoleClient then RoleServer else RoleClient))
+    setHost2AsSenderForDest  dest = fmap convertToReceiver (selectDest dest)
 
     convertToSender, convertToReceiver :: Record MergedHostCols -> Record SenderReceiverCols
     convertToSender r = let
