@@ -25,6 +25,18 @@ import Data.Either (rights, lefts)
 import Frames
 import qualified Data.Set as Set
 
+type MptcpSubflowMapping = [(MptcpSubflow, [(MptcpSubflow, Int)])]
+
+-- | Returns
+-- TODO we should sort the returned
+mapSubflows :: MptcpConnection -> MptcpConnection -> MptcpSubflowMapping
+mapSubflows con1 con2 =
+  -- map selectBest (mpconSubflows con1)
+  [ (sf1, scoreSubflows sf1) | sf1 <- Set.toList (mpconSubflows con1) ]
+  where
+    -- select best / sortOn
+    scoreSubflows sf1 = map (\sf -> (sf, similarityScore sf1 sf)) (Set.toList $ mpconSubflows con2)
+
 -- |
 -- Returns a list of 
 mapTcpConnection ::
@@ -41,17 +53,6 @@ mapTcpConnection aframe frame = let
       evalScore con1 (FrameTcp con2 _) = (con2, similarityScore con1 con2)
     in
       sortedScores
-
-
--- | Returns
--- TODO we should sort the returned 
-mapSubflows :: MptcpConnection -> MptcpConnection -> [(MptcpSubflow, [(MptcpSubflow, Int)])]
-mapSubflows con1 con2 =
-  -- map selectBest (mpconSubflows con1)
-  [ (sf1, scoreSubflows sf1) | sf1 <- Set.toList (mpconSubflows con1) ]
-  where
-    -- select best / sortOn
-    scoreSubflows sf1 = map (\sf -> (sf, similarityScore sf1 sf)) (Set.toList $ mpconSubflows con2)
 
 -- |
 -- map_mptcp_connection_from_known_streams

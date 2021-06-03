@@ -175,7 +175,8 @@ cmdQualifyReinjections (ArgsQualifyReinjections pcap1 streamId1 pcap2 streamId2 
           P.embed $ writeDSV defaultParserOptions ("sndrcv-merged-"  ++ ".csv") myFrame
 
           trace $ "Result of the analysis; reinjections:" ++ showReinjects reinjects
-          trace $ "Merged mptcp connection" ++ showFrame "," reinjectedPacketsFrame
+          trace $ "Merged mptcp connection\nFrame size: " ++ show (frameLength reinjectedPacketsFrame)
+                  ++ "\n" ++ showFrame "," reinjectedPacketsFrame
 
           -- qualifyReinjections tempPath handle (getDests dest) (ffCon aframe1) mergedRes
           return CMD.Continue

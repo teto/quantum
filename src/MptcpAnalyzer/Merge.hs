@@ -23,6 +23,7 @@
 module MptcpAnalyzer.Merge
 where
 
+import Prelude hiding (log)
 import MptcpAnalyzer.Types
 import Tshark.TH
 import MptcpAnalyzer.ArtificialFields
@@ -57,6 +58,9 @@ import Data.Either (fromRight)
 import qualified Pipes as Pipes
 import qualified Pipes.Prelude as Pipes
 import qualified Data.Foldable as F
+import Polysemy.Log (Log)
+import qualified Polysemy.Log as Log
+import Polysemy (Member, Members, Sem, Embed)
 
 -- convert_to_sender_receiver
 -- merge_tcp_dataframes_known_streams(
@@ -156,12 +160,36 @@ writeMergedPcap outPath mergedPcap = do
       content = intercalate "," rows
       rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) mergedPcap)
 
+
+
 -- | Merge of 2 frames
 mergeMptcpConnectionsFromKnownStreams ::
+  (Members '[Log] r)
+  => FrameFiltered MptcpConnection Packet
+  -> FrameFiltered MptcpConnection Packet
+  -> Sem r MergedPcap
+mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 frame2) = do
+  let mappedSubflows = mapSubflows con1 con2
+  Log.info $ "Mapped subflows" <> tshow mappedSubflows
+  -- mergedFrames = map
+  mergedFrames<- mapM  mergeSubflow mappedSubflows
+  return $ mconcat mergedFrames
+  where
+    --
+    -- mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
+    mergeSubflow (sf1, scores) = do
+      Log.debug $ "Test"
+      return $ mergeTcpConnectionsFromKnownStreams aframe1 aframe2
+      where
+        aframe1 = fromRight undefined (buildFrameFromStreamId frame1 (conTcpStreamId $ sfConn sf1) )
+        aframe2 = fromRight undefined (buildFrameFromStreamId frame2 (conTcpStreamId $ sfConn $ fst (head scores ) ))
+
+
+mergeMptcpConnectionsFromKnownStreams' ::
   FrameFiltered MptcpConnection Packet
   -> FrameFiltered MptcpConnection Packet
   -> MergedPcap
-mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 frame2) = let
+mergeMptcpConnectionsFromKnownStreams' (FrameTcp con1 frame1) (FrameTcp con2 frame2) = let
   -- first we need to map subflow to oneanother
   -- map mpconSubflows
     mappedSubflows = mapSubflows con1 con2
@@ -175,7 +203,7 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
     mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
     mergeSubflow (sf1, scores) = mergeTcpConnectionsFromKnownStreams aframe1 aframe2
       where
-        aframe1 = fromRight undefined ( buildFrameFromStreamId frame1 (conTcpStreamId $ sfConn sf1) )
+        aframe1 = fromRight undefined (buildFrameFromStreamId frame1 (conTcpStreamId $ sfConn sf1) )
         aframe2 = fromRight undefined (buildFrameFromStreamId frame2 (conTcpStreamId $ sfConn $ fst (head scores ) ))
                                     -- (FrameFiltered (sfConn sf) frame1)
                                     -- (FrameFiltered (sfConn sf) frame2)

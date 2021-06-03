@@ -176,7 +176,6 @@ defaultPcap = "examples/client_2_filtered.pcapng"
         -- P.modify (\s -> s { _prompt = pcapFilename ++ "> ",
         --       _loadedFile = Just frame
         --     })
--- setPrompt :: Members '[P.Trace] r => String -> Sem r String
 finalizePrompt :: String -> String
 finalizePrompt newPrompt = setSGRCode [SetColor Foreground Vivid Red] ++ newPrompt ++ "> " ++ setSGRCode [Reset]
 
@@ -279,20 +278,9 @@ mainParserInfo = info (mainParser <**> helper)
 
 
 
--- printHelp :: P.Members '[Log String] r => [String] -> Sem r CMD.RetCode
--- -- printHelp :: [String] -> 
--- printHelp _ = Log.info "hello" >> return CMD.Continue
 
--- getHelp :: String
--- getHelp =
---     HM.foldrWithKey printCmdHelp "Available commands:\n" commands
---   where
---     printCmdHelp k _ accum = accum ++ "\n- " ++ k
 
--- liftIO $ putStrLn doPrintHelp >> 
-
--- runCommand :: CommandArgs -> CMD.RetCode
-runCommand :: ( Members '[Log, Cache, P.Trace, P.State MyState, P.Embed IO] r)
+runCommand :: (Members '[Log, Cache, P.Trace, P.State MyState, P.Embed IO] r)
   => CommandArgs -> Sem r CMD.RetCode
 runCommand (ArgsLoadPcap fileToLoad) = loadPcap fileToLoad
   -- ret <- CL.loadPcap fileToLoad
