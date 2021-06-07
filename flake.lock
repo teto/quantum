@@ -101,17 +101,17 @@
         "pre-commit-hooks": "pre-commit-hooks"
       },
       "locked": {
-        "lastModified": 1621613574,
-        "narHash": "sha256-ytSvpKT5qfXYrckY26/01K3RTF4a5Plv9K5io9045PM=",
-        "owner": "haskell",
+        "lastModified": 1623014450,
+        "narHash": "sha256-rGDQRVbYBM4sGUXmg04UrKTRD6+i/NwpTfUnZMB829U=",
+        "owner": "teto",
         "repo": "haskell-language-server",
-        "rev": "37e0551b0d411e345e250a6ed287103640524a62",
+        "rev": "a1b9a83e7d159e72da50eaae4d2663282ac97383",
         "type": "github"
       },
       "original": {
-        "owner": "haskell",
+        "owner": "teto",
+        "ref": "flake-debug",
         "repo": "haskell-language-server",
-        "rev": "37e0551b0d411e345e250a6ed287103640524a62",
         "type": "github"
       }
     },
@@ -173,16 +173,16 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1621840840,
-        "narHash": "sha256-o6h6+d5ZwrFmOTe+ma9s1Z9kyHsCW1C84IA8RZ9/fIU=",
+        "lastModified": 1623015308,
+        "narHash": "sha256-eBzOlaKr1G60wGaPZJ5GhrAL2ZPaulECeL4bs7/VKYU=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "ea7d4aa9b8225abd6147339f0d56675d6f1f0fd1",
+        "rev": "ffb7cfcfad15e3bff9d05336767e59ee6ee24cb6",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixos-unstable",
+        "ref": "master",
         "repo": "nixpkgs",
         "type": "github"
       }

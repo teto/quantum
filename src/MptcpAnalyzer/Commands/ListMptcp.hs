@@ -62,7 +62,7 @@ type SomeFrame = Frame Packet
 getMpTcpStreams :: SomeFrame -> [StreamIdMptcp]
 getMpTcpStreams ps =
     catMaybes $
-    L.fold L.nub $ (view mptcpStream <$> ps)
+    L.fold L.nub (view mptcpStream <$> ps)
 
 filterMptcpConnection :: SomeFrame -> StreamId Mptcp -> SomeFrame
 filterMptcpConnection frame streamId =
@@ -113,12 +113,12 @@ cmdListMptcpConnections _detailed = do
         -- log $ "Number of rows " ++ show (frameLength frame)
         P.trace $ "Number of MPTCP connections " ++ show (length mptcpStreams)
         P.trace $ show mptcpStreams
-        P.trace $ concat $ map showEitherCon mptcpConnections
+        P.trace $ concatMap showEitherCon mptcpConnections
         -- >>
         return CMD.Continue
         where
           mptcpConnections :: [Either String MptcpConnection]
-          mptcpConnections = map (\x -> fmap ffCon ( buildMptcpConnectionFromStreamId frame x)) mptcpStreams
+          mptcpConnections = map (fmap ffCon . buildMptcpConnectionFromStreamId frame ) mptcpStreams
 
           showEitherCon :: Either String MptcpConnection -> String
           showEitherCon (Left msg) = msg ++ "\n"

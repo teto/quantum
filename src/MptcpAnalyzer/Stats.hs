@@ -47,8 +47,8 @@ getTcpStats aframe dest =
       , tusMinSeq = minSeq
 
       -- TODO should be max of seen acks
-      , tusSndUna = maxSeqRow ^. tcpSeq + (fromIntegral $ maxSeqRow ^. tcpLen) :: Word32
-      , tusSndNext = maxSeqRow ^. tcpSeq + (fromIntegral $ maxSeqRow ^. tcpLen ) :: Word32
+      , tusSndUna = maxSeqRow ^. tcpSeq + fromIntegral ( maxSeqRow ^. tcpLen) :: Word32
+      , tusSndNext = maxSeqRow ^. tcpSeq + fromIntegral ( maxSeqRow ^. tcpLen ) :: Word32
       , tusReinjectedBytes = 0
       -- , tusSnd = 0
       -- , tusNumberOfPackets = mempty
@@ -59,13 +59,13 @@ getTcpStats aframe dest =
     -- these return Maybes
     -- I need to find its id and add tcpSize afterwards
     -- TODO use     minimumBy
-    minSeq = case (F.toList $ view tcpSeq <$> frame) of
+    minSeq = case F.toList $ view tcpSeq <$> frame of
       [] -> 0
       l -> minimum l
     -- maxSeq = maximum $ F.toList $ view tcpSeq <$> frame
 
     -- $ F.toList $ view tcpSeq <$> frame
-    maxSeqRow = F.maximumBy (comparing (\x -> x ^. tcpSeq)) frame
+    maxSeqRow = F.maximumBy (comparing (^. tcpSeq)) frame
 
     -- compareRows x y = if (x ^. tcpSeq) (y ^. tcpSeq)
 
@@ -116,7 +116,7 @@ getMptcpStats (FrameTcp mptcpConn frame) dest =
     , musMaxDsn = maxDsn
     , musMinDsn = minDsn
     -- we need the stream id / FrameFiltered MptcpSubflow (Record rs)
-    , musSubflowStats = Map.fromList $ map (\sf -> (sf, getStats dest sf))  (toList $ mpconSubflows $ mptcpConn)
+    , musSubflowStats = Map.fromList $ map (\sf -> (sf, getStats dest sf))  (toList $ mpconSubflows mptcpConn)
   }
   where
     -- buildTcpConnectionFromStreamId :: SomeFrame -> StreamId Tcp -> Either String (FrameFiltered TcpConnection Packet)

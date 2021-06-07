@@ -6,8 +6,8 @@ where
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.ArtificialFields
 import MptcpAnalyzer.Plots.Types
-import MptcpAnalyzer.Commands.Definitions
 import MptcpAnalyzer.Cache
+-- import MptcpAnalyzer.Commands.Definitions
 import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.PlotOWD
 import MptcpAnalyzer.Pcap
@@ -19,7 +19,6 @@ import Net.Mptcp
 
 import Prelude hiding (filter, lookup, repeat, log)
 import Options.Applicative
-import Polysemy
 import Frames
 import Frames.CSV
 
@@ -30,12 +29,12 @@ import Graphics.Rendering.Chart.Easy hiding (argument)
 import Graphics.Rendering.Chart.Backend.Cairo
 import Data.Word (Word8, Word16, Word32, Word64)
 
-import Data.List (intercalate)
+import Data.List (filter, intercalate)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
-import Polysemy (Member, Members, Sem, Embed)
+import Polysemy
 import qualified Polysemy as P
 import Polysemy.State as P
 import Polysemy.Trace as P
@@ -52,7 +51,6 @@ import Frames.ShowCSV (showCSV)
 import qualified Data.Set as Set
 import Debug.Trace
 import Text.Read (readEither)
-import Data.List (filter)
 import qualified Data.Map as Map
 import Data.String
 import Data.Vinyl.TypeLevel
@@ -91,11 +89,8 @@ parserPlotSettings mptcpPlot = PlotSettings
       ( long "title" <> short 't'
       <> help "Overrides the default plot title."
       <> metavar "TITLE" ))
-    <*> (switch
-      ( long "display"
-      <> help "Uses xdg-open to display plot"
-      ))
-      <*> option auto (
+    <*> switch ( long "display" <> help "Uses xdg-open to display plot")
+    <*> option auto (
           metavar "MPTCP"
         -- internal is stronger than --belive, hides from all descriptions
         <> internal
@@ -118,15 +113,16 @@ piPlotTcpMainParser = info parserPlotTcpMain
 
 -- -> Bool -- ^ for mptcp yes or no
 parserPlotTcpMain :: Parser CommandArgs
-parserPlotTcpMain  = ArgsPlotGeneric <$> (parserPlotSettings False) 
+parserPlotTcpMain  = ArgsPlotGeneric <$> parserPlotSettings False
     <*> hsubparser (
-      command "attr" (info (plotStreamParser validTcpAttributes False) (progDesc "toto"))
-      <> command "owd" (piPlotTcpOwd)
+      command "attr" (info (plotStreamParser validTcpAttributes False)
+          (progDesc "toto"))
+      <> command "owd" piPlotTcpOwd
       )
 
 
 parserPlotMptcpMain :: Parser CommandArgs
-parserPlotMptcpMain  = ArgsPlotGeneric <$> (parserPlotSettings False) 
+parserPlotMptcpMain  = ArgsPlotGeneric <$> parserPlotSettings False
     <*> hsubparser (
       command "attr" (info (plotStreamParser validTcpAttributes False) (progDesc "toto"))
       <> command "owd" (info (plotParserOwd True) (progDesc "Plot MPTCP owd"))
@@ -179,10 +175,10 @@ validTcpAttributes = map T.unpack (Map.keys $ Map.mapMaybe fieldLabel baseFields
 
 
 -- TODO pass valid
-validateField :: [String] -> ReadM (String)
-validateField validFields = eitherReader $ \arg -> case elem arg validFields of
-  True -> Right arg
-  False -> Left $ validationErrorMsg validFields arg
+validateField :: [String] -> ReadM String
+validateField validFields = eitherReader $ \arg -> if elem arg validFields then
+  Right arg
+  else Left $ validationErrorMsg validFields arg
 
 validationErrorMsg :: [String] -> String -> String
 validationErrorMsg validFields entry = "validatedField: incorrect value `" ++ entry ++ "` choose from:\n -" ++ intercalate "\n - " validFields
@@ -272,7 +268,7 @@ cmdPlotTcpAttribute field tempPath _ destinations aFrame = do
   embed $ toFile def tempPath $ do
       layout_title .= "TCP " ++ field
       -- TODO generate for mptcp plot
-      flip mapM_ destinations plotAttr
+      mapM_ plotAttr destinations
 
   return Continue
   where
@@ -310,13 +306,13 @@ getData :: forall t a2. (Num a2,
             Foldable t, Functor t) =>
             t (Record (TcpDest ': HostCols) ) -> String -> [a2]
 getData frame attr =
-  toList $ (getAttr  <$> frame)
+  toList (getAttr  <$> frame)
   where
     getAttr = case attr of
-      "tcpSeq" -> fromIntegral . (view tcpSeq)
-      "tcpLen" -> fromIntegral. (view tcpLen)
-      "rwnd" -> fromIntegral. (view rwnd)
-      "tcpAck" -> fromIntegral. (view tcpAck)
+      "tcpSeq" -> fromIntegral . view tcpSeq
+      "tcpLen" -> fromIntegral. view tcpLen
+      "rwnd" -> fromIntegral. view rwnd
+      "tcpAck" -> fromIntegral. view tcpAck
       -- "tsval" -> tsval
       _ -> error "unsupported attr"
 
@@ -337,7 +333,7 @@ cmdPlotMptcpAttribute field tempPath _ destinations aFrame = do
   P.trace $ "number of packets" ++ show (frameLength (ffFrame aFrame))
   -- TODO remove
   embed $ writeCSV "debug.csv" (ffFrame aFrame)
-  embed $ writeCSV "dest.csv" (frameDest)
+  embed $ writeCSV "dest.csv" frameDest
   embed $ toFile def tempPath $ do
       layout_title .= "MPTCP " ++ field
       -- TODO generate for mptcp plot

@@ -217,7 +217,7 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
     mbRecs = map recMaybe mergedRes
     justRecs = catMaybes mbRecs
     sndRcvFrame = convertToSenderReceiver mergedRes
-    dumpRec x = putStrLn $ show $ x
+    dumpRec x = print x
     -- add dest to the whole frame
     -- frameDest = addMptcpDest (ffFrame aFrame) (ffCon aFrame)
     plotAttr dest =
@@ -270,7 +270,7 @@ cmdPlotMptcpOwd tempPath _ destinations con mergedRes = do
     mbRecs = map recMaybe mergedRes
     justRecs = catMaybes mbRecs
     sndRcvFrame = convertToSenderReceiver mergedRes
-    dumpRec x = putStrLn $ show $ x
+    dumpRec x = putStrLn $ show x
     -- add dest to the whole frame
     -- frameDest = addMptcpDest (ffFrame aFrame) (ffCon aFrame)
     plotAttr dest =

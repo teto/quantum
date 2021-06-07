@@ -222,7 +222,7 @@ main = do
           $ P.traceToIO
           $ P.runState myState
           $ runMockCache cacheConfig
-          $ interpretLogStdout $
+          $ interpretLogStdout
             (inputLoop (extraCommands options))
 
       -- -- Set the level of logging we want (for more control see 'filterLogs')
@@ -258,8 +258,8 @@ mainParser = subparser (
     -- TODO here we should pass a subparser
     -- <> subparser (
     -- Main.piParserGeneric
-    <> command "plot-tcp" ( info (Plots.parserPlotTcpMain) (progDesc "hello"))
-    <> command "plot-mptcp" ( info (Plots.parserPlotMptcpMain) (progDesc "hello"))
+    <> command "plot-tcp" ( info Plots.parserPlotTcpMain (progDesc "hello"))
+    <> command "plot-mptcp" ( info Plots.parserPlotMptcpMain (progDesc "hello"))
     )
     where
       helpParser = info (pure ArgsHelp) (progDesc "Display help")
@@ -398,7 +398,7 @@ runPlotCommand (PlotSettings mbOut _mbTitle displayPlot mptcpPlot) specificArgs 
     else
       return Continue
     where
-      getDests mbDest =          fromMaybe [RoleClient, RoleServer] (fmap (\x -> [x]) mbDest)
+      getDests mbDest = maybe [RoleClient, RoleServer] (\x -> [x]) mbDest
 
 -- runPlotCommand _ = error "Should not happen, file a bug report"
 
@@ -444,8 +444,7 @@ runIteration fullCmd = do
 inputLoop :: (Members '[Log , Cache, P.Trace, P.State MyState, P.Embed IO, P.Final (InputT IO)] r)
     => [String] -> Sem r ()
 -- inputLoop (xs:rest) = pure ()
-inputLoop args =
-  go args
+inputLoop = go
   where
     go :: (Members '[Log, Cache, P.Trace, P.State MyState, P.Embed IO, P.Final (InputT IO)] r)
       => [String] -> Sem r ()

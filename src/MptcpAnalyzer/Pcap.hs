@@ -224,13 +224,6 @@ loadRows path = inCoreAoS (
   eitherProcessed path
   )
 
--- maybeRows :: MonadSafe m => Producer (Rec (Maybe :. ElField) (RecordColumns Row)) m ()
--- maybeRows = readTableMaybe "test/data/prestigePartial.csv"
-loadMaybeRows :: MonadSafe m => FilePath -> Producer (Rec (Maybe :. ElField) (RecordColumns Packet)) m ()
-loadMaybeRows path =
-  -- inCoreAoS (
-  readTableMaybeOpt defaultParserOptions path
-  -- )
 
 
 type ManEither = Rec (Either T.Text :. ElField) (RecordColumns Packet)
@@ -344,7 +337,7 @@ buildSubflowFromTcpStreamId frame streamId =
       Right $ FrameTcp sf streamPackets
     where
       syn0 = frameRow synPackets 0
-      streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) (frame)
+      streamPackets = filterFrame  (\x -> x ^. tcpStream == streamId) frame
       synPackets = filterFrame (\x -> TcpFlagSyn `elem` (x ^. tcpFlags)) streamPackets
       sfCon = buildTcpConnectionFromRecord syn0
       -- rcvToken
@@ -387,7 +380,7 @@ addMptcpDest frame con =
 
       startingFrame = fmap setTempDests frame
       setTempDests :: Record rs -> Record ( MptcpDest ': TcpDest ': rs)
-      setTempDests x = (Col RoleClient) :& (Col RoleClient) :& x
+      setTempDests x = Col RoleClient :& (Col RoleClient) :& x
       addMptcpDestToRec x role = (Col $ role) :& x
       subflows = Set.toList $ mpconSubflows con
 
@@ -422,12 +415,19 @@ addTcpDestToFrame frame con = fmap (\x -> addTcpDestToRec x (computeTcpDest x co
     where
       streamFrame = filterFrame  (\x -> rgetField @TcpStream x == conTcpStreamId con) frame
 
-computeTcpDest :: (TcpStream ∈ rs, IpSource ∈ rs, IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs) => Record rs -> TcpConnection -> ConnectionRole
-computeTcpDest x con  = if (rgetField @IpSource x) == (conTcpClientIp con)
-                && (rgetField @IpDest x) == (conTcpServerIp con)
-                && (rgetField @TcpSrcPort x) == (conTcpClientPort con)
-                && (rgetField @TcpDestPort x) == (conTcpServerPort con)
-                && (rgetField @TcpDestPort x) == (conTcpServerPort con)
+computeTcpDest :: (
+  TcpStream ∈ rs
+  , IpSource ∈ rs
+  , IpDest ∈ rs
+  , TcpSrcPort ∈ rs
+  , TcpDestPort ∈ rs
+  ) => Record rs
+  -> TcpConnection -> ConnectionRole
+computeTcpDest x con  = if (rgetField @IpSource x) == conTcpClientIp con
+                && (rgetField @IpDest x) == conTcpServerIp con
+                && (rgetField @TcpSrcPort x) == conTcpClientPort con
+                && (rgetField @TcpDestPort x) == conTcpServerPort con
+                && (rgetField @TcpDestPort x) == conTcpServerPort con
                 -- TODO should error if not the same streamId
                 -- && (rgetField @TcpStream x) == (conTcpStreamId con)
         then RoleServer else RoleClient
@@ -556,7 +556,7 @@ instance StreamConnection TcpConnection Tcp where
 -- | Computes a score
 scoreMptcpCon :: MptcpConnection -> MptcpConnection -> Int
 scoreMptcpCon con1 con2 =
-  let keyScore = if (mptcpServerKey con1 == mptcpServerKey con2 && mptcpClientKey con1 == mptcpClientKey con2) then
+  let keyScore = if mptcpServerKey con1 == mptcpServerKey con2 && mptcpClientKey con1 == mptcpClientKey con2 then
         200
       else
         0

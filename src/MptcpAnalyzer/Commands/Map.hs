@@ -40,7 +40,7 @@ mapTcpOpts = info (
 
 mapMptcpOpts :: ParserInfo CommandArgs
 mapMptcpOpts = info (
-    (parserMapConnection True)<**> helper)
+    parserMapConnection True <**> helper)
   ( progDesc "Maps a MPTCP connection to another one"
   )
 
@@ -131,7 +131,7 @@ cmdMapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit 
   res2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
   case (res, res2) of
     (Right aframe, Right frame) -> do
-      let streamsToCompare = (getMptcpStreams frame)
+      let streamsToCompare = getMptcpStreams frame
       let consToCompare = map (buildTcpConnectionFromStreamId frame) (getTcpStreams frame)
       Log.info $ "Best match for " <> tshow (ffCon aframe) <> " is "
       Log.debug ("Comparing with stream " <> tshow streamsToCompare)

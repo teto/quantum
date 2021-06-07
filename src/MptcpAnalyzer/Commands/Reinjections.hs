@@ -16,6 +16,7 @@ import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
 import Polysemy.Trace as P
+import Polysemy.Log (Log)
 import qualified Polysemy.Log as Log
 import Data.Function (on)
 import Data.List (sortBy, sortOn, intersperse, intercalate)
@@ -31,7 +32,6 @@ import qualified Pipes as Pipes
 import qualified Pipes.Prelude as Pipes
 import Control.Lens hiding (argument)
 
-import Polysemy.Log (Log)
 import qualified Debug.Trace as D
 
 piListReinjections :: ParserInfo CommandArgs
@@ -142,7 +142,14 @@ analyzeReinjection mergedFrame row =
   in
     delta
 
-cmdQualifyReinjections :: (Members '[Log, P.State MyState, Cache, P.Trace, Embed IO] r)
+cmdQualifyReinjections ::
+  Members '[
+    Log
+    , P.State MyState
+    , Cache
+    , P.Trace
+    , Embed IO
+    ] r
   => CommandArgs -> Sem r RetCode
 cmdQualifyReinjections (ArgsQualifyReinjections pcap1 streamId1 pcap2 streamId2 verbose ) = do
   eframe1 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap1 streamId1
@@ -150,7 +157,7 @@ cmdQualifyReinjections (ArgsQualifyReinjections pcap1 streamId1 pcap2 streamId2 
   res <- case (eframe1, eframe2 ) of
     (Right aframe1, Right aframe2) ->
         let
-          mergedRes = mergeMptcpConnectionsFromKnownStreams aframe1 aframe2
+          mergedRes = mergeMptcpConnectionsFromKnownStreams' aframe1 aframe2
 
           mbRecs = map recMaybe mergedRes
           -- packets that could be mapped in both pcaps

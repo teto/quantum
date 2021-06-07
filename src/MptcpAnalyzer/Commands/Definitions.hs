@@ -10,6 +10,16 @@ import Data.Word (Word32)
 
 -- import Polysemy (Sem, Members, makeSem, interpret, Effect)
 
+data PcapMapping = PcapMapping {
+      pmapPcap1 :: FilePath
+      , pmapStream1 :: StreamId Mptcp
+      , pmapPcap2 :: FilePath
+      , pmapStream2 :: StreamId Mptcp
+      , pmapVerbose :: Bool
+      , pmapLimit :: Int -- ^Number of comparisons to show
+      , pmapMptcp :: Bool -- ^Wether it's an MPTCP
+    }
+
 -- | Registered commands
 -- TODO make it possible to add some from a plugin
 data CommandArgs =

@@ -22,6 +22,7 @@ import Polysemy.State as P
 import Data.Function (on)
 import Data.List (sortBy, sortOn)
 import Data.Either (rights, lefts)
+import Data.Ord
 import Frames
 import qualified Data.Set as Set
 
@@ -49,7 +50,7 @@ mapTcpConnection aframe frame = let
       streamsToCompare = getTcpStreams frame
       consToCompare = map (buildTcpConnectionFromStreamId frame) (getTcpStreams frame)
       scores = map (evalScore (ffCon aframe)) (rights consToCompare)
-      sortedScores = reverse $ sortOn snd scores
+      sortedScores = sortOn (Data.Ord.Down . snd) scores
       evalScore con1 (FrameTcp con2 _) = (con2, similarityScore con1 con2)
     in
       sortedScores
@@ -65,7 +66,8 @@ mapMptcpConnection aframe frame = let
       streamsToCompare = getMptcpStreams frame
       consToCompare = map (buildMptcpConnectionFromStreamId frame) (getMptcpStreams frame)
       scores = map (evalScore (ffCon aframe)) (rights consToCompare)
-      sortedScores = reverse $ sortOn snd scores
+      sortedScores = sortOn (Data.Ord.Down . snd) scores
+      -- sortedScores = reverse $ sortOn snd scores
       evalScore con1 (FrameTcp con2 _) = (con2, similarityScore con1 con2)
     in
       sortedScores

@@ -2,7 +2,7 @@
   description = "Multipath tcp pcap analyzer tool";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/master";
     replica.url = "github:berewt/REPLica";
 
     # temporary until this gets fixed upstream
@@ -10,7 +10,8 @@
 
     flake-utils.url = "github:numtide/flake-utils";
 
-    hls.url = "github:haskell/haskell-language-server?rev=37e0551b0d411e345e250a6ed287103640524a62";
+    # hls.url = "github:haskell/haskell-language-server?rev=37e0551b0d411e345e250a6ed287103640524a62";
+    hls.url = "github:teto/haskell-language-server/flake-debug";
   };
 
   outputs = { self, nixpkgs, flake-utils, poetry, replica, ... }@inputs:
