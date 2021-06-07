@@ -301,7 +301,7 @@ runCommand (ArgsPlotGeneric plotSettings plotArgs) = runPlotCommand plotSettings
 -- runCommand args@(ArgsMapTcpConnections pcap1 pcap2 streamId verbose False) = CLI.cmdMapTcpConnection args
 runCommand args@(ArgsMapTcpConnections _ _ _ _ _ False) = CLI.cmdMapTcpConnection args
 runCommand args@(ArgsMapTcpConnections _ _ _ _ _ True) = CLI.cmdMapMptcpConnection args
-runCommand args@ArgsQualifyReinjections{} = CLI.cmdQualifyReinjections args
+runCommand (ArgsQualifyReinjections mapping verbose) = CLI.cmdQualifyReinjections mapping verbose
 runCommand ArgsQuit = cmdQuit
 runCommand ArgsHelp = cmdHelp
 

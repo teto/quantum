@@ -7,17 +7,19 @@ import MptcpAnalyzer.Stream
 import MptcpAnalyzer.Plots.Types
 
 import Data.Word (Word32)
+import Options.Applicative
 
 -- import Polysemy (Sem, Members, makeSem, interpret, Effect)
 
-data PcapMapping = PcapMapping {
+-- | To reprensent a mapping between 2 pcaps
+data PcapMapping a = PcapMapping {
       pmapPcap1 :: FilePath
-      , pmapStream1 :: StreamId Mptcp
+      , pmapStream1 :: StreamId a
       , pmapPcap2 :: FilePath
-      , pmapStream2 :: StreamId Mptcp
-      , pmapVerbose :: Bool
-      , pmapLimit :: Int -- ^Number of comparisons to show
-      , pmapMptcp :: Bool -- ^Wether it's an MPTCP
+      , pmapStream2 :: StreamId a
+      -- , pmapVerbose :: Bool
+      -- , pmapLimit :: Int -- ^Number of comparisons to show
+      -- , pmapMptcp :: Bool -- ^Wether it's an MPTCP
     }
 
 -- | Registered commands
@@ -50,35 +52,33 @@ data CommandArgs =
     -- Bool Whether we have to display
     -- Bool Whether it's TCP
     | ArgsPlotGeneric PlotSettings ArgsPlots
-    -- {
-    --   plotOut :: Maybe String 
-  -- --     , plotToClipboard :: Maybe Bool
-  -- -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
-    --   , plotTitle :: Maybe String  -- ^ To override default title of the plot
-    --   , plotDisplay :: Bool  -- ^Defaults to false
-    --   , plotArgs :: ArgsPlots
-    -- }
-    | ArgsQualifyReinjections FilePath (StreamId Mptcp) FilePath (StreamId Mptcp) Bool
-      -- ^ pcap1 stream1 pcap2 stream2 verbose
-      -- qrPcap1 :: FilePath
-      -- , qrStream1 :: StreamId Mptcp
-      -- , qrPcap2 :: FilePath
-      -- , qrStream2 :: StreamId Mptcp
-      -- , qrVerbose :: Bool
-      -- , qrLimit :: Int -- ^Number of comparisons to show
-      -- , qrMptcp :: Bool -- ^Wether it's an MPTCP
-    -- }
+    | ArgsQualifyReinjections (PcapMapping Mptcp) Bool
 
--- | Return code for user command. Whether to exit program/
+-- | Return code for user command. Whether to exit program or keep going
 data RetCode = Exit | Error String | Continue
 
--- data Command m a where
---   LoadCsv :: ArgsLoadPcap -> Command m RetCode
---   LoadPcap :: ArgsLoadPcap -> Command m RetCode
---   ListTcpConnections :: ParserListSubflows -> Command m RetCode
---   ListMpTcpConnections :: ParserListSubflows -> Command m RetCode
---   TcpSummary :: ParserSummary -> Command m RetCode
---   PrintHelp :: Command m RetCode
---   Plot :: ArgsPlot -> Command m RetCode
-
--- makeSem ''Command
+parserPcapMapping :: Bool -> Parser (PcapMapping a)
+parserPcapMapping forMptcp =
+  -- if forMptcp then
+    PcapMapping <$>
+  -- else
+  --   ArgsMapMptcpConnections <$> toto
+  -- where
+  -- toto =
+      strArgument (
+          metavar "PCAP1"
+          <> help "File to analyze"
+      )
+      <*> argument readStreamId (
+          metavar "TCP_STREAM"
+          <> help "stream id to analyzer"
+      )
+      <*> strArgument (
+          metavar "PCAP2"
+          <> help "File to analyze"
+      )
+      -- 
+      <*> argument readStreamId (
+          metavar "TCP_STREAM"
+          <> help "stream id to analyzer"
+      )

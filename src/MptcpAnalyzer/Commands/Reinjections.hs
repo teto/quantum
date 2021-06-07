@@ -63,23 +63,8 @@ piQualifyReinjections = info (
 
 parserQualifyReinjections :: Parser CommandArgs
 parserQualifyReinjections =
-      ArgsQualifyReinjections <$>
-      strArgument (
-          metavar "PCAP1"
-          <> help "File to analyze"
-      )
-      <*> argument readStreamId (
-          metavar "TCP_STREAM"
-          <> help "stream id to analyze"
-      )
-      <*> strArgument (
-          metavar "PCAP2"
-          <> help "File to analyze"
-      )
-      <*> argument readStreamId (
-          metavar "TCP_STREAM"
-          <> help "stream id to analyze"
-      )
+      ArgsQualifyReinjections
+      <$> parserPcapMapping False
       <*> switch (
           long "verbose"
           <> help "Verbose or not"
@@ -150,8 +135,9 @@ cmdQualifyReinjections ::
     , P.Trace
     , Embed IO
     ] r
-  => CommandArgs -> Sem r RetCode
-cmdQualifyReinjections (ArgsQualifyReinjections pcap1 streamId1 pcap2 streamId2 verbose ) = do
+  => PcapMapping Mptcp
+  -> Bool -> Sem r RetCode
+cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) verbose = do
   eframe1 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap1 streamId1
   eframe2 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap2 streamId2
   res <- case (eframe1, eframe2 ) of
@@ -195,7 +181,6 @@ cmdQualifyReinjections (ArgsQualifyReinjections pcap1 streamId1 pcap2 streamId2 
   where
     -- mergedPcap
     -- reinjectedPackets = filterFrame (sndReinjectionOf) (toFrame justRecs)
-cmdQualifyReinjections _ = error "should not happen"
 
 -- qualifyReinjections :: Members '[Log String, P.State MyState, Cache, Embed IO] r 
 --     => MergedPcap

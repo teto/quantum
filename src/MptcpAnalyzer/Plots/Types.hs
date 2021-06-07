@@ -5,6 +5,14 @@ import MptcpAnalyzer.Types
 import MptcpAnalyzer.ArtificialFields
 import Data.Word (Word32)
 
+-- {
+--   plotOut :: Maybe String 
+-- --     , plotToClipboard :: Maybe Bool
+-- -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
+--   , plotTitle :: Maybe String  -- ^ To override default title of the plot
+--   , plotDisplay :: Bool  -- ^Defaults to false
+--   , plotArgs :: ArgsPlots
+-- }
 data PlotSettings = PlotSettings {
   plsOut :: Maybe String
   , plsTitle :: Maybe String
@@ -18,7 +26,7 @@ data PlotSettings = PlotSettings {
       -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
 
 -- (Maybe String) (Maybe String) Bool
-data ArgsPlots = 
+data ArgsPlots =
 
     -- actually valid for MPTCP too
     ArgsPlotTcpAttr {

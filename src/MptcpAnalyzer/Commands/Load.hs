@@ -42,6 +42,7 @@ loadPcapOpts :: ParserInfo CommandArgs
 loadPcapOpts = info (loadPcapArgs <**> helper)
   ( fullDesc
   <> progDesc "Load a pcap file via wireshark"
+  <> footer "Example: load-pcap examples/client_2_filtered.pcapng"
   )
 
 
