@@ -374,7 +374,7 @@ runPlotCommand (PlotSettings mbOut _mbTitle displayPlot mptcpPlot) specificArgs 
 
         res <- case (eframe1, eframe2 ) of
           (Right aframe1, Right aframe2) -> do
-              let mergedRes = mergeTcpConnectionsFromKnownStreams aframe1 aframe2
+              mergedRes <- mergeTcpConnectionsFromKnownStreams aframe1 aframe2
               let mbRecs = map recMaybe mergedRes
               let justRecs = catMaybes mbRecs
               Plots.cmdPlotTcpOwd tempPath handle (getDests dest) (ffCon aframe1) mergedRes
@@ -391,6 +391,7 @@ runPlotCommand (PlotSettings mbOut _mbTitle displayPlot mptcpPlot) specificArgs 
           createProc :: CreateProcess
           createProc = proc "xdg-open" [ tempPath ]
 
+        Log.info $ "Launching " <> tshow createProc
         (_, _, mbHerr, ph) <- P.embed $  createProcess createProc
         exitCode <- P.embed $ waitForProcess ph
         return Continue
@@ -399,9 +400,6 @@ runPlotCommand (PlotSettings mbOut _mbTitle displayPlot mptcpPlot) specificArgs 
       return Continue
     where
       getDests mbDest = maybe [RoleClient, RoleServer] (\x -> [x]) mbDest
-
--- runPlotCommand _ = error "Should not happen, file a bug report"
-
 
 
 -- TODO use genericRunCommand

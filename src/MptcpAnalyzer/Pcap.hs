@@ -180,12 +180,14 @@ generateCsvCommand fieldNames pcapFilename tsharkParams =
 {- Export to CSV
 
 -}
-exportToCsv :: TsharkParams ->
-               FilePath  -- ^Path to the pcap
-               -> FilePath -- ^ temporary file
-               -> Handle -- ^ temporary file
-              -- ^See haskell:readCreateProcessWithExitCode
-                -> IO (FilePath, ExitCode, String)
+exportToCsv :: 
+  -- Members ()
+  TsharkParams
+  -> FilePath  -- ^Path to the pcap
+  -> FilePath -- ^ temporary file
+  -> Handle -- ^ temporary file
+-- ^See haskell:readCreateProcessWithExitCode
+  -> IO (FilePath, ExitCode, String)
 exportToCsv params pcapPath path tmpFileHandle = do
     let
         (RawCommand bin args) = generateCsvCommand fields pcapPath params
@@ -398,12 +400,8 @@ getMptcpDest mptcpCon sf = case sfJoinToken sf of
 -- append a column with a value role
 -- Todo accept a 'FrameFiltered'
 -- I want to check it is included
-addTcpDestToFrame ::
-  (
-  -- HostCols ⊆ rs,
+addTcpDestToFrame :: (
   I.RecVec rs
-  -- , HostCols <: rs
-  -- , HostCols ∈ rs
   ,IpSource ∈ rs, IpDest ∈ rs
   , IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs
   , TcpStream ∈ rs
@@ -414,6 +412,8 @@ addTcpDestToFrame ::
 addTcpDestToFrame frame con = fmap (\x -> addTcpDestToRec x (computeTcpDest x con)) streamFrame
     where
       streamFrame = filterFrame  (\x -> rgetField @TcpStream x == conTcpStreamId con) frame
+
+-- TODO addTcpDestToFrame
 
 computeTcpDest :: (
   TcpStream ∈ rs

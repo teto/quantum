@@ -36,6 +36,7 @@ import MptcpAnalyzer.Map
 
 
 import Frames as F
+import Frames.CSV
 import Frames.Joins
 import Data.List (sortBy, sortOn, intersperse, intercalate)
 import Data.Vinyl
@@ -58,9 +59,10 @@ import Data.Either (fromRight)
 import qualified Pipes as Pipes
 import qualified Pipes.Prelude as Pipes
 import qualified Data.Foldable as F
+import Polysemy
 import Polysemy.Log (Log)
 import qualified Polysemy.Log as Log
-import Polysemy (Member, Members, Sem, Embed)
+import qualified Polysemy.Embed as P
 
 -- convert_to_sender_receiver
 -- merge_tcp_dataframes_known_streams(
@@ -172,14 +174,14 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
   let mappedSubflows = mapSubflows con1 con2
   Log.info $ "Mapped subflows" <> tshow mappedSubflows
   -- mergedFrames = map
-  mergedFrames<- mapM  mergeSubflow mappedSubflows
+  mergedFrames <- mapM  mergeSubflow mappedSubflows
   return $ mconcat mergedFrames
   where
     --
     -- mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
     mergeSubflow (sf1, scores) = do
       Log.debug $ "Test"
-      return $ mergeTcpConnectionsFromKnownStreams aframe1 aframe2
+      return $ mergeTcpConnectionsFromKnownStreams' aframe1 aframe2
       where
         aframe1 = fromRight undefined (buildFrameFromStreamId frame1 (conTcpStreamId $ sfConn sf1) )
         aframe2 = fromRight undefined (buildFrameFromStreamId frame2 (conTcpStreamId $ sfConn $ fst (head scores ) ))
@@ -201,7 +203,7 @@ mergeMptcpConnectionsFromKnownStreams' (FrameTcp con1 frame1) (FrameTcp con2 fra
 
     -- :: MptcpSubflow ->
     mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
-    mergeSubflow (sf1, scores) = mergeTcpConnectionsFromKnownStreams aframe1 aframe2
+    mergeSubflow (sf1, scores) = mergeTcpConnectionsFromKnownStreams' aframe1 aframe2
       where
         aframe1 = fromRight undefined (buildFrameFromStreamId frame1 (conTcpStreamId $ sfConn sf1) )
         aframe2 = fromRight undefined (buildFrameFromStreamId frame2 (conTcpStreamId $ sfConn $ fst (head scores ) ))
@@ -210,15 +212,42 @@ mergeMptcpConnectionsFromKnownStreams' (FrameTcp con1 frame1) (FrameTcp con2 fra
   in
     mconcat mergedFrames
 
+mergeTcpConnectionsFromKnownStreams ::
+  (Members '[Log, P.Embed IO] r)
+  => FrameFiltered TcpConnection Packet
+  -> FrameFiltered TcpConnection Packet
+  -> Sem r MergedPcap
+-- these are from host1 / host2
+mergeTcpConnectionsFromKnownStreams aframe1 aframe2 = do
+  embed $ writeDSV defaultParserOptions "merge-tcp-debug-1.csv" hframe1
+  embed $ writeDSV defaultParserOptions "merge-tcp-debug-2.csv" hframe2
+
+  return mergedFrame
+  where
+    -- we want an outerJoin , maybe with a status column like in panda
+    -- outerJoin returns a list of [Rec (Maybe :. ElField) ors]
+    mergedFrame = outerJoin @'[PacketHash] (hframe1dest) processedFrame2
+
+    frame1withDest = addTcpDestToFrame (ffFrame aframe1) (ffCon aframe1)
+
+    hframe1 = zipFrames (addHash aframe1) frame1withDest
+    hframe1dest = hframe1
+    -- hframe1dest = addTcpDestinationsToAFrame hframe1
+    hframe2 :: Frame (Record ('[PacketHash] ++ HostColsPrefixed))
+    hframe2 = zipFrames (addHash aframe2) host2_frame
+
+    host2_frame = convertToHost2Cols (ffFrame aframe2)
+    processedFrame2 = hframe2
+
 
 -- | Merge of 2 frames
 -- inspired by merge_tcp_dataframes_known_streams
-mergeTcpConnectionsFromKnownStreams ::
+mergeTcpConnectionsFromKnownStreams' ::
   FrameFiltered TcpConnection Packet
   -> FrameFiltered TcpConnection Packet
   -> MergedPcap
 -- these are from host1 / host2
-mergeTcpConnectionsFromKnownStreams aframe1 aframe2 =
+mergeTcpConnectionsFromKnownStreams' aframe1 aframe2 =
   mergedFrame
   where
     -- (Record HostColsPrefixed)

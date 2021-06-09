@@ -23,6 +23,15 @@ viewFrame frame = do
   putStrLn $ showHeader frame
   mapM_ (putStrLn . showRow) frame
 
+-- writeMergedPcap :: FilePath -> MergedPcap -> IO ()
+-- writeMergedPcap outPath mergedPcap = do
+--   -- showReinjects frame =
+--     -- unlines (intercalate sep (columnHeaders (Proxy :: Proxy (Record rs))) : rows)
+--     writeFile outPath content
+--     where
+--       content = intercalate "," rows
+--       rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) mergedPcap)
+
 
 
 --

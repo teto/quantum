@@ -1,6 +1,6 @@
 
 
-TEST_FILES ?= tests/hello.json
+TEST_FILES ?= tests/tcp.json tests/mptcp.json
 
 # TODO should be doable via LSP/test ormolu
 stylish-haskell:
@@ -18,11 +18,9 @@ build:
 
 .PHONY: test
 test: build $(TEST_FILES)
-	# TODO use shelltest https://github.com/simonmichael/shelltestrunner
-	# TODO adjust command
-	# shelltest --timeout=30 -cd tests/
 	# TODO run $(TEST_FILES)
-	replica run tests/*.json
+	# export PATH=$(dirname $(fd -u --glob  mptcpanalyzer -tx));${PATH}
+	tests/run.sh
 
 .PHONY: gen-autocompletion
 gen-autocompletion:
