@@ -99,28 +99,6 @@ loggerName = "main"
 
 deriving instance Read Log.Severity
 
--- plotParserGeneric :: Parser CommandArgs
--- plotParserGeneric = ArgsPlotGeneric
---       -- <$> parserPlotSettings
---       <$> plotParserSpecific
-
-
--- piParserGeneric :: ParserInfo CommandArgs
--- piParserGeneric = info (
---     -- plotParserGeneric
---     plotParserSpecific
---   )
---   ( progDesc "Generate a plot"
---   )
-
--- plotParserSpecific :: Parser CommandArgs
--- plotParserSpecific =
---   hsubparser (
---     command "tcp" (ArgsPlotGeneric <$> (parserPlotSettings False) <*> Plots.piPlotTcpMainParser)
---     <> command "mptcp" (ArgsPlotGeneric <$> (parserPlotSettings True) <*> Plots.piPlotMptcpParser)
---     -- <> command "owd" (Plots.piPlotTcpOwd)
---    )
-
     -- <*> commandGroup "Loader commands"
     -- <> command "load-csv" CL.piLoadCsv
 
@@ -361,16 +339,12 @@ runPlotCommand (PlotSettings mbOut _mbTitle displayPlot mptcpPlot) specificArgs 
                 Left err -> return $ CMD.Error err
                 Right frame -> Plots.cmdPlotTcpAttribute attr tempPath handle destinations frame
         return res
+
       -- Destinations
-      (ArgsPlotOwd pcap1 pcap2 streamId1 streamId2 dest) -> do
+      (ArgsPlotOwdTcp (PcapMapping pcap1 streamId1 pcap2 streamId2) dest) -> do
         Log.info "owd plot"
-        -- if plotOwdMptcp specificArgs then do
-        --       eFrame <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcapFilename (StreamId streamId)
-        --       case eFrame of
-        --         Left err -> return $ CMD.Error err
-        --         Right frame -> Plots.cmdPlotMptcpAttribute tempPath handle destinations frame
-        eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId1)
-        eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 (StreamId streamId2)
+        eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 streamId1
+        eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 streamId2
 
         res <- case (eframe1, eframe2 ) of
           (Right aframe1, Right aframe2) -> do
@@ -381,6 +355,23 @@ runPlotCommand (PlotSettings mbOut _mbTitle displayPlot mptcpPlot) specificArgs 
           (Left err, _) -> return $ CMD.Error err
           (_, Left err) -> return $ CMD.Error err
         return res
+
+      (ArgsPlotOwdMptcp (PcapMapping pcap1 streamId1 pcap2 streamId2) dest) -> do
+        Log.info "owd plot"
+        eframe1 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap1 streamId1
+        eframe2 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap2 streamId2
+
+        res <- case (eframe1, eframe2 ) of
+          (Right aframe1, Right aframe2) -> do
+              mergedRes <- mergeMptcpConnectionsFromKnownStreams aframe1 aframe2
+              let mbRecs = map recMaybe mergedRes
+              let justRecs = catMaybes mbRecs
+              -- Plots.cmdPlotMptcpOwd tempPath handle (getDests dest) (ffCon aframe1) mergedRes
+              undefined
+          (Left err, _) -> return $ CMD.Error err
+          (_, Left err) -> return $ CMD.Error err
+        return res
+
 
     _ <- P.embed $ case mbOut of
             -- user specified a file move the file

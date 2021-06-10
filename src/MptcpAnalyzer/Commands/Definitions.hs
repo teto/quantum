@@ -12,15 +12,15 @@ import Options.Applicative
 -- import Polysemy (Sem, Members, makeSem, interpret, Effect)
 
 -- | To reprensent a mapping between 2 pcaps
-data PcapMapping a = PcapMapping {
-      pmapPcap1 :: FilePath
-      , pmapStream1 :: StreamId a
-      , pmapPcap2 :: FilePath
-      , pmapStream2 :: StreamId a
-      -- , pmapVerbose :: Bool
-      -- , pmapLimit :: Int -- ^Number of comparisons to show
-      -- , pmapMptcp :: Bool -- ^Wether it's an MPTCP
-    }
+-- data PcapMapping a = PcapMapping {
+--       pmapPcap1 :: FilePath
+--       , pmapStream1 :: StreamId a
+--       , pmapPcap2 :: FilePath
+--       , pmapStream2 :: StreamId a
+--       -- , pmapVerbose :: Bool
+--       -- , pmapLimit :: Int -- ^Number of comparisons to show
+--       -- , pmapMptcp :: Bool -- ^Wether it's an MPTCP
+--     }
 
 -- | Registered commands
 -- TODO make it possible to add some from a plugin

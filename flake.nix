@@ -149,6 +149,11 @@
           pkg-config
           zlib
         ];
+
+        shellHook = ''
+          exe=$(cabal list-bin exe:mptcpanalyzer)
+          PATH="$(dirname $exe):$PATH"
+        '';
       };
 
     });

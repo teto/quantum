@@ -95,25 +95,26 @@ plotParserOwd ::
     Bool -- ^ for mptcp yes or no
     ->
     Parser ArgsPlots
-plotParserOwd _mptcpPlot = ArgsPlotOwd <$>
+plotParserOwd _mptcpPlot = ArgsPlotOwdTcp <$>
+      parserPcapMapping False
       -- this ends up being not optional !
-      strArgument (
-          metavar "PCAP1"
-          <> help "File to analyze"
-      )
-      <*> strArgument (
-          metavar "PCAP2"
-          <> help "File to analyze"
-      )
-      -- auto readStreamId
-      <*> argument auto (
-          metavar "STREAM_ID1"
-          <> help "Stream Id (tcp.stream)"
-      )
-      <*> argument auto (
-          metavar "STREAM_ID2"
-          <> help "Stream Id (tcp.stream)"
-      )
+      -- strArgument (
+      --     metavar "PCAP1"
+      --     <> help "File to analyze"
+      -- )
+      -- <*> strArgument (
+      --     metavar "PCAP2"
+      --     <> help "File to analyze"
+      -- )
+      -- -- auto readStreamId
+      -- <*> argument auto (
+      --     metavar "STREAM_ID1"
+      --     <> help "Stream Id (tcp.stream)"
+      -- )
+      -- <*> argument auto (
+      --     metavar "STREAM_ID2"
+      --     <> help "Stream Id (tcp.stream)"
+      -- )
       -- TODO validate as presented in https://github.com/pcapriotti/optparse-applicative/issues/75
       --validate :: (a -> Either String a) -> ReadM a -> ReadM a
       -- TODO ? if nothing prints both directions

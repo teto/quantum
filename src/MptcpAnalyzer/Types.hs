@@ -109,6 +109,17 @@ genRecHashable "HashablePart" baseFields
 genRecordFrom "SenderCols" baseFieldsSender
 genRecordFrom "ReceiverCols" baseFieldsReceiver
 
+-- | To reprensent a mapping between 2 pcaps
+data PcapMapping a = PcapMapping {
+      pmapPcap1 :: FilePath
+      , pmapStream1 :: StreamId a
+      , pmapPcap2 :: FilePath
+      , pmapStream2 :: StreamId a
+      -- , pmapVerbose :: Bool
+      -- , pmapLimit :: Int -- ^Number of comparisons to show
+      -- , pmapMptcp :: Bool -- ^Wether it's an MPTCP
+    }
+
 
 -- row / ManRow
 type Packet = Record HostCols

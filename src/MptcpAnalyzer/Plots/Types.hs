@@ -2,6 +2,7 @@ module MptcpAnalyzer.Plots.Types
 where
 
 import MptcpAnalyzer.Types
+import MptcpAnalyzer.Stream
 import MptcpAnalyzer.ArtificialFields
 import Data.Word (Word32)
 
@@ -25,33 +26,22 @@ data PlotSettings = PlotSettings {
   }
       -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
 
--- (Maybe String) (Maybe String) Bool
 data ArgsPlots =
 
     -- actually valid for MPTCP too
-    ArgsPlotTcpAttr {
+    ArgsPlotTcpAttr FilePath Word32 String (Maybe ConnectionRole)
       -- plotField :: String
-      plotFilename :: FilePath
-      -- try to pattern match on the StreamId
-      , plotStreamId :: Word32
-      , plotTcpAttr :: String
-      , plotDest :: Maybe ConnectionRole
-      -- , plotMptcp :: Bool -- ^ hidden option
-    }
+      -- plotFilename :: FilePath
+      -- -- try to pattern match on the StreamId
+      -- , plotStreamId :: Word32
+      -- , plotTcpAttr :: String
+      -- , plotDest :: Maybe ConnectionRole
+      -- -- , plotMptcp :: Bool -- ^ hidden option
+
     -- |
     -- @pcap1 pcap2 stream1 stream2 destinations whether its tcp or mptcp
-    | ArgsPlotOwd FilePath FilePath Word32 Word32 (Maybe ConnectionRole)
-    -- | ArgsPlotOwd {
-    --   plotOwdPcap1 :: FilePath
-    --   , plotOwdPcap2 :: FilePath
-    --   -- try to pattern match on the StreamId
-    --   , plotOwdStreamId1 :: Word32
-    --   , plotOwdStreamId2 :: Word32
-    --   , plotOwdDest :: Maybe ConnectionRole
-    --   -- , plotOwdMptcp :: Bool -- ^ hidden option
-    -- }
-    --
-    --
+    | ArgsPlotOwdTcp (PcapMapping Tcp) (Maybe ConnectionRole)
+    | ArgsPlotOwdMptcp (PcapMapping Mptcp) (Maybe ConnectionRole)
     -- ArgsPlotMptcpAttr {
     --     plotAttrMptcpFilename :: FilePath
     --   , plotAttrMptcpStreamId :: StreamId Mptcp

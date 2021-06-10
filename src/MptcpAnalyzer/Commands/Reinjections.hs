@@ -141,29 +141,28 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) verbose = d
   eframe1 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap1 streamId1
   eframe2 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap2 streamId2
   res <- case (eframe1, eframe2 ) of
-    (Right aframe1, Right aframe2) ->
-        let
-          mergedRes = mergeMptcpConnectionsFromKnownStreams' aframe1 aframe2
-
-          mbRecs = map recMaybe mergedRes
-          -- packets that could be mapped in both pcaps
-          -- justRecs = catMaybes mbRecs
-          myFrame = convertToSenderReceiver mergedRes
-
-          reinjectedPacketsFrame = filterFrame (\x -> isJust $ x ^. sndReinjectionOf) myFrame
-
-          -- loop over these reinjectpackets
-          -- assume both were mapped
-          reinjects = fmap (analyzeReinjection myFrame) reinjectedPacketsFrame
-
-          showReinjects frame =
-            -- unlines (intercalate sep (columnHeaders (Proxy :: Proxy (Record rs))) : rows)
-            intercalate "," rows
-            where
-              rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) frame)
-
-        in do
+    (Right aframe1, Right aframe2) -> do
           -- Log.info $ "Result of the analysis; reinjections:" <> tshow (showReinjects justRecs)
+          mergedRes <- mergeMptcpConnectionsFromKnownStreams aframe1 aframe2
+          let
+            -- mergedRes = mergeMptcpConnectionsFromKnownStreams' aframe1 aframe2
+
+            mbRecs = map recMaybe mergedRes
+            -- packets that could be mapped in both pcaps
+            -- justRecs = catMaybes mbRecs
+            myFrame = convertToSenderReceiver mergedRes
+
+            reinjectedPacketsFrame = filterFrame (\x -> isJust $ x ^. sndReinjectionOf) myFrame
+
+            -- loop over these reinjectpackets
+            -- assume both were mapped
+            reinjects = fmap (analyzeReinjection myFrame) reinjectedPacketsFrame
+
+            showReinjects frame =
+              -- unlines (intercalate sep (columnHeaders (Proxy :: Proxy (Record rs))) : rows)
+              intercalate "," rows
+              where
+                rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) frame)
           P.embed $ writeMergedPcap ("mergedRes-"  ++ ".csv") mergedRes
           P.embed $ writeDSV defaultParserOptions ("sndrcv-merged-"  ++ ".csv") myFrame
 
