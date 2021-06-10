@@ -15,6 +15,8 @@ import MptcpAnalyzer.Stream
 import MptcpAnalyzer.ArtificialFields
 
 
+{- Holds all necessary information about a multipath TCP connection
+-}
 data MptcpConnection = MptcpConnection {
       -- todo prefix as mpcon
       mptcpStreamId :: StreamIdMptcp
@@ -29,7 +31,7 @@ data MptcpConnection = MptcpConnection {
 -- Ord to be able to use fromList
 } deriving (Show, Eq, Ord)
 
--- |
+-- | Extension of @TcpConnection@
 -- master subflow has implicit addrid 0
 data MptcpSubflow = MptcpSubflow {
       sfConn :: TcpConnection
@@ -47,6 +49,7 @@ data MptcpSubflow = MptcpSubflow {
 tshow :: Show a => a -> TS.Text
 tshow = TS.pack . Prelude.show
 
+-- |Pretty print of an MPTCP connection
 showMptcpConnectionText :: MptcpConnection -> Text
 showMptcpConnectionText con =
   -- showIp (srcIp con) <> ":" <> tshow (srcPort con) <> " -> " <> showIp (dstIp con) <> ":" <> tshow (dstPort con)

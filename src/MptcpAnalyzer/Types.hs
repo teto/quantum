@@ -109,10 +109,13 @@ genRecHashable "HashablePart" baseFields
 genRecordFrom "SenderCols" baseFieldsSender
 genRecordFrom "ReceiverCols" baseFieldsReceiver
 
--- | To reprensent a mapping between 2 pcaps
+-- | Represent a mapping between 2 pcaps captured at either end of a connection
+-- (i.e., one pcap was captured at the client, the other at the receiver)
 data PcapMapping a = PcapMapping {
+      -- | Host 1 pcap to load
       pmapPcap1 :: FilePath
       , pmapStream1 :: StreamId a
+      -- | Host 2 
       , pmapPcap2 :: FilePath
       , pmapStream2 :: StreamId a
       -- , pmapVerbose :: Bool
@@ -155,42 +158,12 @@ deriving instance Hashable IPv6
 -- @a@ be Tcp / Mptcp
 -- @b@ could be the direction
 type PcapFrame a = Frame Packet
--- type SomeFrame = PcapFrame ()
 
 
 tshow :: Show a => a -> TS.Text
 tshow = TS.pack . Prelude.show
 -- TODO PcapFrame should be a monoid and a semigroup with a list of Connection []
 
--- Named ConnectionTcp to not clash with mptcppm's one ?
--- data Connection = TcpConnection {
--- --   -- TODO use libraries to deal with that ? filter from the command line for instance ?
---   conTcpClientIp :: IP -- ^Client ip
---   , conTcpServerIp :: IP -- ^Server ip
---   , conTcpClientPort :: Word16  -- ^ Source port
---   , conTcpServerPort :: Word16  -- ^Destination port
---   , conTcpStreamId :: StreamId Tcp  -- ^ @tcp.stream@ in wireshark
---   }
---     | MptcpConnection {
---       -- todo prefix as mpcon
---       mptcpStreamId :: StreamIdMptcp
---       , mptcpServerKey :: Word64
---       , mptcpClientKey :: Word64
---       , mptcpServerToken :: Word32
---       , mptcpClientToken :: Word32
---       , mptcpNegotiatedVersion :: Word8
---       -- should be a subflow
---       , mpconSubflows :: Set.Set MptcpSubflow
--- -- Ord to be able to use fromList
--- } deriving (Show, Eq, Ord)
-
-
-
-
-
--- data SStreamId (a :: Protocol) where
---   StreamIdTcp :: SStreamId 'Tcp
---   StreamIdMptcp :: SStreamId 'Mptcp
 
 -- | TODO adapt / rename to AFrame ? AdvancedFrames ?
 -- GADT ?

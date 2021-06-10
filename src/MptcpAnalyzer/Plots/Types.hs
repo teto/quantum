@@ -6,22 +6,16 @@ import MptcpAnalyzer.Stream
 import MptcpAnalyzer.ArtificialFields
 import Data.Word (Word32)
 
--- {
---   plotOut :: Maybe String 
--- --     , plotToClipboard :: Maybe Bool
--- -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
---   , plotTitle :: Maybe String  -- ^ To override default title of the plot
---   , plotDisplay :: Bool  -- ^Defaults to false
---   , plotArgs :: ArgsPlots
--- }
+-- | Settings shared by all plots
 data PlotSettings = PlotSettings {
+  -- | Where to save the file
   plsOut :: Maybe String
+  -- | To override the default title
   , plsTitle :: Maybe String
+  -- | Whether to display the result
   , plsDisplay :: Bool
   -- , ploLabelx :: String
   -- , ploLabely :: String
-  -- Tshark config ? why
-  --
   , plsMptcp :: Bool -- mptcp
   }
       -- parser.add_argument('--display', action="store", default="term", choices=["term", "gui", "no"],
@@ -29,22 +23,9 @@ data PlotSettings = PlotSettings {
 data ArgsPlots =
 
     -- actually valid for MPTCP too
+    -- | Expects a filename/streamId attr and maybe destination
     ArgsPlotTcpAttr FilePath Word32 String (Maybe ConnectionRole)
-      -- plotField :: String
-      -- plotFilename :: FilePath
-      -- -- try to pattern match on the StreamId
-      -- , plotStreamId :: Word32
-      -- , plotTcpAttr :: String
-      -- , plotDest :: Maybe ConnectionRole
-      -- -- , plotMptcp :: Bool -- ^ hidden option
-
     -- |
     -- @pcap1 pcap2 stream1 stream2 destinations whether its tcp or mptcp
     | ArgsPlotOwdTcp (PcapMapping Tcp) (Maybe ConnectionRole)
     | ArgsPlotOwdMptcp (PcapMapping Mptcp) (Maybe ConnectionRole)
-    -- ArgsPlotMptcpAttr {
-    --     plotAttrMptcpFilename :: FilePath
-    --   , plotAttrMptcpStreamId :: StreamId Mptcp
-    --   , plotAttrMptcpAttr :: String
-    --   , plotAttrMptcpDest :: Maybe ConnectionRole
-    -- }
