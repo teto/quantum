@@ -1,5 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE OverloadedStrings #-}
+-- {-# LANGUAGE PackageImports #-}
 module MptcpAnalyzer.Map
 where
 
@@ -28,6 +29,8 @@ import qualified Data.Set as Set
 
 type MptcpSubflowMapping = [(MptcpSubflow, [(MptcpSubflow, Int)])]
 
+-- data MptcpSubflowMapping 
+
 -- | Returns
 -- TODO we should sort the returned
 mapSubflows :: MptcpConnection -> MptcpConnection -> MptcpSubflowMapping
@@ -37,6 +40,15 @@ mapSubflows con1 con2 =
   where
     -- select best / sortOn
     scoreSubflows sf1 = map (\sf -> (sf, similarityScore sf1 sf)) (Set.toList $ mpconSubflows con2)
+
+
+showMptcpSubflowMapping :: MptcpSubflowMapping -> Text
+showMptcpSubflowMapping m =
+  concatMap showOneSfMapping m
+  where
+    showOneSfMapping (ref, scores) = "Mappings for " <> showMptcpSubflowText ref <> ":\n"
+      <> (map (\(sf, score) -> showMptcpSubflowText sf) scores)
+
 
 -- |
 -- Returns a list of 
@@ -71,6 +83,3 @@ mapMptcpConnection aframe frame = let
       evalScore con1 (FrameTcp con2 _) = (con2, similarityScore con1 con2)
     in
       sortedScores
-
--- map_tcp_connection examples/client_1_tcp_only.pcap examples/server_1_tcp_only.pcap  0
--- do_map_tcp_connection(self, args):

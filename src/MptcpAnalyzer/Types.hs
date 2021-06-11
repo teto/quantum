@@ -41,7 +41,7 @@ import Frames.ShowCSV
 import Frames.TH
 import Frames.CSV (QuotingMode(..), ParserOptions(..))
 -- (Parseable(..), parseIntish, Parsed(..))
-import Frames.ColumnTypeable 
+import Frames.ColumnTypeable
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Text.Read as T
@@ -54,7 +54,6 @@ import qualified Data.Text.Lazy.Builder as B
 import Data.Typeable (Typeable)
 import Control.Lens
 import Control.Monad (MonadPlus, mzero)
-import Frames (CommonColumns, Readable(..))
 import qualified Frames as F
 import qualified Data.Set as Set
 import qualified Data.Text as TS
@@ -133,7 +132,7 @@ type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': HostCols)
 -- forall t s a rs. (t ~ '(s,a)
 -- comparable to Storable
 deriving instance  (KnownSymbol s, Hashable a) => Hashable(ElField '(s, a))
-deriving instance Hashable( TcpFlag)
+deriving instance Hashable TcpFlag
 
 -- | This is only here so we can use hash maps for the grouping step.  This should properly be in Vinyl itself.
 instance Hashable (F.Record '[]) where
@@ -143,7 +142,7 @@ instance Hashable (F.Record '[]) where
   {-# INLINABLE hashWithSalt #-}
 
 instance (V.KnownField t, Hashable (V.Snd t), Hashable (F.Record rs), rs F.⊆ (t ': rs)) => Hashable (F.Record (t ': rs)) where
-  hashWithSalt s r = s `Hash.hashWithSalt` (F.rgetField @t r) `Hash.hashWithSalt` (F.rcast @rs r)
+  hashWithSalt s r = s `Hash.hashWithSalt` (F.rgetField @t r) `Hash.hashWithSalt` F.rcast @rs r
   {-# INLINABLE hashWithSalt #-}
 
 deriving instance Hashable IP

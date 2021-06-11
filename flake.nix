@@ -1,6 +1,11 @@
 {
   description = "Multipath tcp pcap analyzer tool";
 
+  nixConfig = {
+    substituters = [  https://hydra.iohk.io ];
+    # bash-prompt = "toto";
+  };
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/master";
     replica.url = "github:berewt/REPLica";
@@ -66,10 +71,9 @@
       hsEnv = myHaskellPackages.ghcWithPackages(hs: [
         # hs.cairo
         # hs.diagrams
-        # haskell-language-server-884
-        inputs.hls.packages."${system}"."haskell-language-server-${compilerVersion}"
+        # inputs.hls.packages."${system}"."haskell-language-server-${compilerVersion}"
         hs.cabal-install
-        # myHaskellPackages.stylish-haskell
+        hs.stylish-haskell
         hs.hasktags
         # myHaskellPackages.hlint
         hs.stan

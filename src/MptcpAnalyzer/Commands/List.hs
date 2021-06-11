@@ -47,7 +47,7 @@ piTcpSummaryOpts :: ParserInfo CommandArgs
 piTcpSummaryOpts = info (
    piTcpSummary <**> helper)
   ( progDesc "Detail a specific TCP connection"
-    <> footer "Example: summary - "
+    <> footer "Example: summary 0"
   )
   where
     piTcpSummary :: Parser CommandArgs
@@ -66,6 +66,7 @@ piMptcpSummaryOpts :: ParserInfo CommandArgs
 piMptcpSummaryOpts = info (
    piMptcpSummary <**> helper)
   ( progDesc "Detail a specific TCP connection"
+  <> footer "mptcp-summary 0"
   )
   where
     piMptcpSummary :: Parser CommandArgs

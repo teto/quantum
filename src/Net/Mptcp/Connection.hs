@@ -18,15 +18,15 @@ import MptcpAnalyzer.ArtificialFields
 {- Holds all necessary information about a multipath TCP connection
 -}
 data MptcpConnection = MptcpConnection {
-      -- todo prefix as mpcon
-      mptcpStreamId :: StreamIdMptcp
-      , mptcpServerKey :: Word64
-      , mptcpClientKey :: Word64
-      , mptcpServerToken :: Word32  -- ^ Hash of the server key
-      , mptcpClientToken :: Word32
-      , mptcpNegotiatedVersion :: Word8
-      -- should be a subflow
-      , mpconSubflows :: Set.Set MptcpSubflow
+  -- todo prefix as mpcon
+  mptcpStreamId :: StreamIdMptcp
+  , mptcpServerKey :: Word64    -- ^ MPTCP server key
+  , mptcpClientKey :: Word64    -- ^ MPTCP client key
+  , mptcpServerToken :: Word32  -- ^ Hash of the server key
+  , mptcpClientToken :: Word32
+  , mptcpNegotiatedVersion :: Word8  -- ^ 0 or 1 at least for now
+  -- should be a subflow
+  , mpconSubflows :: Set.Set MptcpSubflow  -- ^ List of all subflows seen during communication
 
 -- Ord to be able to use fromList
 } deriving (Show, Eq, Ord)
@@ -49,15 +49,12 @@ data MptcpSubflow = MptcpSubflow {
 tshow :: Show a => a -> TS.Text
 tshow = TS.pack . Prelude.show
 
--- |Pretty print of an MPTCP connection
+-- |Pretty print an MPTCP connection
 showMptcpConnectionText :: MptcpConnection -> Text
 showMptcpConnectionText con =
   -- showIp (srcIp con) <> ":" <> tshow (srcPort con) <> " -> " <> showIp (dstIp con) <> ":" <> tshow (dstPort con)
   tpl <> "\n" <> TS.unlines (Prelude.map (showTcpConnectionText . sfConn) (Set.toList $ mpconSubflows con))
   where
-    -- showIp = Net.IP.encode
-    -- tshowSubflow = tshow . showSubflow
-
     -- todo show version
     tpl :: Text
     tpl = "Server key/token: " <> tshow (mptcpServerKey con) <> "/" <> tshow ( mptcpServerToken con)

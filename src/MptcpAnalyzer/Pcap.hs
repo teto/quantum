@@ -1,31 +1,25 @@
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE TemplateHaskell            #-}
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE KindSignatures             #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE FlexibleInstances                      #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleContexts, QuasiQuotes #-}
-{-# LANGUAGE ConstraintKinds,
-             DataKinds,
-             EmptyCase,
-             FlexibleContexts,
-             FlexibleInstances,
-             FunctionalDependencies,
-             KindSignatures,
-             GADTs,
-             MultiParamTypeClasses,
-             PatternSynonyms,
-             PolyKinds,
-             ScopedTypeVariables,
-             TypeFamilies,
-             TypeOperators,
-             UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds        #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE EmptyCase              #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE KindSignatures         #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE PatternSynonyms        #-}
+{-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE QuasiQuotes            #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TemplateHaskell        #-}
+{-# LANGUAGE TypeApplications       #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE PackageImports         #-}
 module MptcpAnalyzer.Pcap
 -- (TsharkParams(..),
 --     defaultTsharkPrefs
@@ -38,59 +32,61 @@ module MptcpAnalyzer.Pcap
 where
 
 
-import Tshark.TH
-import Tshark.Fields
-import Net.Tcp
-import Net.Mptcp
-import MptcpAnalyzer.Types
-import MptcpAnalyzer.Stream
-import MptcpAnalyzer.ArtificialFields
-import "mptcp-pm" Net.Tcp ( TcpFlag(..))
+import           MptcpAnalyzer.ArtificialFields
+import           MptcpAnalyzer.Stream
+import           MptcpAnalyzer.Types
+import           Net.Mptcp
+import           Net.Tcp
+import           "mptcp-pm" Net.Tcp             (TcpFlag (..))
+import           Tshark.Fields
+import           Tshark.TH
 
-import Data.Monoid (First(..))
-import qualified Data.Vector as V
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import System.IO (BufferMode(LineBuffering), hSetBuffering, SeekMode(AbsoluteSeek), hSeek, Handle, hGetContents)
-import System.Process
-import System.Exit
-import Frames.TH
-import Frames
+import           Data.Monoid                    (First (..))
+import qualified Data.Text                      as T
+import qualified Data.Text.IO                   as T
+import qualified Data.Vector                    as V
+import           Frames
+import           Frames.TH
+import           System.Exit
+import           System.IO                      (BufferMode (LineBuffering), Handle, SeekMode (AbsoluteSeek),
+                                                 hGetContents, hSeek, hSetBuffering)
+import           System.Process
 -- import Frames.InCore
-import Frames.ShowCSV
-import Frames.Col
-import Frames.CSV (produceTextLines, pipeTableEitherOpt, readFileLatin1Ln, readTableMaybeOpt, QuotingMode(..), ParserOptions(..), ReadRec)
-import Frames.ColumnTypeable (Parseable(..), parseIntish, Parsed(..))
+import           Frames.CSV                     (ParserOptions (..), QuotingMode (..), ReadRec, pipeTableEitherOpt,
+                                                 produceTextLines, readFileLatin1Ln, readTableMaybeOpt)
+import           Frames.Col
+import           Frames.ColumnTypeable          (Parseable (..), Parsed (..), parseIntish)
+import           Frames.ShowCSV
 -- for Record
 -- import Frames.Rec (Record(..))
-import Net.IP
-import Data.List (intercalate)
+import           Data.List                      (intercalate)
+import           Net.IP
 -- for symbol
 -- import GHC.Types
-import qualified Data.Set as Set
-import qualified Control.Foldl as L
+import qualified Control.Foldl                  as L
+import qualified Data.Set                       as Set
 -- import Language.Haskell.TH
 -- import Language.Haskell.TH.Syntax
 -- import Lens.Micro
 -- import Lens.Micro.Extras
-import Control.Lens
-import Data.Word (Word8, Word16, Word32, Word64)
-import Numeric (readHex)
-import qualified Data.Foldable as F
-import qualified Pipes.Prelude as P
-import Pipes (cat, Producer, (>->))
-import Data.Vinyl (Rec(..), ElField(..), rapply, xrec, rmapX)
-import Data.Vinyl.Functor (Compose(..), (:.))
-import Data.Vinyl.Class.Method
-import Data.Maybe (fromJust, catMaybes)
-import GHC.Base (Symbol)
-import GHC.TypeLits (KnownSymbol)
-import GHC.List (foldl')
+import           Control.Lens
+import qualified Data.Foldable                  as F
+import           Data.Maybe                     (catMaybes, fromJust)
+import           Data.Vinyl                     (ElField (..), Rec (..), rapply, rmapX, xrec)
+import           Data.Vinyl.Class.Method
+import           Data.Vinyl.Functor             (Compose (..), (:.))
+import           Data.Word                      (Word16, Word32, Word64, Word8)
+import           GHC.Base                       (Symbol)
+import           GHC.List                       (foldl')
+import           GHC.TypeLits                   (KnownSymbol)
+import           Numeric                        (readHex)
+import           Pipes                          (Producer, cat, (>->))
+import qualified Pipes.Prelude                  as P
 -- import qualified Frames.InCore
-import qualified Frames.InCore as I
-import Debug.Trace
-import qualified Data.Map as Map
-import Data.Either (lefts, rights)
+import           Data.Either                    (lefts, rights)
+import qualified Data.Map                       as Map
+import           Debug.Trace
+import qualified Frames.InCore                  as I
 
 
 -- tableTypes is a Template Haskell function, which means that it is executed at compile time. It generates a data type for our CSV, so we have everything under control with our types.
@@ -120,9 +116,9 @@ import Data.Either (lefts, rights)
 -- Make it a record ?
 
 data TsharkParams = TsharkParams {
-      tsharkBinary :: String,
-      tsharkOptions :: [(String, String)],
-      csvDelimiter :: Char,
+      tsharkBinary     :: String,
+      tsharkOptions    :: [(String, String)],
+      csvDelimiter     :: Char,
       tsharkReadFilter :: Maybe String
     }
 
@@ -165,7 +161,7 @@ generateCsvCommand fieldNames pcapFilename tsharkParams =
 
         readFilter :: [String]
         readFilter = case tsharkReadFilter tsharkParams of
-            Just x ->["-2", "-R", x]
+            Just x  ->["-2", "-R", x]
             Nothing -> []
 
         fields :: [T.Text]
@@ -180,7 +176,7 @@ generateCsvCommand fieldNames pcapFilename tsharkParams =
 {- Export to CSV
 
 -}
-exportToCsv :: 
+exportToCsv ::
   -- Members ()
   TsharkParams
   -> FilePath  -- ^Path to the pcap
@@ -201,7 +197,7 @@ exportToCsv params pcapPath path tmpFileHandle = do
     -- TODO write header
     -- TODO redirect stdout towards the out handle
     hSetBuffering tmpFileHandle LineBuffering
-    hSeek tmpFileHandle AbsoluteSeek 0 >> T.hPutStrLn tmpFileHandle fieldHeader 
+    hSeek tmpFileHandle AbsoluteSeek 0 >> T.hPutStrLn tmpFileHandle fieldHeader
     (_, _, Just herr, ph) <-  createProcess_ "error" createProc
     exitCode <- waitForProcess ph
     -- TODO do it only in case of error ?
@@ -237,7 +233,7 @@ type ManEither = Rec (Either T.Text :. ElField) (RecordColumns Packet)
 {- |Load rows and errors when it can't load a specific line
 -}
 eitherProcessed :: (ReadRec a, MonadSafe m) => FilePath -> Producer (Record a) m ()
-eitherProcessed path = produceTextLines path 
+eitherProcessed path = produceTextLines path
   >-> pipeTableEitherOpt defaultParserOptions >-> P.map fromEither
   where
     -- fromEither :: Rec (Either Text :. ElField) (RecordColumns Packet) -> Packet
@@ -282,7 +278,7 @@ defaultTsharkPrefs = TsharkParams {
     }
 
 
-{- 
+{-
 -}
 getTcpFrame :: FrameRec HostCols -> StreamId Tcp -> Either String (FrameFiltered TcpConnection Packet)
 getTcpFrame = buildTcpConnectionFromStreamId
@@ -294,7 +290,7 @@ buildTcpConnectionFromRecord :: (
 
   )
   => Record rs -> TcpConnection
-buildTcpConnectionFromRecord r = 
+buildTcpConnectionFromRecord r =
   TcpConnection {
     conTcpClientIp = r ^. ipSource
     , conTcpServerIp = r ^. ipDest
@@ -310,7 +306,7 @@ buildTcpConnectionFromStreamId ::
   -> StreamId Tcp -> Either String (FrameFiltered TcpConnection Packet)
 buildTcpConnectionFromStreamId frame streamId =
     if frameLength synPackets < 1 then
-      Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
+      Left $ "No packet with any SYN flag for tcp.stream " ++ show streamId
     else
       -- TODO check who is client
       Right $ FrameTcp (buildTcpConnectionFromRecord $ frameRow synPackets 0) streamPackets
@@ -333,7 +329,7 @@ buildSubflowFromTcpStreamId ::
   -> Either String (FrameFiltered MptcpSubflow (Record rs))
 buildSubflowFromTcpStreamId frame streamId =
     if frameLength synPackets < 1 then
-      Left $ "No packet with any SYN flag for tcpstream " ++ show streamId
+      Left $ "No packet with any SYN flag for tcp.stream " ++ show streamId
     else
       -- TODO check who is client
       Right $ FrameTcp sf streamPackets
@@ -513,16 +509,15 @@ buildMptcpConnectionFromStreamId frame streamId = do
 
       clientMptcpVersion = synPacket ^. mptcpVersion
 
-      -- 
+      --
       subflows = map (buildSubflowFromTcpStreamId frame) (getTcpStreams streamPackets)
 
 
--- TODO rename to connection later
 -- filterFrame / buildFrameFromStreamId
 {- Common interface to work with TCP and MPTCP connections
 -}
 class StreamConnection a b | a -> b where
-  -- | How 
+  -- | How
   showConnectionText :: a -> Text
   -- describeConnection :: a -> Text
   buildFrameFromStreamId :: Frame Packet -> StreamId b -> Either String (FrameFiltered a Packet)
@@ -533,6 +528,9 @@ class StreamConnection a b | a -> b where
   -- summarize :: a -> Text
   -- GetLabel ?
 
+
+-- | Compares 2 TCP connections and gives a score
+-- The higher the score, the more similar the 2 connections are.
 scoreTcpCon :: TcpConnection -> TcpConnection -> Int
 scoreTcpCon con1 con2 =
   -- If every parameter is equal, returns +oo else 0
@@ -550,29 +548,18 @@ instance StreamConnection TcpConnection Tcp where
   showConnectionText = showTcpConnectionText
   buildFrameFromStreamId = buildTcpConnectionFromStreamId
   similarityScore = scoreTcpCon
-  -- listConnections
 
 
 -- | Computes a score
 scoreMptcpCon :: MptcpConnection -> MptcpConnection -> Int
 scoreMptcpCon con1 con2 =
-  let keyScore = if mptcpServerKey con1 == mptcpServerKey con2 && mptcpClientKey con1 == mptcpClientKey con2 then
-        200
+  let keyScore = if mptcpServerKey con1 == mptcpServerKey con2 && mptcpClientKey con1 == mptcpClientKey con2
+      then
+          200
       else
-        0
+          0
   in
     keyScore
-        -- map similarityScore (mpconSubflows con1)
-
-        -- # TODO check there is at least the master
-        -- # with nat, ips don't mean a thing ?
-        -- for sf in self.subflows():
-        --     if sf in other.subflows() or sf.reversed() in other.subflows():
-        --         log.debug("Subflow %s in common", sf)
-        --         score += 10
-        --         common_sf.append(sf)
-        --     else:
-        --         log.debug("subflows %s doesn't seem to exist in other ", sf)
 
 
 instance StreamConnection MptcpConnection Mptcp where
@@ -581,11 +568,17 @@ instance StreamConnection MptcpConnection Mptcp where
   similarityScore = scoreMptcpCon
 
 instance StreamConnection MptcpSubflow Tcp where
-  showConnectionText = showConnectionText . sfConn
+  showConnectionText = showMptcpSubflowText
   buildFrameFromStreamId = undefined
   -- TODO use score as well
   similarityScore sf1 sf2 = similarityScore (sfConn sf1) (sfConn sf2)
 
+
+-- |Show the subflow (ids)
+showMptcpSubflowText :: MptcpSubflow -> Text
+showMptcpSubflowText sf =
+  showConnectionText (sfConn sf) <> " (Local/Remote ids: " <> tshow (sfLocalId sf)
+      <> "/" <> tshow (sfRemoteId sf) <> ", token " <> tshow (sfJoinToken sf) <> ")"
 
 -- TODO add sthg in case it's the master subflow ?
 showConnection :: StreamConnection a b => a -> String

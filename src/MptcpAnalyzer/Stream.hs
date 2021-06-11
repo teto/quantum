@@ -17,6 +17,8 @@ newtype StreamId a = StreamId Word32 deriving (Show, Read, Eq, Ord ) deriving Ha
 type StreamIdTcp = StreamId Tcp
 type StreamIdMptcp = StreamId Mptcp
 
+-- showStream :: StreamId a -> Text
+
 
 -- |Can load stream ids from CSV files
 readStreamId :: ReadM (StreamId a)
