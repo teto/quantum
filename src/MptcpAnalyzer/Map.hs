@@ -1,12 +1,11 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 -- {-# LANGUAGE PackageImports #-}
 module MptcpAnalyzer.Map
 where
 
 import MptcpAnalyzer.Cache
-import MptcpAnalyzer.Commands.Definitions as CMD
-import MptcpAnalyzer.Commands.List as CMD
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Loader
@@ -26,6 +25,7 @@ import Data.Either (rights, lefts)
 import Data.Ord
 import Frames
 import qualified Data.Set as Set
+import Data.Text (intercalate, Text)
 
 type MptcpSubflowMapping = [(MptcpSubflow, [(MptcpSubflow, Int)])]
 
@@ -44,10 +44,10 @@ mapSubflows con1 con2 =
 
 showMptcpSubflowMapping :: MptcpSubflowMapping -> Text
 showMptcpSubflowMapping m =
-  concatMap showOneSfMapping m
+  intercalate "\n" $ map showOneSfMapping m
   where
     showOneSfMapping (ref, scores) = "Mappings for " <> showMptcpSubflowText ref <> ":\n"
-      <> (map (\(sf, score) -> showMptcpSubflowText sf) scores)
+      <> (intercalate "-\n" $ map (\(sf, score) -> showMptcpSubflowText sf <> " SCORE: "<> tshow score) scores)
 
 
 -- |

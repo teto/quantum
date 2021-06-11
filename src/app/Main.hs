@@ -59,7 +59,7 @@ import Options.Applicative.Help (parserHelp)
 -- import Colog.Core.IO (logStringStdout)
 -- import Colog.Polysemy (Log)
 import Colog.Actions
-import Graphics.Rendering.Chart.Easy hiding (argument)
+-- import Graphics.Rendering.Chart.Easy hiding (argument)
 import Graphics.Rendering.Chart.Backend.Cairo
 import Frames.InCore (toFrame)
 
@@ -276,9 +276,8 @@ runCommand (ArgsListTcpConnections detailed) = CLI.cmdListTcpConnections detaile
 runCommand (ArgsListMpTcpConnections detailed) = CLI.cmdListMptcpConnections detailed
 runCommand (ArgsExport out) = CLI.cmdExport out
 runCommand (ArgsPlotGeneric plotSettings plotArgs) = runPlotCommand plotSettings plotArgs
--- runCommand args@(ArgsMapTcpConnections pcap1 pcap2 streamId verbose False) = CLI.cmdMapTcpConnection args
-runCommand args@(ArgsMapTcpConnections _ _ _ _ _ False) = CLI.cmdMapTcpConnection args
-runCommand args@(ArgsMapTcpConnections _ _ _ _ _ True) = CLI.cmdMapMptcpConnection args
+runCommand (ArgsMapTcpConnections cmd False) = CLI.cmdMapTcpConnection cmd
+runCommand (ArgsMapTcpConnections args True) = CLI.cmdMapMptcpConnection args
 runCommand (ArgsQualifyReinjections mapping verbose) = CLI.cmdQualifyReinjections mapping verbose
 runCommand ArgsQuit = cmdQuit
 runCommand ArgsHelp = cmdHelp

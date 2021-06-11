@@ -58,6 +58,7 @@
       };
 
       compilerVersion = "8104";
+      # compilerVersion = "901";
 
       # pkgs = nixpkgs.legacyPackages."${system}";
       pkgs = import nixpkgs {
@@ -157,6 +158,8 @@
         shellHook = ''
           exe=$(cabal list-bin exe:mptcpanalyzer)
           PATH="$(dirname $exe):$PATH"
+
+          export VIMRUNTIME=/home/teto/neovim/runtime
         '';
       };
 

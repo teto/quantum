@@ -47,11 +47,8 @@ mapMptcpOpts = info (
 parserMapConnection :: Bool -> Parser CommandArgs
 parserMapConnection forMptcp =
   -- if forMptcp then
-    ArgsMapTcpConnections <$>
-  -- else
-  --   ArgsMapMptcpConnections <$> toto
-  -- where
-  -- toto =
+    ArgsMapTcpConnections <$> (
+      CommandMapPcap <$>
       strArgument (
           metavar "PCAP1"
           <> help "File to analyze"
@@ -75,6 +72,7 @@ parserMapConnection forMptcp =
 
           <> help "Limit the number of comparisons to display"
       )
+      )
       <*> option auto (
           metavar "MPTCP"
         -- internal is stronger than --belive, hides from all descriptions
@@ -83,22 +81,13 @@ parserMapConnection forMptcp =
         <> help ""
       )
 
--- |
--- todo this should be better handled
--- cmdMapConnection :: Members '[Log String, P.State MyState, Cache, Embed IO] r => CommandArgs -> Sem r RetCode
--- cmdMapConnection args@ArgsMapConnections{} = do
---   if argsMapMptcp args then
---     cmdMapMptcpConnection args
---   else
---     cmdMapTcpConnection args
-
 printInRed :: String -> String
 printInRed val = setSGRCode [SetColor Foreground Vivid Red] ++ val ++ setSGRCode [Reset]
 
 -- TODO this could be made polymorphic using StreamConnection
-cmdMapTcpConnection :: (Members '[Log, P.State MyState, P.Trace, Cache, Embed IO] r )
-  => CommandArgs -> Sem r RetCode
-cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _) = do
+cmdMapTcpConnection, cmdMapMptcpConnection :: (Members '[Log, P.State MyState, P.Trace, Cache, Embed IO] r )
+  => CommandMapPcap -> Sem r RetCode
+cmdMapTcpConnection (CommandMapPcap pcap1 pcap2 streamId verbose limit) = do
   Log.info "Mapping tcp connections"
   res <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 (StreamId streamId)
   res2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
@@ -121,11 +110,7 @@ cmdMapTcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit _)
         displayFailure err = "Couldn't compute score for tcp.stream  " <> tshow err
     _ -> return $ CMD.Error "An error happened"
 
-cmdMapTcpConnection _ = error "not supported"
-
-cmdMapMptcpConnection :: (Members '[Log, P.State MyState, P.Trace, Cache, Embed IO] r)
-  => CommandArgs -> Sem r RetCode
-cmdMapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit True) = do
+cmdMapMptcpConnection (CommandMapPcap pcap1 pcap2 streamId verbose limit) = do
   Log.info "Mapping mptcp connections"
   res <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap1 (StreamId streamId)
   res2 <- loadPcapIntoFrame defaultTsharkPrefs pcap2
@@ -150,5 +135,3 @@ cmdMapMptcpConnection (ArgsMapTcpConnections pcap1 pcap2 streamId verbose limit 
             <> ": " <> tshow score <> "\n" <> showConnectionText con <> "\n"
         displayFailure err = "Couldn't compute score for mptcp.stream " <> tshow err
     _ -> return $ CMD.Error "An error happened"
-
-cmdMapMptcpConnection _ = error "not supported"

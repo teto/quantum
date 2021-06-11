@@ -172,7 +172,7 @@ mergeMptcpConnectionsFromKnownStreams ::
   -> Sem r MergedPcap
 mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 frame2) = do
   let mappedSubflows = mapSubflows con1 con2
-  Log.info $ "Mapped subflows" <> tshow mappedSubflows
+  Log.info $ "Mapped subflows" <> showMptcpSubflowMapping mappedSubflows
   -- mergedFrames = map
   mergedFrames <- mapM  mergeSubflow mappedSubflows
   return $ mconcat mergedFrames
@@ -180,11 +180,13 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
     --
     -- mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
     mergeSubflow (sf1, scores) = do
-      Log.debug $ "Test"
+      Log.debug $ "Merging pcap1 stream" <> tshow streamId1 <> " and " <> tshow streamId2
       return $ mergeTcpConnectionsFromKnownStreams' aframe1 aframe2
       where
-        aframe1 = fromRight undefined (buildFrameFromStreamId frame1 (conTcpStreamId $ sfConn sf1) )
-        aframe2 = fromRight undefined (buildFrameFromStreamId frame2 (conTcpStreamId $ sfConn $ fst (head scores ) ))
+        streamId1 = conTcpStreamId $ sfConn sf1
+        streamId2 = conTcpStreamId $ sfConn $ fst (head scores)
+        aframe1 = fromRight undefined (buildFrameFromStreamId frame1 streamId1)
+        aframe2 = fromRight undefined (buildFrameFromStreamId frame2 (streamId2))
 
 
 mergeMptcpConnectionsFromKnownStreams' ::

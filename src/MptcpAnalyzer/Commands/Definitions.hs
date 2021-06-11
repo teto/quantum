@@ -22,6 +22,15 @@ import Options.Applicative
 --       -- , pmapMptcp :: Bool -- ^Wether it's an MPTCP
 --     }
 
+data CommandMapPcap = CommandMapPcap {
+  argsMapPcap1 :: FilePath
+  , argsMapPcap2 :: FilePath
+  , argsMapStream :: Word32
+  , argsMapVerbose :: Bool
+  , argsMapLimit :: Int -- ^Number of comparisons to show
+  -- , argsMapMptcp :: Bool -- ^Wether it's an MPTCP
+}
+
 -- | Registered commands
 -- TODO make it possible to add some from a plugin
 data CommandArgs =
@@ -31,17 +40,9 @@ data CommandArgs =
     | ArgsLoadPcap FilePath
     | ArgsListTcpConnections Bool  -- ^ Detailed
     | ArgsListMpTcpConnections Bool  -- ^ Detailed
-    | ArgsMapTcpConnections FilePath FilePath Word32 Bool Int Bool
-    -- ^ Pcap 1
-    -- ^ Pcap 2
+    | ArgsMapTcpConnections CommandMapPcap Bool
+    -- ^ Pcap 1 Pcap 2 streamId1 verbose Limit Mptcp
     -- | ArgsMapMptcpConnections FilePath FilePath Word32 Bool Int Bool
-      -- argsMapPcap1 :: FilePath
-      -- , argsMapPcap2 :: FilePath
-      -- , argsMapStream :: Word32
-      -- , argsMapVerbose :: Bool
-      -- , argsMapLimit :: Int -- ^Number of comparisons to show
-      -- , argsMapMptcp :: Bool -- ^Wether it's an MPTCP
-    -- }
     | ArgsListSubflows Bool
       -- ^ _listSubflowsDetailed
     | ArgsListReinjections (StreamId Mptcp)
