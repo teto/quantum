@@ -17,6 +17,10 @@
 
     # hls.url = "github:haskell/haskell-language-server?rev=37e0551b0d411e345e250a6ed287103640524a62";
     hls.url = "github:teto/haskell-language-server/flake-debug";
+
+    haskellNix.url = "github:input-output-hk/haskell.nix?ref=hkm/nixpkgs-unstable-update";
+
+    # mptcp-pm =
   };
 
   outputs = { self, nixpkgs, flake-utils, poetry, replica, ... }@inputs:
@@ -158,8 +162,6 @@
         shellHook = ''
           exe=$(cabal list-bin exe:mptcpanalyzer)
           PATH="$(dirname $exe):$PATH"
-
-          export VIMRUNTIME=/home/teto/neovim/runtime
         '';
       };
 

@@ -39,7 +39,8 @@ mapSubflows con1 con2 =
   [ (sf1, scoreSubflows sf1) | sf1 <- Set.toList (mpconSubflows con1) ]
   where
     -- select best / sortOn
-    scoreSubflows sf1 = map (\sf -> (sf, similarityScore sf1 sf)) (Set.toList $ mpconSubflows con2)
+    scoreSubflows sf1 = sortOn (Data.Ord.Down . snd) $
+        map (\sf -> (sf, similarityScore sf1 sf)) (Set.toList $ mpconSubflows con2)
 
 
 showMptcpSubflowMapping :: MptcpSubflowMapping -> Text
@@ -47,7 +48,7 @@ showMptcpSubflowMapping m =
   intercalate "\n" $ map showOneSfMapping m
   where
     showOneSfMapping (ref, scores) = "Mappings for " <> showMptcpSubflowText ref <> ":\n"
-      <> (intercalate "-\n" $ map (\(sf, score) -> showMptcpSubflowText sf <> " SCORE: "<> tshow score) scores)
+      <> (intercalate "\n-" $ map (\(sf, score) -> showMptcpSubflowText sf <> " SCORE: "<> tshow score) scores)
 
 
 -- |

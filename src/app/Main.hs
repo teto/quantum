@@ -341,22 +341,22 @@ runPlotCommand (PlotSettings mbOut _mbTitle displayPlot mptcpPlot) specificArgs 
 
       -- Destinations
       (ArgsPlotOwdTcp (PcapMapping pcap1 streamId1 pcap2 streamId2) dest) -> do
-        Log.info "owd plot"
+        Log.info $ "plotting owd for tcp.stream " <> tshow streamId1 <> " and " <> tshow streamId2
         eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 streamId1
         eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 streamId2
 
         res <- case (eframe1, eframe2 ) of
           (Right aframe1, Right aframe2) -> do
               mergedRes <- mergeTcpConnectionsFromKnownStreams aframe1 aframe2
-              let mbRecs = map recMaybe mergedRes
-              let justRecs = catMaybes mbRecs
+              -- let mbRecs = map recMaybe mergedRes
+              -- let justRecs = catMaybes mbRecs
               Plots.cmdPlotTcpOwd tempPath handle (getDests dest) (ffCon aframe1) mergedRes
           (Left err, _) -> return $ CMD.Error err
           (_, Left err) -> return $ CMD.Error err
         return res
 
       (ArgsPlotOwdMptcp (PcapMapping pcap1 streamId1 pcap2 streamId2) dest) -> do
-        Log.info "owd plot"
+        Log.info "plotting mptcp owd"
         eframe1 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap1 streamId1
         eframe2 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap2 streamId2
 
@@ -366,7 +366,7 @@ runPlotCommand (PlotSettings mbOut _mbTitle displayPlot mptcpPlot) specificArgs 
               let mbRecs = map recMaybe mergedRes
               let justRecs = catMaybes mbRecs
               -- Plots.cmdPlotMptcpOwd tempPath handle (getDests dest) (ffCon aframe1) mergedRes
-              undefined
+              error "not implemented"
           (Left err, _) -> return $ CMD.Error err
           (_, Left err) -> return $ CMD.Error err
         return res
@@ -382,7 +382,7 @@ runPlotCommand (PlotSettings mbOut _mbTitle displayPlot mptcpPlot) specificArgs 
           createProc = proc "xdg-open" [ tempPath ]
 
         Log.info $ "Launching " <> tshow createProc
-        (_, _, mbHerr, ph) <- P.embed $  createProcess createProc
+        (_, _, mbHerr, ph) <- P.embed $ createProcess createProc
         exitCode <- P.embed $ waitForProcess ph
         return Continue
 

@@ -166,7 +166,7 @@ writeMergedPcap outPath mergedPcap = do
 
 -- | Merge of 2 frames
 mergeMptcpConnectionsFromKnownStreams ::
-  (Members '[Log] r)
+  (Members '[Log, P.Embed IO] r)
   => FrameFiltered MptcpConnection Packet
   -> FrameFiltered MptcpConnection Packet
   -> Sem r MergedPcap
@@ -175,18 +175,32 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
   Log.info $ "Mapped subflows" <> showMptcpSubflowMapping mappedSubflows
   -- mergedFrames = map
   mergedFrames <- mapM  mergeSubflow mappedSubflows
+  Log.info $ "Debug" <> showMptcpSubflowMapping mappedSubflows
   return $ mconcat mergedFrames
   where
     --
     -- mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
     mergeSubflow (sf1, scores) = do
-      Log.debug $ "Merging pcap1 stream" <> tshow streamId1 <> " and " <> tshow streamId2
-      return $ mergeTcpConnectionsFromKnownStreams' aframe1 aframe2
+      Log.debug $ "Merging pcap1 stream" <> tshow streamId1 <> " (" <> tshow (frameLength frame1)
+          <> " packets) and " <> tshow streamId2 <> " (" <> tshow (frameLength frame2) <> " packets)"
+      mergedSf <- mergeTcpConnectionsFromKnownStreams aframe1 aframe2
+      -- TODO print justRecs / 
+      let
+        mbRecs = map recMaybe mergedSf
+        justRecs = catMaybes mbRecs
+      -- Log.debug $ "Merging pcap1 stream" <> tshow streamId1 <> " (" <> tshow (frameLength frame1)
+          -- <> " packets) and " <> tshow streamId2 <> " (" <> tshow (frameLength frame2) <> " packets)"
+      Log.debug $ "There are " <> tshow (length justRecs) <> " valid merged rows (out of " 
+        <> tshow (length mergedSf) <> " merged rows)"
+      -- Log.debug $ (concat . showFields) (head justRecs)
+
+      return mergedSf
       where
         streamId1 = conTcpStreamId $ sfConn sf1
+        -- here we assume it's ordered but it might not be the case
         streamId2 = conTcpStreamId $ sfConn $ fst (head scores)
         aframe1 = fromRight undefined (buildFrameFromStreamId frame1 streamId1)
-        aframe2 = fromRight undefined (buildFrameFromStreamId frame2 (streamId2))
+        aframe2 = fromRight undefined (buildFrameFromStreamId frame2 streamId2)
 
 
 mergeMptcpConnectionsFromKnownStreams' ::

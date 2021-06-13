@@ -56,8 +56,9 @@ piListReinjections = info (
 
 piQualifyReinjections :: ParserInfo CommandArgs
 piQualifyReinjections = info (
-    (parserQualifyReinjections ) <**> helper)
+    (parserQualifyReinjections) <**> helper)
   ( progDesc "Qualifies MPTCP reinjections"
+  <> footer "analyze examples/client_2_redundant.pcapng 0 examples/server_2_redundant.pcapng 0"
   )
 
 
@@ -142,14 +143,13 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) verbose = d
   eframe2 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap2 streamId2
   res <- case (eframe1, eframe2 ) of
     (Right aframe1, Right aframe2) -> do
-          -- Log.info $ "Result of the analysis; reinjections:" <> tshow (showReinjects justRecs)
           mergedRes <- mergeMptcpConnectionsFromKnownStreams aframe1 aframe2
           let
             -- mergedRes = mergeMptcpConnectionsFromKnownStreams' aframe1 aframe2
 
             mbRecs = map recMaybe mergedRes
             -- packets that could be mapped in both pcaps
-            -- justRecs = catMaybes mbRecs
+            justRecs = catMaybes mbRecs
             myFrame = convertToSenderReceiver mergedRes
 
             reinjectedPacketsFrame = filterFrame (\x -> isJust $ x ^. sndReinjectionOf) myFrame
@@ -163,6 +163,7 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) verbose = d
               intercalate "," rows
               where
                 rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) frame)
+          Log.info $ "Result of the analysis; reinjections:" <> tshow (showReinjects justRecs)
           P.embed $ writeMergedPcap ("mergedRes-"  ++ ".csv") mergedRes
           P.embed $ writeDSV defaultParserOptions ("sndrcv-merged-"  ++ ".csv") myFrame
 

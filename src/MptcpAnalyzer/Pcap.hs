@@ -471,11 +471,12 @@ buildMptcpConnectionFromStreamId frame streamId = do
       -- if ds.loc[server_id, "abstime"] < ds.loc[client_id, "abstime"]:
       --     log.error("Clocks are not synchronized correctly")
       -- update temporary fframe with the computed subflows
-      Right tempFframe  {
-          ffCon = (ffCon tempFframe) {
-              mpconSubflows = Set.fromList $ map ffCon (rights subflows)
-          }
-      }
+      Right tempFframe
+      -- {
+      --     ffCon = (ffCon tempFframe) {
+      --         mpconSubflows = Set.fromList $ map ffCon (rights subflows)
+      --     }
+      -- }
       --  $ frameRow synPackets 0
     where
       streamPackets :: FrameRec HostCols
@@ -494,7 +495,7 @@ buildMptcpConnectionFromStreamId frame streamId = do
           , mptcpClientToken = fromJust $ synPacket ^. mptcpExpectedToken
           , mptcpNegotiatedVersion = fromIntegral $ fromJust clientMptcpVersion :: Word8
 
-          , mpconSubflows = mempty
+          , mpconSubflows = Set.fromList $ map ffCon (rights subflows)
         }
       -- suppose tcpflags is a list of flags, check if it is in the list
       -- of type FrameRec [(Symbol, *)]
