@@ -163,13 +163,16 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) verbose = d
               intercalate "," rows
               where
                 rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) frame)
-          Log.info $ "Result of the analysis; reinjections:" <> tshow (showReinjects justRecs)
+          -- Log.info $ "Result of the analysis; reinjections:"
+            -- <> tshow (showReinjects justRecs)
           P.embed $ writeMergedPcap ("mergedRes-"  ++ ".csv") mergedRes
           P.embed $ writeDSV defaultParserOptions ("sndrcv-merged-"  ++ ".csv") myFrame
+          trace $ "Size after conversion to sender/receiver " ++ show (frameLength myFrame)
+          trace $ "Number of reinjected packets: " ++ show (frameLength reinjectedPacketsFrame)
 
           trace $ "Result of the analysis; reinjections:" ++ showReinjects reinjects
-          trace $ "Merged mptcp connection\nFrame size: " ++ show (frameLength reinjectedPacketsFrame)
-                  ++ "\n" ++ showFrame "," reinjectedPacketsFrame
+          -- trace $ "Merged mptcp connection\nFrame size: " ++ show (frameLength reinjectedPacketsFrame)
+                  -- ++ "\n" ++ showFrame "," reinjectedPacketsFrame
 
           -- qualifyReinjections tempPath handle (getDests dest) (ffCon aframe1) mergedRes
           return CMD.Continue

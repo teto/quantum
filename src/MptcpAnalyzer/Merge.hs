@@ -174,9 +174,11 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
   let mappedSubflows = mapSubflows con1 con2
   Log.info $ "Mapped subflows" <> showMptcpSubflowMapping mappedSubflows
   -- mergedFrames = map
-  mergedFrames <- mapM  mergeSubflow mappedSubflows
-  Log.info $ "Debug" <> showMptcpSubflowMapping mappedSubflows
-  return $ mconcat mergedFrames
+  mergedPackets <- mapM  mergeSubflow mappedSubflows
+  Log.info $ tshow (length mergedPackets) <> " merged lists"
+  let res = mconcat mergedPackets
+  Log.info $ tshow (length mergedPackets) <> " concatenated merged packets"
+  return res
   where
     --
     -- mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
@@ -190,7 +192,7 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
         justRecs = catMaybes mbRecs
       -- Log.debug $ "Merging pcap1 stream" <> tshow streamId1 <> " (" <> tshow (frameLength frame1)
           -- <> " packets) and " <> tshow streamId2 <> " (" <> tshow (frameLength frame2) <> " packets)"
-      Log.debug $ "There are " <> tshow (length justRecs) <> " valid merged rows (out of " 
+      Log.debug $ "There are " <> tshow (length justRecs) <> " valid rows (out of " 
         <> tshow (length mergedSf) <> " merged rows)"
       -- Log.debug $ (concat . showFields) (head justRecs)
 

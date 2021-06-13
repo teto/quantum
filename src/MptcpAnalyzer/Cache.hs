@@ -85,7 +85,10 @@ runMockCache config = do
       IsValid cid -> return False
 
 -- first check if the file exists ?
-doGetCache :: (Serialize a, Members '[Embed IO] r) => CacheConfig -> CacheId -> Sem r (Either String a)
+doGetCache :: (Serialize a, Members '[Embed IO] r)
+  => CacheConfig
+  -> CacheId
+  -> Sem r (Either String a)
 doGetCache config cid = return $ Left "Not implemented yet"
   -- do
   -- -- res <- embed $ loadRows csvFilename

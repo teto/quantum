@@ -199,7 +199,7 @@ main = do
           $ P.embedToFinal . P.runEmbedded lift
           $ P.traceToIO
           $ P.runState myState
-          $ runMockCache cacheConfig
+          $ runCache cacheConfig
           $ interpretLogStdout
             (inputLoop (extraCommands options))
 
