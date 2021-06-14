@@ -1,4 +1,6 @@
 -- TODO reexport stuff ?
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE FlexibleInstances #-}
 module MptcpAnalyzer.Frame
 where
 
@@ -8,6 +10,8 @@ import Data.Serialize
 import Data.Text as T
 import Data.Text.Encoding as TSE
 import Data.ByteString as BS
+import Data.ByteString.Lazy as LBS
+import Data.ByteString.Lazy.UTF8 as BLU
 import Frames
 
 import Pipes ((>->))
@@ -18,16 +22,39 @@ import qualified Pipes.Safe as P
 import qualified Pipes.Safe.Prelude as Safe
 import System.IO (Handle, IOMode(ReadMode, WriteMode))
 import Data.Vinyl hiding (rget)
+import Frames
 import Frames.CSV hiding (consumeTextLines)
 import Frames.ShowCSV
 -- import Data.Proxy
+import System.IO.Unsafe (unsafePerformIO)
+import qualified Data.Vinyl as V
+import qualified Data.Vinyl.Class.Method as V
 
 
+-- convertToBs :: Frame (Record a) -> Put
+-- convertToBs f = do
+--       bs <- P.runSafeT . P.runEffect $ produceDSV defaultParserOptions f >-> P.map BLU.fromString
+--       return bs
+
+newtype Test a = FrameRec a
 
 -- TODO here we want to put a bytestring
-instance Serialize (Frame a) where
-  -- put f = return $ produceDSV defaultParserOptions f >-> P.map (TSE.encodeUtf8 . T.pack) 
-  put f = undefined
+instance (ColumnHeaders rs, V.RecMapMethod Show ElField rs, V.RecordToList rs) => Serialize (Frame (Record rs)) where
+  -- 
+  -- putByteString
+  
+  put f = do
+      -- (csvDelimiter defaultTsharkPrefs)
+      let bs = BLU.fromString $ showFrame "|" f
+      -- let bs = unsafePerformIO $ do
+      --         writeDSV defaultParserOptions tmpFile f
+      --         BS.readFile tmpFile
+      -- renvoie unit IO ()
+      putByteString $ LBS.toStrict bs
+      -- where
+      --   tmpFile = "tmp.csv"
+
+  -- put f = undefined
   get = undefined
 
 consumeTextLines :: P.MonadSafe m => FilePath -> P.Consumer BS.ByteString m r

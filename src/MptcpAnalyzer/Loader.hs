@@ -21,7 +21,8 @@ import qualified Frames.InCore
 
 import Polysemy.Log (Log)
 import qualified Polysemy.Log as Log
-
+import qualified Data.Vinyl as V
+import qualified Data.Vinyl.Class.Method as V
 
 
 -- TODO return an Either or Maybe ?
@@ -29,6 +30,8 @@ import qualified Polysemy.Log as Log
 loadPcapIntoFrame ::
     (Frames.InCore.RecVec a
     , Frames.CSV.ReadRec a
+    , ColumnHeaders a
+    , V.RecMapMethod Show ElField a, V.RecordToList a
     , Members [Log, Cache, Embed IO ] m)
     => TsharkParams
     -> FilePath

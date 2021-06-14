@@ -50,6 +50,7 @@ common shared-properties
       , hashable
       , bytestring
       , ip
+      , utf8-string
       -- , netlink >= 1.1.1.0
       -- for liftIO
        , mtl

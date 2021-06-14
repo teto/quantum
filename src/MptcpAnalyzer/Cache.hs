@@ -33,6 +33,9 @@ data CacheConfig = CacheConfig {
   , cacheEnabled :: Bool
 } deriving Show
 
+-- class Serializable a where
+--   encode :: a -> String
+--   decode :: String -> a
 
 -- TODO add a cacheConfig ?
 -- TODO this should be an effect

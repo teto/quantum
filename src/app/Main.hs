@@ -162,6 +162,13 @@ finalizePrompt newPrompt = setSGRCode [SetColor Foreground Vivid Red] ++ newProm
 defaultParserPrefs :: ParserPrefs
 defaultParserPrefs = prefs $ showHelpOnEmpty <> showHelpOnError
 
+
+-- default if complete = completeFilename,
+-- (String, String) -> m (String, [Completion])
+customCompleteFunc :: CompletionFunc IO
+customCompleteFunc = completeFilename
+-- customCompleteFunc _i = return ("toto", [ Completion "toInsert" "choice 1" False ])
+
 main :: IO ()
 main = do
   putStrLn "Starting mptcpanalyzer"
@@ -184,9 +191,11 @@ main = do
   putStrLn "Commands:"
   print $ extraCommands options
 
-  let haskelineSettings = defaultSettings {
-      historyFile = Just $ cacheFolderXdg </> "history"
-      }
+  let haskelineSettings = (Settings {
+      complete = customCompleteFunc
+      , historyFile = Just $ cacheFolderXdg </> "history"
+      , autoAddHistory = True
+      })
   let
     cacheConfig :: CacheConfig
     cacheConfig = CacheConfig {
