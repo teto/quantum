@@ -2,6 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 module MptcpAnalyzer.Cache
 where
 
@@ -49,11 +50,12 @@ makeSem ''Cache
 
 filenameFromCacheId :: CacheId -> FilePath
 filenameFromCacheId cid =
-    cachePrefix cid ++ intercalate "_" basenames ++ myHash ++ cacheSuffix cid
+    cachePrefix cid ++ intercalate "_" basenames ++ show myHash ++ cacheSuffix cid
     where
         basenames = map takeBaseName $ cacheDeps cid
         -- TODO
-        myHash = "hash"
+        -- "hash"
+        myHash = hash basenames
 
 -- Return full path to the config folder
 getFullPath :: CacheConfig -> CacheId -> FilePath

@@ -65,7 +65,7 @@ loadPcapIntoFrame params path = do
                 return $ Left stdErr
 
     where
-      cacheId = CacheId [path] "" ""
+      cacheId = CacheId [path] "" "csv"
       opts :: TempFileOptions
       opts = TempFileOptions True
 

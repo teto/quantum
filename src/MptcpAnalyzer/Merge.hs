@@ -172,7 +172,8 @@ mergeMptcpConnectionsFromKnownStreams ::
   -> Sem r MergedPcap
 mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 frame2) = do
   let mappedSubflows = mapSubflows con1 con2
-  Log.info $ "Mapped subflows" <> showMptcpSubflowMapping mappedSubflows
+  Log.info $ "Merging MPTCP frame1 " <> tshow (frameLength frame1) <> " and frame2 " <> tshow (frameLength frame2)
+  Log.info $ "Mapped subflows:\n" <> showMptcpSubflowMapping mappedSubflows
   -- mergedFrames = map
   mergedPackets <- mapM  mergeSubflow mappedSubflows
   Log.info $ tshow (length mergedPackets) <> " merged lists"
@@ -183,8 +184,8 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
     --
     -- mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
     mergeSubflow (sf1, scores) = do
-      Log.debug $ "Merging pcap1 stream" <> tshow streamId1 <> " (" <> tshow (frameLength frame1)
-          <> " packets) and " <> tshow streamId2 <> " (" <> tshow (frameLength frame2) <> " packets)"
+      Log.debug $ "Merging pcap1 " <> tshow streamId1 <> " (" <> tshow (frameLength $ ffFrame aframe1)
+          <> " packets) and " <> tshow streamId2 <> " (" <> tshow (frameLength $ ffFrame aframe2) <> " packets)"
       mergedSf <- mergeTcpConnectionsFromKnownStreams aframe1 aframe2
       -- TODO print justRecs / 
       let
@@ -201,6 +202,7 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
         streamId1 = conTcpStreamId $ sfConn sf1
         -- here we assume it's ordered but it might not be the case
         streamId2 = conTcpStreamId $ sfConn $ fst (head scores)
+
         aframe1 = fromRight undefined (buildFrameFromStreamId frame1 streamId1)
         aframe2 = fromRight undefined (buildFrameFromStreamId frame2 streamId2)
 
@@ -237,11 +239,16 @@ mergeTcpConnectionsFromKnownStreams ::
   -> Sem r MergedPcap
 -- these are from host1 / host2
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 = do
-  embed $ writeDSV defaultParserOptions "merge-tcp-debug-1.csv" hframe1
-  embed $ writeDSV defaultParserOptions "merge-tcp-debug-2.csv" hframe2
+  Log.debug $ "Merging stream " <> showConnectionText (ffCon aframe1) <> " with stream "
+  -- Ziggy Marley
+  embed $ writeDSV defaultParserOptions out1 hframe1
+  embed $ writeDSV defaultParserOptions out2 hframe2
 
   return mergedFrame
   where
+    out1 = "merge-tcp-1-stream-" ++ show ((conTcpStreamId . ffCon) aframe1) ++ ".tsv"
+    out2 = "merge-tcp-2-stream-" ++ show (conTcpStreamId $ ffCon aframe2) ++ ".tsv"
+
     -- we want an outerJoin , maybe with a status column like in panda
     -- outerJoin returns a list of [Rec (Maybe :. ElField) ors]
     mergedFrame = outerJoin @'[PacketHash] (hframe1dest) processedFrame2

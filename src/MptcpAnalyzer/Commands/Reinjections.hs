@@ -128,6 +128,11 @@ analyzeReinjection mergedFrame row =
   in
     delta
 
+
+{- Tries to distinguish between useful and useless reinjections
+  Also tries to evalute the usefulness by providing a delta showing how much time
+  the reinjection made the connection win or lose
+-}
 cmdQualifyReinjections ::
   Members '[
     Log
@@ -143,13 +148,15 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) verbose = d
   eframe2 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap2 streamId2
   res <- case (eframe1, eframe2 ) of
     (Right aframe1, Right aframe2) -> do
+
           mergedRes <- mergeMptcpConnectionsFromKnownStreams aframe1 aframe2
           let
             -- mergedRes = mergeMptcpConnectionsFromKnownStreams' aframe1 aframe2
+            reinjectedPacketsHost1 = filterFrame (\x -> isJust $ x ^. reinjectionOf) (ffFrame aframe1)
 
-            mbRecs = map recMaybe mergedRes
+            -- mbRecs = map recMaybe mergedRes
             -- packets that could be mapped in both pcaps
-            justRecs = catMaybes mbRecs
+            -- justRecs = catMaybes mbRecs
             myFrame = convertToSenderReceiver mergedRes
 
             reinjectedPacketsFrame = filterFrame (\x -> isJust $ x ^. sndReinjectionOf) myFrame
@@ -165,6 +172,7 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) verbose = d
                 rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) frame)
           -- Log.info $ "Result of the analysis; reinjections:"
             -- <> tshow (showReinjects justRecs)
+          Log.debug $ "reinjectionsOf in host1 frame " <> tshow (frameLength reinjectedPacketsHost1)
           P.embed $ writeMergedPcap ("mergedRes-"  ++ ".csv") mergedRes
           P.embed $ writeDSV defaultParserOptions ("sndrcv-merged-"  ++ ".csv") myFrame
           trace $ "Size after conversion to sender/receiver " ++ show (frameLength myFrame)

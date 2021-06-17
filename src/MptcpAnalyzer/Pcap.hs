@@ -570,7 +570,7 @@ instance StreamConnection MptcpConnection Mptcp where
 
 instance StreamConnection MptcpSubflow Tcp where
   showConnectionText = showMptcpSubflowText
-  buildFrameFromStreamId = undefined
+  buildFrameFromStreamId = buildSubflowFromTcpStreamId
   -- TODO use score as well
   similarityScore sf1 sf2 = similarityScore (sfConn sf1) (sfConn sf2)
 

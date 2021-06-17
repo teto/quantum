@@ -173,6 +173,8 @@ data FrameFiltered a rs = FrameTcp {
     , ffFrame :: Frame rs
   }
 
+aframeLength :: FrameFiltered a rs -> Int
+aframeLength = frameLength . ffFrame
 
 -- data FrameMerged = FrameMerged {
 --     ffCon :: !Connection
