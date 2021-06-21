@@ -18,7 +18,8 @@
     # hls.url = "github:haskell/haskell-language-server?rev=37e0551b0d411e345e250a6ed287103640524a62";
     hls.url = "github:teto/haskell-language-server/flake-debug";
 
-    haskellNix.url = "github:input-output-hk/haskell.nix?ref=hkm/nixpkgs-unstable-update";
+    # haskellNix.url = "github:input-output-hk/haskell.nix?ref=hkm/nixpkgs-unstable-update";
+    haskellNix.url = "github:input-output-hk/haskell.nix";
 
     # mptcp-pm =
   };
