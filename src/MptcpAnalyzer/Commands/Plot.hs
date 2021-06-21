@@ -12,7 +12,7 @@ import MptcpAnalyzer.Commands.Definitions as CMD
 import MptcpAnalyzer.Commands.PlotOWD
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Loader
-import Tshark.Fields (baseFields, TsharkFieldDesc (fieldLabel))
+import Tshark.Fields (baseFields, TsharkFieldDesc (tfieldLabel))
 import MptcpAnalyzer.Debug
 import Net.Tcp
 import Net.Mptcp
@@ -163,7 +163,7 @@ validMptcpAttributes = validTcpAttributes
 -- TODO generate from the list of fields, via TH?
 
 validTcpAttributes :: [String]
-validTcpAttributes = map T.unpack (Map.keys $ Map.mapMaybe fieldLabel baseFields)
+validTcpAttributes = map T.unpack (Map.keys $ Map.mapMaybe tfieldLabel baseFields)
 -- [
 --   "tsval"
 --   , "rwnd"

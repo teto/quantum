@@ -48,7 +48,7 @@ data TsharkFieldDesc = TsharkFieldDesc {
         -- ^Test
         , tfieldColType :: Name
         -- , colType :: Q Type
-        , fieldLabel :: Maybe String
+        , tfieldLabel :: Maybe String
         -- ^How to reference it in plot
         , tfieldHashable :: Bool
         -- ^Wether to take into account this field when creating a hash of a packet
@@ -106,8 +106,8 @@ baseFields = fromList [
     , ("mptcpDsn", TsharkFieldDesc "mptcp.dsn" ''MbWord64 (Just "Data Sequence Number") True)
 
     -- these ones are experimental
-    , ("relatedMappings", TsharkFieldDesc "mptcp.related_mapping" ''MbWord64 Nothing True)
-    , ("reinjectionOf", TsharkFieldDesc "mptcp.reinjection_of" ''MbPacketIdList Nothing True)
+    , ("relatedMappings", TsharkFieldDesc "mptcp.related_mapping" ''MbWord64 Nothing False)
+    , ("reinjectionOf", TsharkFieldDesc "mptcp.reinjection_of" ''MbPacketIdList Nothing False)
     , ("reinjectedIn", TsharkFieldDesc "mptcp.reinjection_of" ''MbPacketIdList Nothing True)
     ]
 

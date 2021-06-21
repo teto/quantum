@@ -153,6 +153,7 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) verbose = d
           let
             -- mergedRes = mergeMptcpConnectionsFromKnownStreams' aframe1 aframe2
             reinjectedPacketsHost1 = filterFrame (\x -> isJust $ x ^. reinjectionOf) (ffFrame aframe1)
+            reinjectedPacketsHost2 = filterFrame (\x -> isJust $ x ^. reinjectionOf) (ffFrame aframe2)
 
             -- mbRecs = map recMaybe mergedRes
             -- packets that could be mapped in both pcaps
@@ -172,10 +173,14 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) verbose = d
                 rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) frame)
           -- Log.info $ "Result of the analysis; reinjections:"
             -- <> tshow (showReinjects justRecs)
+          -- Log.debug $ "reinjectionsOf in host1 frame " <> tshow $ showFrame myFrame
+          Log.debug $ "showing merged res" <> tshow (showMergedRes $ take 3 mergedRes)
           Log.debug $ "reinjectionsOf in host1 frame " <> tshow (frameLength reinjectedPacketsHost1)
+          Log.debug $ "reinjectionsOf in host2 frame " <> tshow (frameLength reinjectedPacketsHost2)
           P.embed $ writeMergedPcap ("mergedRes-"  ++ ".csv") mergedRes
           P.embed $ writeDSV defaultParserOptions ("sndrcv-merged-"  ++ ".csv") myFrame
-          trace $ "Size after conversion to sender/receiver " ++ show (frameLength myFrame)
+          trace $ "Size after conversion to sender/receiver " ++ show (frameLength myFrame) 
+                  ++ "( " ++ show (length mergedRes) ++ ")"
           trace $ "Number of reinjected packets: " ++ show (frameLength reinjectedPacketsFrame)
 
           trace $ "Result of the analysis; reinjections:" ++ showReinjects reinjects

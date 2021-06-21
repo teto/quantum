@@ -63,6 +63,7 @@ import Polysemy
 import Polysemy.Log (Log)
 import qualified Polysemy.Log as Log
 import qualified Polysemy.Embed as P
+import qualified Control.Foldl                  as L
 
 -- convert_to_sender_receiver
 -- merge_tcp_dataframes_known_streams(
@@ -163,6 +164,18 @@ writeMergedPcap outPath mergedPcap = do
       rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) mergedPcap)
 
 
+showMergedRes :: MergedPcap -> String
+showMergedRes mergedPcap = do
+  -- showReinjects frame =
+    -- unlines (intercalate sep (columnHeaders (Proxy :: Proxy (Record rs))) : rows)
+    -- writeFile outPath content
+    content
+    where
+      content = intercalate "\n" rows
+      rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) mergedPcap)
+
+
+
 
 -- | Merge of 2 frames
 mergeMptcpConnectionsFromKnownStreams ::
@@ -232,6 +245,17 @@ mergeMptcpConnectionsFromKnownStreams' (FrameTcp con1 frame1) (FrameTcp con2 fra
   in
     mconcat mergedFrames
 
+
+validateMergedRes ::
+  (Members '[Log, P.Embed IO] r)
+  => MergedPcap
+  -> Sem r Bool
+validateMergedRes l = do
+  Log.debug "validating mergedRes"
+  -- rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) mergedPcap)
+  -- return $ L.nub (view packetId <$> l) /= length l
+  return True
+
 mergeTcpConnectionsFromKnownStreams ::
   (Members '[Log, P.Embed IO] r)
   => FrameFiltered TcpConnection Packet
@@ -251,7 +275,7 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 = do
 
     -- we want an outerJoin , maybe with a status column like in panda
     -- outerJoin returns a list of [Rec (Maybe :. ElField) ors]
-    mergedFrame = outerJoin @'[PacketHash] (hframe1dest) processedFrame2
+    mergedFrame = leftJoin @'[PacketHash] (hframe1dest) processedFrame2
 
     frame1withDest = addTcpDestToFrame (ffFrame aframe1) (ffCon aframe1)
 
@@ -354,12 +378,6 @@ convertToSenderReceiver oframe = do
     jframe :: FrameRec MergedHostCols
     jframe = toFrame $ catMaybes $ toList tframe
     firstRow = frameRow jframe 0
-
-    --
-    -- convertToSenderReceiver' :: ConnectionRole -> ConnectionRole
-    -- convertToSenderReceiver' h1role
-
-    -- convertHost1AsClient = 
 
     -- instead of taking firstRow we should compare the minima in case there are retransmissions
     delta :: Double

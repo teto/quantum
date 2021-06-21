@@ -8,6 +8,13 @@ import Data.Proxy
 -- import Data.Text
 import Data.List (intercalate)
 
+{-
+check:
+  - showFrame
+  - printFrame
+from Frames.Exploration too
+-}
+
 -- pipeToCSV
 -- see https://github.com/acowley/Frames/issues/130
 showRow :: (RecMapMethod Show ElField a, RecordToList a)
@@ -31,6 +38,8 @@ viewFrame frame = do
 --     where
 --       content = intercalate "," rows
 --       rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) mergedPcap)
+
+
 
 
 
