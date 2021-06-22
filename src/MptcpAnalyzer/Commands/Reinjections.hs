@@ -9,6 +9,7 @@ import MptcpAnalyzer.Types
 import MptcpAnalyzer.Loader
 import MptcpAnalyzer.Merge
 import MptcpAnalyzer.Stream
+import MptcpAnalyzer.ArtificialFields
 
 import Prelude hiding (log)
 import Options.Applicative
@@ -33,6 +34,7 @@ import qualified Pipes.Prelude as Pipes
 import Control.Lens hiding (argument)
 
 import qualified Debug.Trace as D
+import Control.Monad
 
 piListReinjections :: ParserInfo CommandArgs
 piListReinjections = info (
@@ -103,12 +105,12 @@ cmdListReinjections streamId = do
 
 -- Analyzes row of reinject packets
 -- Compares arrival time of the first send of a segment with the
--- analyzeReinjection :: (FrameRec SenderReceiverCols) -> Record SenderReceiverCols -> Double
+analyzeReinjection :: (FrameRec SenderReceiverCols) -> Record SenderReceiverCols -> Double
 analyzeReinjection mergedFrame row =
   let
     -- a list of packetIds
     reinjectOf = fromJust (rgetField @SndReinjectionOf row)
-    initialPktId = head reinjectOf
+    initialPktId = D.traceShowId $ head reinjectOf
 
     -- it is a frame
 
@@ -142,8 +144,10 @@ cmdQualifyReinjections ::
     , Embed IO
     ] r
   => PcapMapping Mptcp
-  -> Bool -> Sem r RetCode
-cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) verbose = do
+  -> [ConnectionRole]
+  -> Bool
+  -> Sem r RetCode
+cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) destinations verbose = do
   eframe1 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap1 streamId1
   eframe2 <- buildAFrameFromStreamIdMptcp defaultTsharkPrefs pcap2 streamId2
   res <- case (eframe1, eframe2 ) of
@@ -164,28 +168,20 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) verbose = d
 
             -- loop over these reinjectpackets
             -- assume both were mapped
-            reinjects = fmap (analyzeReinjection myFrame) reinjectedPacketsFrame
 
-            showReinjects frame =
-              -- unlines (intercalate sep (columnHeaders (Proxy :: Proxy (Record rs))) : rows)
-              intercalate "," rows
-              where
-                rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) frame)
           -- Log.info $ "Result of the analysis; reinjections:"
             -- <> tshow (showReinjects justRecs)
           -- Log.debug $ "reinjectionsOf in host1 frame " <> tshow $ showFrame myFrame
           Log.debug $ "showing merged res" <> tshow (showMergedRes $ take 3 mergedRes)
-          Log.debug $ "reinjectionsOf in host1 frame " <> tshow (frameLength reinjectedPacketsHost1)
-          Log.debug $ "reinjectionsOf in host2 frame " <> tshow (frameLength reinjectedPacketsHost2)
           P.embed $ writeMergedPcap ("mergedRes-"  ++ ".csv") mergedRes
-          P.embed $ writeDSV defaultParserOptions ("sndrcv-merged-"  ++ ".csv") myFrame
           trace $ "Size after conversion to sender/receiver " ++ show (frameLength myFrame) 
                   ++ "( " ++ show (length mergedRes) ++ ")"
-          trace $ "Number of reinjected packets: " ++ show (frameLength reinjectedPacketsFrame)
+          -- trace $ "Number of reinjected packets: " ++ show (frameLength reinjectedPacketsFrame)
 
-          trace $ "Result of the analysis; reinjections:" ++ showReinjects reinjects
           -- trace $ "Merged mptcp connection\nFrame size: " ++ show (frameLength reinjectedPacketsFrame)
                   -- ++ "\n" ++ showFrame "," reinjectedPacketsFrame
+          forM_ destinations $ \x -> do
+            qualifyReinjections myFrame x
 
           -- qualifyReinjections tempPath handle (getDests dest) (ffCon aframe1) mergedRes
           return CMD.Continue
@@ -194,11 +190,44 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) verbose = d
 
 
   return CMD.Continue
-  where
     -- mergedPcap
     -- reinjectedPackets = filterFrame (sndReinjectionOf) (toFrame justRecs)
 
--- qualifyReinjections :: Members '[Log String, P.State MyState, Cache, Embed IO] r 
---     => MergedPcap
---     -> Sem r RetCode
--- qualifyReinjections mergedRes (getDests dest)
+-- TODO there should be a classification on a per mptcp basis
+qualifyReinjections :: Members '[
+    Log, P.State MyState
+    , Cache
+    , P.Trace
+    , Embed IO
+    ] r
+    => FrameRec SenderReceiverCols
+    -> ConnectionRole
+    -> Sem r ()
+qualifyReinjections frame dest = do
+    let
+      -- "dest"frame
+      dstFrame = filterFrame (\x -> x ^. tcpDest == dest) frame
+      -- mergedRes = mergeMptcpConnectionsFromKnownStreams' aframe1 aframe2
+      -- reinjectedPacketsHost1 = filterFrame (\x -> isJust $ x ^. reinjectionOf) (ffFrame aframe1)
+      -- reinjectedPacketsHost2 = filterFrame (\x -> isJust $ x ^. reinjectionOf) (ffFrame aframe2)
+      reinjectedPacketsFrame = filterFrame (\x -> isJust $ x ^. sndReinjectionOf) dstFrame
+      reinjects = fmap (analyzeReinjection frame) reinjectedPacketsFrame
+
+    trace $ "Qualify reinjections for dests " ++ show dest
+    P.embed $ writeDSV defaultParserOptions ("sndrcv-merged-" ++ show dest  ++ ".csv") dstFrame
+    trace $ "Number of reinjected packets: " ++ show (frameLength reinjectedPacketsFrame)
+    -- trace $ "Result of the analysis; reinjections:" ++ showReinjects reinjects
+    forM_ reinjectedPacketsFrame $ \row -> do
+      let
+        reinjectOf = fromJust (rgetField @SndReinjectionOf row)
+
+        initialPktId = D.traceShowId $ head reinjectOf
+      trace $ show (row ^. sndPacketId) ++ " is a reinjection of packet id " ++ show initialPktId
+      -- TODO check if pktId is available
+
+    where
+        showReinjects frame2 =
+          -- unlines (intercalate sep (columnHeaders (Proxy :: Proxy (Record rs))) : rows)
+          intercalate "," rows
+          where
+            rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) frame2)

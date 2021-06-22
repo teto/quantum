@@ -287,7 +287,7 @@ runCommand (ArgsExport out) = CLI.cmdExport out
 runCommand (ArgsPlotGeneric plotSettings plotArgs) = runPlotCommand plotSettings plotArgs
 runCommand (ArgsMapTcpConnections cmd False) = CLI.cmdMapTcpConnection cmd
 runCommand (ArgsMapTcpConnections args True) = CLI.cmdMapMptcpConnection args
-runCommand (ArgsQualifyReinjections mapping verbose) = CLI.cmdQualifyReinjections mapping verbose
+runCommand (ArgsQualifyReinjections mapping verbose) = CLI.cmdQualifyReinjections mapping [RoleServer] verbose
 runCommand ArgsQuit = cmdQuit
 runCommand ArgsHelp = cmdHelp
 

@@ -178,6 +178,7 @@ showMergedRes mergedPcap = do
 
 
 -- | Merge of 2 frames
+-- TODO add MptcpDest
 mergeMptcpConnectionsFromKnownStreams ::
   (Members '[Log, P.Embed IO] r)
   => FrameFiltered MptcpConnection Packet
@@ -194,7 +195,6 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
   Log.info $ tshow (length mergedPackets) <> " concatenated merged packets"
   return res
   where
-    --
     -- mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
     mergeSubflow (sf1, scores) = do
       Log.debug $ "Merging pcap1 " <> tshow streamId1 <> " (" <> tshow (frameLength $ ffFrame aframe1)
@@ -364,19 +364,18 @@ convertToSenderReceiver oframe = do
     -- then rename into sndTime, rcvTime
     -- TODO
     -- convertHost1AsClient
-    setHost1AsSenderForDest RoleServer
-    <> setHost2AsSenderForDest  RoleClient
+    setHost1AsSenderForDest RoleServer <> setHost2AsSenderForDest RoleClient
   else
-    -- convertHost1AsServer
-    setHost1AsSenderForDest RoleServer
-      <> setHost2AsSenderForDest  RoleClient
+    -- TODO zarb because it's the same as before
+    setHost1AsSenderForDest RoleServer <> setHost2AsSenderForDest RoleClient
 
   where
-    -- tframe :: [Maybe MergedHostCols]
     tframe :: [Maybe (Record MergedHostCols)]
     tframe = fmap recMaybe oframe
+
     jframe :: FrameRec MergedHostCols
     jframe = toFrame $ catMaybes $ toList tframe
+
     firstRow = frameRow jframe 0
 
     -- instead of taking firstRow we should compare the minima in case there are retransmissions
