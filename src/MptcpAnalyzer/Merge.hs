@@ -335,7 +335,7 @@ convertToHost2Cols frame = fmap convertCols' frame
 -- , RcvAbsTime
 -- type SenderReceiverCols =  '[SndPacketId, RcvPacketId, SndAbsTime, RcvAbsTime, TcpDest]
 -- TODO il nous faut le hash + la dest
-type SenderReceiverCols =  TcpDest ': SenderCols V.++ ReceiverCols
+type SenderReceiverCols =  TcpDest ': SenderHost ': SenderCols V.++ ReceiverCols
 
 
 
@@ -401,7 +401,7 @@ convertToSenderReceiver oframe = do
         receiverCols :: Record ReceiverCols
         receiverCols = (withNames . stripNames . F.rcast @HostColsPrefixed) r
       in
-        (rget @TcpDest r) :& (rappend senderCols receiverCols)
+        (rget @TcpDest r) :& (Col False) :& (rappend senderCols receiverCols)
 
     convertToReceiver r = let
         senderCols :: Record SenderCols
@@ -409,7 +409,7 @@ convertToSenderReceiver oframe = do
         receiverCols :: Record ReceiverCols
         receiverCols = (withNames . stripNames . F.rcast @HostCols) r
       in
-        (rget @TcpDest r) :& (rappend senderCols receiverCols)
+        (rget @TcpDest r) :& (Col False) :& (rappend senderCols receiverCols)
         -- convert ("first host") to sender/receiver
         -- TODO this could be improved
 

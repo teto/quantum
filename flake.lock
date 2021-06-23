@@ -121,16 +121,15 @@
         "pre-commit-hooks": "pre-commit-hooks"
       },
       "locked": {
-        "lastModified": 1623014450,
-        "narHash": "sha256-rGDQRVbYBM4sGUXmg04UrKTRD6+i/NwpTfUnZMB829U=",
-        "owner": "teto",
+        "lastModified": 1624451311,
+        "narHash": "sha256-5oxCDyd+1xloh3P4x5LS86MggxLMCNB08sM3Mhcd37A=",
+        "owner": "haskell",
         "repo": "haskell-language-server",
-        "rev": "a1b9a83e7d159e72da50eaae4d2663282ac97383",
+        "rev": "9f4220fe645c21b2732ddc10ae0a8a6eb158b254",
         "type": "github"
       },
       "original": {
-        "owner": "teto",
-        "ref": "flake-debug",
+        "owner": "haskell",
         "repo": "haskell-language-server",
         "type": "github"
       }
