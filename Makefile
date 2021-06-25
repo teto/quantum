@@ -30,6 +30,9 @@ gen-autocompletion:
 %.json: %.dhall
 	dhall-to-json --file $< --output $@
 
+stan:
+	stan
+
 # $(TEST_FILES):
 	# -v ${PWD}/build/doc/$(@F):/docs/build/html/ $(subst _,-,$(@F)) poetry run sh -c \
 

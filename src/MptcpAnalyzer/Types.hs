@@ -93,7 +93,7 @@ declarePrefixedColumns "" baseFieldsReceiver
 -- todo declare it from ArtificialFields ?
 -- artificial types, i.e. created by the app and not tshark
 declareColumn "tcpDest" ''ConnectionRole
--- True if host 1 is sender
+-- | True if host 1 is sender
 declareColumn "senderHost" ''Bool
 declareColumn "mptcpDest" ''ConnectionRole
 declareColumn "packetHash" ''Int

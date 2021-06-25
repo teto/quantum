@@ -1,3 +1,7 @@
+{-
+Command to analyze reinjections
+
+-}
 module MptcpAnalyzer.Commands.Reinjections
 where
 
@@ -181,7 +185,7 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) destination
           -- trace $ "Merged mptcp connection\nFrame size: " ++ show (frameLength reinjectedPacketsFrame)
                   -- ++ "\n" ++ showFrame "," reinjectedPacketsFrame
           forM_ destinations $ \x -> do
-            qualifyReinjections myFrame x
+            qualifyReinjections myFrame (ffFrame aframe1, ffFrame aframe2) x
 
           -- qualifyReinjections tempPath handle (getDests dest) (ffCon aframe1) mergedRes
           return CMD.Continue
@@ -201,9 +205,10 @@ qualifyReinjections :: Members '[
     , Embed IO
     ] r
     => FrameRec SenderReceiverCols
+    -> (Frame Packet, Frame Packet) -- ^ (host1, host2) pcaps
     -> ConnectionRole
     -> Sem r ()
-qualifyReinjections frame dest = do
+qualifyReinjections frame (frameH1, frameH2) dest = do
     let
       -- "dest"frame
       dstFrame = filterFrame (\x -> x ^. tcpDest == dest) frame
@@ -220,9 +225,16 @@ qualifyReinjections frame dest = do
     forM_ reinjectedPacketsFrame $ \row -> do
       let
         reinjectOf = fromJust (rgetField @SndReinjectionOf row)
+        hostType = rgetField @SenderHost row
+
+        -- should be only one
+        originalPacket = filterFrame (\x -> x ^. sndPacketId) dstFrame
 
         initialPktId = D.traceShowId $ head reinjectOf
+      -- of packet id " ++ show initialPktId
+      -- from host" ++ show hostType
       trace $ show (row ^. sndPacketId) ++ " is a reinjection of packet id " ++ show initialPktId
+      trace $ "number of original packets " ++ show (frameLength originalPacket)
       -- TODO check if pktId is available
 
     where
