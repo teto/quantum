@@ -150,6 +150,7 @@
           # defaultPackage.inputDerivation
           replica.packages."${system}".build
           inputs.hls.packages."${system}"."haskell-language-server-${compilerVersion}"
+          haskellPackages.stan
           cairo # for chart-cairo
           dhall-json  # for dhall-to-json
           glib
