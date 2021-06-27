@@ -6,14 +6,13 @@ where
 
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Pcap (defaultParserOptions)
+
 import Data.Serialize
 import Data.Text as T
 import Data.Text.Encoding as TSE
 import Data.ByteString as BS
 import Data.ByteString.Lazy as LBS
 import Data.ByteString.Lazy.UTF8 as BLU
-import Frames
-
 import Pipes ((>->))
 import qualified Pipes as P
 import qualified Pipes.Prelude as P

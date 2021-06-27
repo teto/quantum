@@ -443,10 +443,10 @@ computeTcpDest :: (
   ) => Record rs
   -> TcpConnection -> ConnectionRole
 computeTcpDest x con  = if (rgetField @IpSource x) == conTcpClientIp con
-                && (rgetField @IpDest x) == conTcpServerIp con
-                && (rgetField @TcpSrcPort x) == conTcpClientPort con
-                && (rgetField @TcpDestPort x) == conTcpServerPort con
-                && (rgetField @TcpDestPort x) == conTcpServerPort con
+                && rgetField @IpDest x == conTcpServerIp con
+                && rgetField @TcpSrcPort x == conTcpClientPort con
+                && rgetField @TcpDestPort x == conTcpServerPort con
+                && rgetField @TcpDestPort x == conTcpServerPort con
                 -- TODO should error if not the same streamId
                 -- && (rgetField @TcpStream x) == (conTcpStreamId con)
         then RoleServer else RoleClient

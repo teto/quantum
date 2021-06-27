@@ -438,15 +438,15 @@ convertToSenderReceiver oframe = do
     delta =  (firstRow ^. testAbsTime) - (firstRow ^. absTime)
 
     selectDest :: ConnectionRole -> FrameRec MergedHostCols
-    selectDest dest = (filterFrame (\x -> x ^. senderDest == dest) jframe)
+    selectDest dest = filterFrame (\x -> x ^. senderDest == dest) jframe
 
     -- em fait le retype va ajouter la colonne a la fin seulement
     -- zipFrames
     setHost1AsSenderForDest, setHost2AsSenderForDest  :: ConnectionRole -> FrameRec SenderReceiverCols
-    setHost1AsSenderForDest dest = fmap (\x -> (Col False) :& convertToSender x ) (selectDest dest)
+    setHost1AsSenderForDest dest = fmap (\x -> Col False :& convertToSender x ) (selectDest dest)
 
     -- (if h1role == RoleClient then RoleServer else RoleClient))
-    setHost2AsSenderForDest  dest = fmap (\x -> (Col True) :& convertToReceiver x ) (selectDest dest)
+    setHost2AsSenderForDest  dest = fmap (\x -> Col True :& convertToReceiver x ) (selectDest dest)
 
     -- convertToSender, convertToReceiver :: Record MergedHostCols -> Record SenderReceiverCols
     convertToSender r = let
@@ -456,7 +456,7 @@ convertToSenderReceiver oframe = do
         receiverCols :: Record ReceiverCols
         receiverCols = (withNames . stripNames . F.rcast @HostColsPrefixed) r
       in
-        (rget @SenderDest r) :& (rappend senderCols receiverCols)
+        rget @SenderDest r :& (rappend senderCols receiverCols)
 
     convertToReceiver r = let
         senderCols :: Record SenderCols

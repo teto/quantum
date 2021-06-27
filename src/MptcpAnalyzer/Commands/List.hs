@@ -15,7 +15,6 @@ import MptcpAnalyzer.ArtificialFields
 import Net.Tcp
 import Net.Mptcp
 import Net.Mptcp.Stats
-import MptcpAnalyzer.Types
 
 import Frames.CSV
 import Prelude hiding (log)
@@ -108,7 +107,7 @@ cmdListTcpConnections listDetailed = do
         -- log $ "Number of rows " ++ show (frameLength frame)
         P.trace $ "Number of TCP connections " ++ show (length tcpStreams)
         -- TODO use a trace there
-        _ <- mapM (P.trace . describeConnection) streamIdList
+        mapM_ (P.trace . describeConnection) streamIdList
         return CMD.Continue
         where
           describeConnection streamId = 
@@ -141,9 +140,9 @@ cmdTcpSummary streamId detailed = do
           if detailed
           then do
             res <- showStats aframe RoleServer
-            P.trace $ res
+            P.trace res
             res2 <- showStats aframe RoleClient
-            P.trace $ res2
+            P.trace res2
           else
             pure ()
           -- log $ "Number of SYN packets " ++ (fmap  )
@@ -207,8 +206,8 @@ showMptcpStats s = " Mptcp stats towards " ++ show (musDirection s) ++ " :\n"
         in "stream " ++ show (conTcpStreamId (sfConn sf))
           ++ ": transferred " ++ show seqRange ++ " out of " ++ show totalApplicationBytes
           ++ " between "
-          ++ show (tusStartTime $ tcpStats) ++ " end time: " ++ show (tusEndTime $ tssStats sfStats)
-          ++ " , accouting for " ++ show (seqRange / (fromIntegral totalApplicationBytes)) ++ " %"
+          ++ show (tusStartTime tcpStats) ++ " end time: " ++ show (tusEndTime $ tssStats sfStats)
+          ++ " , accouting for " ++ show (seqRange / fromIntegral totalApplicationBytes) ++ " %"
 
 {-
 Returns:

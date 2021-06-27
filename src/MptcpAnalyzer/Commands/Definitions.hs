@@ -1,6 +1,5 @@
 module MptcpAnalyzer.Commands.Definitions
 where
-import MptcpAnalyzer.Types ()
 import MptcpAnalyzer.Pcap
 import MptcpAnalyzer.Types
 import MptcpAnalyzer.Stream

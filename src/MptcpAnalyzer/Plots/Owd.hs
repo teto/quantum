@@ -28,7 +28,8 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
-import Polysemy (Member, Members, Sem, Embed)
+import Polysemy
+-- import Polysemy (Member, Members, Sem, Embed)
 import qualified Polysemy as P
 import Polysemy.State as P
 -- import Colog.Polysemy (Log, log)
