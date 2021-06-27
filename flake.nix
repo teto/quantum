@@ -2,7 +2,13 @@
   description = "Multipath tcp pcap analyzer tool";
 
   nixConfig = {
-    substituters = [  https://hydra.iohk.io ];
+    substituters = [
+      # https://iohk.cachix.org
+      https://hydra.iohk.io
+    ];
+    trusted-public-keys = [
+      hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+    ];
     # bash-prompt = "toto";
   };
 
@@ -22,18 +28,36 @@
     haskellNix.url = "github:input-output-hk/haskell.nix";
   };
 
-  outputs = { self, nixpkgs, flake-utils, poetry, replica, ... }@inputs:
+  outputs = { self, nixpkgs, flake-utils, poetry, haskellNix, replica, ... }@inputs:
     flake-utils.lib.eachSystem ["x86_64-linux"] (system: let
+
+      compilerVersion = "8104";
+
+      ## haskell.nix trial
+      overlays = [
+        haskellNix.overlay
+        (final: prev: {
+          # This overlay adds our project to pkgs
+          mptcpanalyzer =
+            final.haskell-nix.project' {
+              src = ./.;
+              compiler-nix-name = "ghc${compilerVersion}";
+            };
+        })
+      ];
+      flake = pkgs.mptcpanalyzer.flake {};
+
 
       haskellOverlay = hnew: hold: with pkgs.haskell.lib; {
 
         # TODO override Frames
         ip = unmarkBroken (dontCheck hold.ip);
         bytebuild = unmarkBroken (dontCheck hold.bytebuild);
+
+        # may not be needed anymore ?
         wide-word = unmarkBroken (dontCheck hold.wide-word);
 
         co-log-polysemy = doJailbreak (hold.co-log-polysemy);
-        # hls-lint-plugin = doJailbreak (hold.hls-lint-plugin);
 
         netlink = (overrideSrc hold.netlink {
           # src = builtins.fetchGit {
@@ -57,15 +81,12 @@
             sha256 = "sha256-7JhrMrv9ld12nx8LyfOuOPTBb7RyWIwSWNB9vWDe/g0=";
           };
         };
-
       };
 
-      compilerVersion = "8104";
-      # compilerVersion = "901";
 
       # pkgs = nixpkgs.legacyPackages."${system}";
       pkgs = import nixpkgs {
-          inherit system;
+          inherit system overlays;
           # overlays = pkgs.lib.attrValues (self.overlays);
           config = { allowUnfree = true; allowBroken = true; };
         };
@@ -86,6 +107,7 @@
       ]);
 
     in rec {
+      packages.mptcpanalyzer2 = flake.packages."mptcpanalyzer:exe:mptcpanalyzer";
 
       packages.mptcpanalyzer = pkgs.haskellPackages.developPackage {
         root = ./.;
@@ -95,54 +117,8 @@
         overrides = haskellOverlay;
       };
 
-      # packages.mptcpanalyzer = pkgs.stdenv.mkDerivation rec {
-      #   name = "mptcpanalyzer";
-      #   version = "0.1";
-      #   src = ./.;
-      #   buildInputs = with pkgs; [
-      #     cairo # for chart-cairo
-      #     dhall-json  # for dhall-to-json
-      #     glib
-      #     hsEnv
-      #     pkg-config
-      #     zlib
-      #   ];
-
-      #   # see https://discourse.nixos.org/t/shared-libraries-error-with-cabal-repl-in-nix-shell/8921/9
-      #   LD_LIBRARY_PATH = nixpkgs.lib.makeLibraryPath buildInputs;
-
-      # # # export HIE_HOOGLE_DATABASE=$NIX_GHC_DOCDIR as DOCDIR doesn't exist it won't work
-      #   # export ASAN_OPTIONS="log_path=./test.log:abort_on_error=1"
-      #   # export UBSAN_OPTIONS=print_stacktrace=1
-      #   shellHook = ''
-      #     # check if it's still needed ?
-      #     export NVIM_LOG_FILE=/tmp/log
-
-      #     ulimit -c unlimited
-      #   '';
-      # };
-
       defaultPackage = packages.mptcpanalyzer;
-      # packages.mptcppm =
-      # devShell = pkgs.haskellPackages.developPackage {
-      #   root = ./.;
-      #   name = "mptcp-pm";
-      #   returnShellEnv = false;
-      #   withHoogle = true;
-      #   overrides = haskellOverlay;
-      #   modifier = drv:
-      #     pkgs.haskell.lib.addBuildTools drv (with pkgs;
-      #     [
-      #       # ghcid
-      #       haskellPackages.cabal-install
-      #       haskellPackages.c2hs
-      #       haskellPackages.stylish-haskell
-      #       haskellPackages.hlint
-      #       # haskellPackages.haskell-language-server
-      #       haskellPackages.hasktags
-      #       hls.packages."${system}"."haskell-language-server-${compilerVersion}"
-      #     ]);
-      # };
+
 
       devShell = pkgs.mkShell {
         name = "dev-shell";
