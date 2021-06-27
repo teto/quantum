@@ -14,6 +14,7 @@ import MptcpAnalyzer.Loader
 import MptcpAnalyzer.Merge
 import MptcpAnalyzer.Stream
 import MptcpAnalyzer.ArtificialFields
+import Net.Mptcp
 
 import Prelude hiding (log)
 import Options.Applicative
@@ -185,7 +186,7 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) destination
           -- trace $ "Merged mptcp connection\nFrame size: " ++ show (frameLength reinjectedPacketsFrame)
                   -- ++ "\n" ++ showFrame "," reinjectedPacketsFrame
           forM_ destinations $ \x -> do
-            qualifyReinjections myFrame (ffFrame aframe1, ffFrame aframe2) x
+            qualifyReinjections myFrame (assignRoles aframe1 aframe2) x
 
           -- qualifyReinjections tempPath handle (getDests dest) (ffCon aframe1) mergedRes
           return CMD.Continue
@@ -215,6 +216,28 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) destination
 -- buildConnectionFromSndPacket :: Record SenderReceiverCols -> TcpConnection
 -- buildConnectionFromSndPacket row -> 
 
+
+-- | Returns (Client,Server)
+-- kinbda hackish
+assignRoles :: FrameFiltered MptcpConnection Packet -> FrameFiltered MptcpConnection Packet 
+  -> (FrameFiltered MptcpConnection Packet , FrameFiltered MptcpConnection Packet)
+assignRoles aframe1 aframe2 = 
+  if delta > 0 then
+    (aframe1, aframe2)
+  else
+    (aframe2, aframe1)
+  where
+    -- assume non empty
+    firstRow1 = frameRow (ffFrame aframe1) 0
+    firstRow2 = frameRow (ffFrame aframe2) 0
+
+    delta :: Double
+    delta = (firstRow2 ^. absTime) - (firstRow1 ^. absTime)
+
+    -- selectDest :: ConnectionRole -> FrameRec MergedHostCols
+    -- selectDest dest = (filterFrame (\x -> x ^. senderDest == dest) jframe)
+
+
 -- TODO there should be a classification on a per mptcp basis
 -- Here we should be able to tell who is the sender
 qualifyReinjections :: Members '[
@@ -224,8 +247,8 @@ qualifyReinjections :: Members '[
     , Embed IO
     ] r
     => FrameRec SenderReceiverCols
-    -- (host1, host2) pcaps
-    -> (Frame Packet, Frame Packet) 
+    -- (Client, server) pcaps
+    -> (FrameFiltered MptcpConnection Packet,FrameFiltered MptcpConnection Packet)
     -> ConnectionRole
     -> Sem r ()
 qualifyReinjections frame (aframeH1, aframeH2) dest = do
@@ -246,9 +269,13 @@ qualifyReinjections frame (aframeH1, aframeH2) dest = do
       let
         reinjectOf = fromJust (rgetField @SndReinjectionOf row)
         hostType = rgetField @SenderHost row
+        senderDest = rgetField @SenderDest row
+
+        originalFrame = if senderDest == RoleClient then (ffFrame aframeH2) else (ffFrame aframeH1)
 
         -- should be only one
-        originalPacket = filterFrame (\x -> x ^. packetId == initialPktId) aframeH1
+        originalPacket = filterFrame (\x -> x ^. packetId == initialPktId) originalFrame
+        -- originalPacket = filterFrame (\x -> x ^. packetId == initialPktId) aframeH1
 
         -- ((frameRow originalPacket 0) ^. senderHost)
         hostBool = if frameLength originalPacket > 0 then show hostType else "unknown"
@@ -257,10 +284,11 @@ qualifyReinjections frame (aframeH1, aframeH2) dest = do
         -- buildTcpConnectionFromSndRecord
 
         initialPktId = D.traceShowId $ head reinjectOf
+        -- initialPktId = D.traceShowId $ head reinjectOf
       -- of packet id " ++ show initialPktId
       -- from host" ++ show hostType
       trace $ show (row ^. sndPacketId) ++ " is a reinjection of packet id " ++ show initialPktId
-      trace $ "number of original packets " ++ show (frameLength originalPacket) ++ " Host " ++ show hostType 
+      trace $ "number of original packets " ++ show (frameLength originalPacket) ++ " Host " ++ show senderDest
       -- TODO check if pktId is available
 
     where
