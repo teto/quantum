@@ -80,6 +80,7 @@ import Data.Maybe (fromMaybe, catMaybes)
 import Data.Either (fromLeft)
 import Frames.CSV (writeDSV)
 import Frames (recMaybe, Frame, Record)
+import Frames as F
 import System.IO (stderr)
 import Polysemy.Log (Log)
 import qualified Polysemy.Log as Log
@@ -349,20 +350,28 @@ runPlotCommand (PlotSettings mbOut _mbTitle displayPlot mptcpPlot) specificArgs 
         return res
 
       -- Destinations
-      (ArgsPlotOwdTcp (PcapMapping pcap1 streamId1 pcap2 streamId2) dest) -> do
-        Log.info $ "plotting owd for tcp.stream " <> tshow streamId1 <> " and " <> tshow streamId2
-        eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 streamId1
-        eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 streamId2
+      (ArgsPlotOwdTcp mapping dest) ->
+        -- Log.info $ "plotting owd for tcp.stream " <> tshow streamId1 <> " and " <> tshow streamId2
+        -- eframe1 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap1 streamId1
+        -- eframe2 <- buildAFrameFromStreamIdTcp defaultTsharkPrefs pcap2 streamId2
 
-        res <- case (eframe1, eframe2 ) of
-          (Right aframe1, Right aframe2) -> do
-              mergedRes <- mergeTcpConnectionsFromKnownStreams aframe1 aframe2
-              -- let mbRecs = map recMaybe mergedRes
-              -- let justRecs = catMaybes mbRecs
-              Plots.cmdPlotTcpOwd tempPath handle (getDests dest) (ffCon aframe1) mergedRes
-          (Left err, _) -> return $ CMD.Error err
-          (_, Left err) -> return $ CMD.Error err
-        return res
+        -- res <- case (eframe1, eframe2 ) of
+        --   (Right (FrameTcp con frame1), Right aframe2) -> do
+        --       -- TODO addTcpDest -> convert then
+        --       let
+        --         dest = genTcpDestFrame frame1 con
+
+        --         convertCols' :: Record '[TcpDest] -> Record '[SenderDest]
+        --         convertCols' = F.withNames . F.stripNames
+        --         sendFrame = fmap convertCols' dest
+
+        --       mergedRes <- mergeTcpConnectionsFromKnownStreams (FrameTcp con (F.zipFrames sendFrame frame1)) aframe2
+        --       -- let mbRecs = map recMaybe mergedRes
+        --       -- let justRecs = catMaybes mbRecs
+        --       Plots.cmdPlotTcpOwd tempPath handle (getDests dest) (ffCon aframe1) mergedRes
+        --   (Left err, _) -> return $ CMD.Error err
+        --   (_, Left err) -> return $ CMD.Error err
+        Plots.cmdPlotTcpOwd tempPath handle (getDests dest) mapping
 
       (ArgsPlotOwdMptcp (PcapMapping pcap1 streamId1 pcap2 streamId2) dest) -> do
         Log.info "plotting mptcp owd"

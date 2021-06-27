@@ -360,7 +360,9 @@ addMptcpDest ::
       ) =>
       Frame (Record HostCols)
       -> MptcpConnection
-      -> Frame (Record  ( MptcpDest ': TcpDest ': HostCols ))
+      -> FrameRec  (
+            MptcpDest ': TcpDest ': HostCols
+          )
 addMptcpDest frame con =
     -- foldl' (\tframe sf -> addDestToFrame tframe sf) startingFrame subflows
     mconcat subflowFrames
@@ -382,6 +384,12 @@ addMptcpDest frame con =
       addMptcpDestToRec x role = (Col $ role) :& x
       subflows = Set.toList $ mpconSubflows con
 
+addMptcpDestToFrame :: MptcpConnection -> FrameFiltered MptcpSubflow Packet -> FrameRec ('[MptcpDest])
+addMptcpDestToFrame mpcon (FrameTcp sf frame) = fmap (addMptcpDest' (getMptcpDest mpcon sf)) frame
+  where
+      addMptcpDest' role x = (Col role) :& RNil
+
+
 getMptcpDest :: MptcpConnection -> MptcpSubflow -> ConnectionRole
 getMptcpDest mptcpCon sf = case sfJoinToken sf of
   -- master subflow, dest is by definition the server
@@ -402,10 +410,25 @@ addTcpDestToFrame :: (
   , IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs
   , TcpStream ∈ rs
   )
-    => Frame (Record rs)
+    => FrameRec rs
     -> TcpConnection
-    -> Frame (Record  ( TcpDest ': rs ))
+    -> FrameRec ( TcpDest ': rs )
 addTcpDestToFrame frame con = fmap (\x -> addTcpDestToRec x (computeTcpDest x con)) streamFrame
+    where
+      streamFrame = filterFrame  (\x -> rgetField @TcpStream x == conTcpStreamId con) frame
+
+
+-- | Generates a frame with the TcpDest
+genTcpDestFrame :: (
+  I.RecVec rs
+  ,IpSource ∈ rs, IpDest ∈ rs
+  , IpDest ∈ rs, TcpSrcPort ∈ rs, TcpDestPort ∈ rs
+  , TcpStream ∈ rs
+  )
+    => FrameRec rs
+    -> TcpConnection
+    -> FrameRec '[TcpDest]
+genTcpDestFrame frame con = fmap (\x -> Col (computeTcpDest x con) :& RNil) streamFrame
     where
       streamFrame = filterFrame  (\x -> rgetField @TcpStream x == conTcpStreamId con) frame
 
@@ -522,6 +545,8 @@ class StreamConnection a b | a -> b where
   showConnectionText :: a -> Text
   -- describeConnection :: a -> Text
   buildFrameFromStreamId :: Frame Packet -> StreamId b -> Either String (FrameFiltered a Packet)
+
+  -- type toto = Int
 
   -- | Compare two conection and give a similarityScore
   similarityScore :: a -> a -> Int

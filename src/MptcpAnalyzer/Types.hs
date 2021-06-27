@@ -95,6 +95,7 @@ declarePrefixedColumns "" baseFieldsReceiver
 declareColumn "tcpDest" ''ConnectionRole
 -- | True if host 1 is sender
 declareColumn "senderHost" ''Bool
+declareColumn "senderDest" ''ConnectionRole
 declareColumn "mptcpDest" ''ConnectionRole
 declareColumn "packetHash" ''Int
 declareColumn "colOwd" ''Double
@@ -127,8 +128,9 @@ data PcapMapping a = PcapMapping {
 
 -- row / ManRow
 type Packet = Record HostCols
+type PacketWithSenderDest = Record (SenderDest ': HostCols)
 type PacketWithTcpDest = Record (TcpDest ': HostCols)
-type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': HostCols)
+-- type PacketWithMptcpDest = Record (MptcpDest ': MptcpDest ': HostCols)
 
 -- https://stackoverflow.com/questions/14020491/is-there-a-way-of-deriving-binary-instances-for-vinyl-record-types-using-derive?rq=1
 -- forall t s a rs. (t ~ '(s,a)

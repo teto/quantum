@@ -231,7 +231,7 @@ qualifyReinjections :: Members '[
 qualifyReinjections frame (aframeH1, aframeH2) dest = do
     let
       -- "dest"frame
-      dstFrame = filterFrame (\x -> x ^. tcpDest == dest) frame
+      dstFrame = filterFrame (\x -> x ^. senderDest == dest) frame
       -- mergedRes = mergeMptcpConnectionsFromKnownStreams' aframe1 aframe2
       -- reinjectedPacketsHost1 = filterFrame (\x -> isJust $ x ^. reinjectionOf) (ffFrame aframe1)
       -- reinjectedPacketsHost2 = filterFrame (\x -> isJust $ x ^. reinjectionOf) (ffFrame aframe2)

@@ -132,20 +132,31 @@ toHashablePacket = rcast
 -- generate a column and add it back to HostCols
 addHash :: StreamConnection a b => FrameFiltered a Packet -> Frame (Record '[PacketHash] )
 addHash aframe =
+  -- addHashToFrame (ffFrame aframe)
   fmap (addHash')  (frame)
   where
     frame = fmap toHashablePacket (ffFrame aframe)
     addHash' row = Col (hash row) :& RNil
 
+addHashToFrame :: Frame Packet -> Frame (Record '[PacketHash] )
+addHashToFrame frame =
+  fmap (addHash')  (frame')
+  where
+    frame' = fmap toHashablePacket frame
+    addHash' row = Col (hash row) :& RNil
 
-type MergedHostCols = PacketHash ': '[TcpDest] V.++ HostCols V.++ HostColsPrefixed
-type MergedHostColsMptcp = PacketHash ': '[MptcpDest] V.++ HostCols V.++ HostColsPrefixed
+
+-- '[TcpDest] V.++
+type MergedHostCols = PacketHash ': '[SenderDest] V.++ HostCols V.++ HostColsPrefixed
+type MergedHostColsMptcp = PacketHash ': '[SenderDest] V.++ HostCols V.++ HostColsPrefixed
 
 -- not a frame but hope it should be
 -- type MergedPcap a = [Rec (Maybe :. ElField) a]
 type MergedPcap = [Rec (Maybe :. ElField) MergedHostCols]
 
 type MergedFrame = FrameRec MergedHostCols
+-- type MergedFrameTcp = FrameRec (TcpDest ': MergedHostCols)
+-- type MergedFrameMptcp = FrameRec (MptcpDest ': MergedHostCols)
 
 -- liste de
 mergedPcapToFrame :: MergedPcap -> (FrameRec MergedHostCols, MergedPcap)
@@ -178,6 +189,11 @@ showMergedRes mergedPcap = do
       content = intercalate "\n" rows
       rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) mergedPcap)
 
+--
+-- | Drop a column from a record.  Just a specialization of rcast.
+dropColumn :: forall x rs. (F.RDelete x rs F.⊆ rs) => F.Record rs -> F.Record (F.RDelete x rs)
+dropColumn = F.rcast
+
 
 -- | Merge of 2 frames
 -- TODO add MptcpDest
@@ -198,11 +214,26 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
   Log.info $ tshow (frameLength res) <> " concatenated merged packets"
   return res
   where
+    -- convertDest :: Record (MptcpDest ': TcpDest ': HostCols) -> Record (SenderDest ': HostCols)
+    -- convertDest = withNames . stripNames
+    convertDest :: Record '[MptcpDest] -> Record '[SenderDest]
+    convertDest = withNames . stripNames
+
+    -- frameWithDests = addMptcpDest frame1 con1 
+
+    -- frameWithSenderDest :: FrameRec (MptcpDest ': TcpDest ': HostCols) -> FrameRec (SenderDest ': HostCols)
+    -- frameWithSenderDest = fmap convertDest frameWithDests
+
     -- mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
     mergeSubflow (sf1, scores) = do
       Log.debug $ "Merging pcap1 " <> tshow streamId1 <> " (" <> tshow (frameLength $ ffFrame aframe1)
           <> " packets) and " <> tshow streamId2 <> " (" <> tshow (frameLength $ ffFrame aframe2) <> " packets)"
-      mergedSf <- mergeTcpConnectionsFromKnownStreams aframe1 aframe2
+
+      -- TODO add MptcpDest and recast to senderDest
+      -- addMptcpDestToSubflowFrame
+      mergedSf <- mergeTcpSubflowFromKnownStreams
+            (FrameTcp (ffCon aframe1) (zipFrames aframe1Dest (ffFrame aframe1)))
+            aframe2
       -- TODO print justRecs / 
       -- let
       --   mbRecs = map recMaybe mergedSf
@@ -222,6 +253,7 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
         aframe1 = fromRight undefined (buildFrameFromStreamId frame1 streamId1)
         aframe2 = fromRight undefined (buildFrameFromStreamId frame2 streamId2)
 
+        aframe1Dest = fmap convertDest (addMptcpDestToFrame con1 aframe1)
 
 -- mergeMptcpConnectionsFromKnownStreams' ::
 --   FrameFiltered MptcpConnection Packet
@@ -259,9 +291,21 @@ validateMergedRes l = do
   -- return $ L.nub (view packetId <$> l) /= length l
   return True
 
+-- mergeTcpSubflow ::
+
+
+mergeTcpSubflowFromKnownStreams :: 
+  (Members '[Log, P.Embed IO] r)
+  => FrameFiltered MptcpSubflow PacketWithSenderDest
+  -> FrameFiltered MptcpSubflow Packet
+  -> Sem r MergedFrame
+mergeTcpSubflowFromKnownStreams (FrameTcp sfcon1 frame1) (FrameTcp sfcon2 frame2) =
+  mergeTcpConnectionsFromKnownStreams (FrameTcp (sfConn sfcon1) frame1)
+      (FrameTcp (sfConn sfcon2) frame2)
+
 mergeTcpConnectionsFromKnownStreams ::
   (Members '[Log, P.Embed IO] r)
-  => FrameFiltered TcpConnection Packet
+  => FrameFiltered TcpConnection PacketWithSenderDest
   -> FrameFiltered TcpConnection Packet
   -> Sem r MergedFrame
 -- these are from host1 / host2
@@ -273,6 +317,9 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 = do
 
   return $ (fst . mergedPcapToFrame) mergedRes
   where
+    -- frame1withDest = addTcpDestToFrame (ffFrame aframe1) (ffCon aframe1)
+    frame1withDest = (ffFrame aframe1)
+
     out1 = "merge-tcp-1-stream-" ++ show ((conTcpStreamId . ffCon) aframe1) ++ ".tsv"
     out2 = "merge-tcp-2-stream-" ++ show (conTcpStreamId $ ffCon aframe2) ++ ".tsv"
 
@@ -280,9 +327,10 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 = do
     -- outerJoin returns a list of [Rec (Maybe :. ElField) ors]
     mergedRes = leftJoin @'[PacketHash] (hframe1dest) processedFrame2
 
-    frame1withDest = addTcpDestToFrame (ffFrame aframe1) (ffCon aframe1)
 
-    hframe1 = zipFrames (addHash aframe1) frame1withDest
+    -- (rcast @HostCols )
+    -- hframe1 = zipFrames (addHash $ fmap (rcast @Packet) (ffFrame aframe1)) (ffFrame aframe1)
+    hframe1 = zipFrames (addHashToFrame $ fmap (rcast @HostCols) (ffFrame aframe1)) (ffFrame aframe1)
     hframe1dest = hframe1
     -- hframe1dest = addTcpDestinationsToAFrame hframe1
     hframe2 :: Frame (Record ('[PacketHash] ++ HostColsPrefixed))
@@ -340,7 +388,7 @@ convertToHost2Cols frame = fmap convertCols' frame
 -- TODO il nous faut le hash + la dest
 -- | SenderHost
 type TcpSenderReceiverCols =  SenderHost ': TcpDest ': SenderCols V.++ ReceiverCols
-type SenderReceiverCols =  SenderHost ': TcpDest ': SenderCols V.++ ReceiverCols
+type SenderReceiverCols =  SenderHost ': SenderDest ': SenderCols V.++ ReceiverCols
 type MptcpSenderReceiverCols =  SenderHost ': MptcpDest ': SenderCols V.++ ReceiverCols
 
 
@@ -390,7 +438,7 @@ convertToSenderReceiver oframe = do
     delta =  (firstRow ^. testAbsTime) - (firstRow ^. absTime)
 
     selectDest :: ConnectionRole -> FrameRec MergedHostCols
-    selectDest dest = (filterFrame (\x -> x ^. tcpDest == dest) jframe)
+    selectDest dest = (filterFrame (\x -> x ^. senderDest == dest) jframe)
 
     -- em fait le retype va ajouter la colonne a la fin seulement
     -- zipFrames
@@ -408,7 +456,7 @@ convertToSenderReceiver oframe = do
         receiverCols :: Record ReceiverCols
         receiverCols = (withNames . stripNames . F.rcast @HostColsPrefixed) r
       in
-        (rget @TcpDest r) :& (rappend senderCols receiverCols)
+        (rget @SenderDest r) :& (rappend senderCols receiverCols)
 
     convertToReceiver r = let
         senderCols :: Record SenderCols
@@ -416,7 +464,7 @@ convertToSenderReceiver oframe = do
         receiverCols :: Record ReceiverCols
         receiverCols = (withNames . stripNames . F.rcast @HostCols) r
       in
-        (rget @TcpDest r) :& (rappend senderCols receiverCols)
+        (rget @SenderDest r) :& (rappend senderCols receiverCols)
         -- convert ("first host") to sender/receiver
         -- TODO this could be improved
 
