@@ -139,9 +139,13 @@ addHash aframe =
 
 
 type MergedHostCols = PacketHash ': '[TcpDest] V.++ HostCols V.++ HostColsPrefixed
+type MergedHostColsMptcp = PacketHash ': '[MptcpDest] V.++ HostCols V.++ HostColsPrefixed
 
 -- not a frame but hope it should be
+-- type MergedPcap a = [Rec (Maybe :. ElField) a]
 type MergedPcap = [Rec (Maybe :. ElField) MergedHostCols]
+
+type MergedFrame = FrameRec MergedHostCols
 
 -- liste de
 mergedPcapToFrame :: MergedPcap -> (FrameRec MergedHostCols, MergedPcap)
@@ -175,24 +179,23 @@ showMergedRes mergedPcap = do
       rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) mergedPcap)
 
 
-
-
 -- | Merge of 2 frames
 -- TODO add MptcpDest
 mergeMptcpConnectionsFromKnownStreams ::
   (Members '[Log, P.Embed IO] r)
   => FrameFiltered MptcpConnection Packet
   -> FrameFiltered MptcpConnection Packet
-  -> Sem r MergedPcap
+  -> Sem r MergedFrame
+  -- ^ merged frame
 mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 frame2) = do
   let mappedSubflows = mapSubflows con1 con2
   Log.info $ "Merging MPTCP frame1 " <> tshow (frameLength frame1) <> " and frame2 " <> tshow (frameLength frame2)
   Log.info $ "Mapped subflows:\n" <> showMptcpSubflowMapping mappedSubflows
   -- mergedFrames = map
-  mergedPackets <- mapM  mergeSubflow mappedSubflows
-  Log.info $ tshow (length mergedPackets) <> " merged lists"
-  let res = mconcat mergedPackets
-  Log.info $ tshow (length mergedPackets) <> " concatenated merged packets"
+  mergedFrames <- mapM  mergeSubflow mappedSubflows
+  -- Log.info $ tshow (length mergedPackets) <> " merged lists"
+  let res = mconcat mergedFrames
+  Log.info $ tshow (frameLength res) <> " concatenated merged packets"
   return res
   where
     -- mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
@@ -201,13 +204,13 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
           <> " packets) and " <> tshow streamId2 <> " (" <> tshow (frameLength $ ffFrame aframe2) <> " packets)"
       mergedSf <- mergeTcpConnectionsFromKnownStreams aframe1 aframe2
       -- TODO print justRecs / 
-      let
-        mbRecs = map recMaybe mergedSf
-        justRecs = catMaybes mbRecs
-      -- Log.debug $ "Merging pcap1 stream" <> tshow streamId1 <> " (" <> tshow (frameLength frame1)
-          -- <> " packets) and " <> tshow streamId2 <> " (" <> tshow (frameLength frame2) <> " packets)"
-      Log.debug $ "There are " <> tshow (length justRecs) <> " valid rows (out of " 
-        <> tshow (length mergedSf) <> " merged rows)"
+      -- let
+      --   mbRecs = map recMaybe mergedSf
+      --   justRecs = catMaybes mbRecs
+      -- -- Log.debug $ "Merging pcap1 stream" <> tshow streamId1 <> " (" <> tshow (frameLength frame1)
+      --     -- <> " packets) and " <> tshow streamId2 <> " (" <> tshow (frameLength frame2) <> " packets)"
+      -- Log.debug $ "There are " <> tshow (length justRecs) <> " valid rows (out of " 
+      --   <> tshow (length mergedSf) <> " merged rows)"
       -- Log.debug $ (concat . showFields) (head justRecs)
 
       return mergedSf
@@ -220,30 +223,30 @@ mergeMptcpConnectionsFromKnownStreams (FrameTcp con1 frame1) (FrameTcp con2 fram
         aframe2 = fromRight undefined (buildFrameFromStreamId frame2 streamId2)
 
 
-mergeMptcpConnectionsFromKnownStreams' ::
-  FrameFiltered MptcpConnection Packet
-  -> FrameFiltered MptcpConnection Packet
-  -> MergedPcap
-mergeMptcpConnectionsFromKnownStreams' (FrameTcp con1 frame1) (FrameTcp con2 frame2) = let
-  -- first we need to map subflow to oneanother
-  -- map mpconSubflows
-    mappedSubflows = mapSubflows con1 con2
-    mergedFrames = map mergeSubflow mappedSubflows
+-- mergeMptcpConnectionsFromKnownStreams' ::
+--   FrameFiltered MptcpConnection Packet
+--   -> FrameFiltered MptcpConnection Packet
+--   -> MergedPcap
+-- mergeMptcpConnectionsFromKnownStreams' (FrameTcp con1 frame1) (FrameTcp con2 frame2) = let
+--   -- first we need to map subflow to oneanother
+--   -- map mpconSubflows
+--     mappedSubflows = mapSubflows con1 con2
+--     mergedFrames = map mergeSubflow mappedSubflows
 
-    -- aframeSf1 = buildFrameFromStreamId frame1 (conTcpStreamId $ sfConn con1) 
-    -- aframeSf1 = buildFrameFromStreamId frame2 (conTcpStreamId $ sfConn con1) 
-    -- sf1 = buildTcpConnectionFromStreamId (
+--     -- aframeSf1 = buildFrameFromStreamId frame1 (conTcpStreamId $ sfConn con1) 
+--     -- aframeSf1 = buildFrameFromStreamId frame2 (conTcpStreamId $ sfConn con1) 
+--     -- sf1 = buildTcpConnectionFromStreamId (
 
-    -- :: MptcpSubflow ->
-    mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
-    mergeSubflow (sf1, scores) = mergeTcpConnectionsFromKnownStreams' aframe1 aframe2
-      where
-        aframe1 = fromRight undefined (buildFrameFromStreamId frame1 (conTcpStreamId $ sfConn sf1) )
-        aframe2 = fromRight undefined (buildFrameFromStreamId frame2 (conTcpStreamId $ sfConn $ fst (head scores ) ))
-                                    -- (FrameFiltered (sfConn sf) frame1)
-                                    -- (FrameFiltered (sfConn sf) frame2)
-  in
-    mconcat mergedFrames
+--     -- :: MptcpSubflow ->
+--     mergeSubflow :: (MptcpSubflow, [(MptcpSubflow, Int)]) -> MergedPcap
+--     mergeSubflow (sf1, scores) = mergeTcpConnectionsFromKnownStreams' aframe1 aframe2
+--       where
+--         aframe1 = fromRight undefined (buildFrameFromStreamId frame1 (conTcpStreamId $ sfConn sf1) )
+--         aframe2 = fromRight undefined (buildFrameFromStreamId frame2 (conTcpStreamId $ sfConn $ fst (head scores ) ))
+--                                     -- (FrameFiltered (sfConn sf) frame1)
+--                                     -- (FrameFiltered (sfConn sf) frame2)
+--   in
+--     mconcat mergedFrames
 
 
 validateMergedRes ::
@@ -260,7 +263,7 @@ mergeTcpConnectionsFromKnownStreams ::
   (Members '[Log, P.Embed IO] r)
   => FrameFiltered TcpConnection Packet
   -> FrameFiltered TcpConnection Packet
-  -> Sem r MergedPcap
+  -> Sem r MergedFrame
 -- these are from host1 / host2
 mergeTcpConnectionsFromKnownStreams aframe1 aframe2 = do
   Log.debug $ "Merging stream " <> showConnectionText (ffCon aframe1) <> " with stream "
@@ -268,14 +271,14 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 = do
   embed $ writeDSV defaultParserOptions out1 hframe1
   embed $ writeDSV defaultParserOptions out2 hframe2
 
-  return mergedFrame
+  return $ (fst . mergedPcapToFrame) mergedRes
   where
     out1 = "merge-tcp-1-stream-" ++ show ((conTcpStreamId . ffCon) aframe1) ++ ".tsv"
     out2 = "merge-tcp-2-stream-" ++ show (conTcpStreamId $ ffCon aframe2) ++ ".tsv"
 
     -- we want an outerJoin , maybe with a status column like in panda
     -- outerJoin returns a list of [Rec (Maybe :. ElField) ors]
-    mergedFrame = leftJoin @'[PacketHash] (hframe1dest) processedFrame2
+    mergedRes = leftJoin @'[PacketHash] (hframe1dest) processedFrame2
 
     frame1withDest = addTcpDestToFrame (ffFrame aframe1) (ffCon aframe1)
 
@@ -291,29 +294,29 @@ mergeTcpConnectionsFromKnownStreams aframe1 aframe2 = do
 
 -- | Merge of 2 frames
 -- inspired by merge_tcp_dataframes_known_streams
-mergeTcpConnectionsFromKnownStreams' ::
-  FrameFiltered TcpConnection Packet
-  -> FrameFiltered TcpConnection Packet
-  -> MergedPcap
--- these are from host1 / host2
-mergeTcpConnectionsFromKnownStreams' aframe1 aframe2 =
-  mergedFrame
-  where
-    -- (Record HostColsPrefixed)
-    -- we want an outerJoin , maybe with a status column like in panda
-    -- outerJoin returns a list of [Rec (Maybe :. ElField) ors]
-    mergedFrame = outerJoin @'[PacketHash] (hframe1dest) processedFrame2
+-- mergeTcpConnectionsFromKnownStreams' ::
+--   FrameFiltered TcpConnection Packet
+--   -> FrameFiltered TcpConnection Packet
+--   -> MergedPcap
+-- -- these are from host1 / host2
+-- mergeTcpConnectionsFromKnownStreams' aframe1 aframe2 =
+--   mergedFrame
+--   where
+--     -- (Record HostColsPrefixed)
+--     -- we want an outerJoin , maybe with a status column like in panda
+--     -- outerJoin returns a list of [Rec (Maybe :. ElField) ors]
+--     mergedFrame = outerJoin @'[PacketHash] (hframe1dest) processedFrame2
 
-    frame1withDest = addTcpDestToFrame (ffFrame aframe1) (ffCon aframe1)
+--     frame1withDest = addTcpDestToFrame (ffFrame aframe1) (ffCon aframe1)
 
-    hframe1 = zipFrames (addHash aframe1) frame1withDest
-    hframe1dest = hframe1
-    -- hframe1dest = addTcpDestinationsToAFrame hframe1
-    hframe2 :: Frame (Record ('[PacketHash] ++ HostColsPrefixed))
-    hframe2 = zipFrames (addHash aframe2) host2_frame
+--     hframe1 = zipFrames (addHash aframe1) frame1withDest
+--     hframe1dest = hframe1
+--     -- hframe1dest = addTcpDestinationsToAFrame hframe1
+--     hframe2 :: Frame (Record ('[PacketHash] ++ HostColsPrefixed))
+--     hframe2 = zipFrames (addHash aframe2) host2_frame
 
-    host2_frame = convertToHost2Cols (ffFrame aframe2)
-    processedFrame2 = hframe2
+--     host2_frame = convertToHost2Cols (ffFrame aframe2)
+--     processedFrame2 = hframe2
 
 -- | Result of the merge of 2 pcaps
 -- genExplicitRecord "" "HostCols" mergedFields
@@ -336,7 +339,9 @@ convertToHost2Cols frame = fmap convertCols' frame
 -- type SenderReceiverCols =  '[SndPacketId, RcvPacketId, SndAbsTime, RcvAbsTime, TcpDest]
 -- TODO il nous faut le hash + la dest
 -- | SenderHost
-type SenderReceiverCols =  TcpDest ': SenderHost ': SenderCols V.++ ReceiverCols
+type TcpSenderReceiverCols =  SenderHost ': TcpDest ': SenderCols V.++ ReceiverCols
+type SenderReceiverCols =  SenderHost ': TcpDest ': SenderCols V.++ ReceiverCols
+type MptcpSenderReceiverCols =  SenderHost ': MptcpDest ': SenderCols V.++ ReceiverCols
 
 
 
@@ -356,7 +361,7 @@ type SenderReceiverCols =  TcpDest ': SenderHost ': SenderCols V.++ ReceiverCols
 --
 -- 1/ we compare the abstime of the first packet (TODO we could select the role instead ?!)
 convertToSenderReceiver ::
-  MergedPcap
+  MergedFrame
   -> FrameRec SenderReceiverCols
 convertToSenderReceiver oframe = do
   -- compare first packet time
@@ -371,11 +376,12 @@ convertToSenderReceiver oframe = do
     setHost1AsSenderForDest RoleServer <> setHost2AsSenderForDest RoleClient
 
   where
-    tframe :: [Maybe (Record MergedHostCols)]
-    tframe = fmap recMaybe oframe
+    -- tframe :: [Maybe (Record MergedHostCols)]
+    -- tframe = fmap recMaybe oframe
 
-    jframe :: FrameRec MergedHostCols
-    jframe = toFrame $ catMaybes $ toList tframe
+    -- jframe :: FrameRec MergedHostCols
+    -- jframe = toFrame $ catMaybes $ toList tframe
+    jframe = oframe
 
     firstRow = frameRow jframe 0
 
@@ -389,12 +395,12 @@ convertToSenderReceiver oframe = do
     -- em fait le retype va ajouter la colonne a la fin seulement
     -- zipFrames
     setHost1AsSenderForDest, setHost2AsSenderForDest  :: ConnectionRole -> FrameRec SenderReceiverCols
-    setHost1AsSenderForDest dest = fmap convertToSender (selectDest dest)
+    setHost1AsSenderForDest dest = fmap (\x -> (Col False) :& convertToSender x ) (selectDest dest)
 
     -- (if h1role == RoleClient then RoleServer else RoleClient))
-    setHost2AsSenderForDest  dest = fmap convertToReceiver (selectDest dest)
+    setHost2AsSenderForDest  dest = fmap (\x -> (Col True) :& convertToReceiver x ) (selectDest dest)
 
-    convertToSender, convertToReceiver :: Record MergedHostCols -> Record SenderReceiverCols
+    -- convertToSender, convertToReceiver :: Record MergedHostCols -> Record SenderReceiverCols
     convertToSender r = let
         -- TODO add tcpDest
         senderCols :: Record SenderCols
@@ -402,7 +408,7 @@ convertToSenderReceiver oframe = do
         receiverCols :: Record ReceiverCols
         receiverCols = (withNames . stripNames . F.rcast @HostColsPrefixed) r
       in
-        (rget @TcpDest r) :& (Col False) :& (rappend senderCols receiverCols)
+        (rget @TcpDest r) :& (rappend senderCols receiverCols)
 
     convertToReceiver r = let
         senderCols :: Record SenderCols
@@ -410,7 +416,7 @@ convertToSenderReceiver oframe = do
         receiverCols :: Record ReceiverCols
         receiverCols = (withNames . stripNames . F.rcast @HostCols) r
       in
-        (rget @TcpDest r) :& (Col True) :& (rappend senderCols receiverCols)
+        (rget @TcpDest r) :& (rappend senderCols receiverCols)
         -- convert ("first host") to sender/receiver
         -- TODO this could be improved
 

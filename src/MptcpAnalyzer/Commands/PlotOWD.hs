@@ -188,7 +188,7 @@ cmdPlotTcpOwd :: (Members [Log, P.Trace, P.State MyState, Cache, Embed IO] m)
   -> Handle
   -> [ConnectionRole]
   -> TcpConnection
-  -> MergedPcap
+  -> MergedFrame
   -- -> FrameFiltered Packet
   -- -> FrameFiltered (Record HostColsPrefixed)
   -> Sem m RetCode
@@ -196,9 +196,9 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
   Log.info "plotting TCP OWDs "
   -- look at https://hackage.haskell.org/package/vinyl-0.13.0/docs/Data-Vinyl-Functor.html#t::.
   -- could use showRow as well
-  P.embed $ dumpRec $ head justRecs
-  P.trace $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
-  P.trace $ (concat . showFields) (head justRecs)
+  -- P.embed $ dumpRec $ head justRecs
+  -- P.trace $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
+  -- P.trace $ (concat . showFields) (head justRecs)
   -- P.embed $ putStrLn $ "retyped column" ++ (concat . showFields) (newCol)
   embed $ toFile def tempPath $ do
       layout_title .= "TCP One-way delays"
@@ -208,15 +208,15 @@ cmdPlotTcpOwd tempPath _ destinations con mergedRes = do
 
 
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
-  embed $ writeDSV defaultParserOptions "tcp-owd-debug.csv" (toFrame justRecs)
+  -- embed $ writeDSV defaultParserOptions "tcp-owd-debug.csv" (toFrame justRecs)
   embed $ writeDSV defaultParserOptions "tcp-owd-converted.csv" sndRcvFrame
   -- P.embed $ putStrLn $ "OWDs:" ++ show owd
   -- so for now we assume an innerJoin (but fix it later)
 
   return Continue
   where
-    mbRecs = map recMaybe mergedRes
-    justRecs = catMaybes mbRecs
+    -- mbRecs = map recMaybe mergedRes
+    -- justRecs = catMaybes mbRecs
     sndRcvFrame = convertToSenderReceiver mergedRes
     dumpRec x = print x
     -- add dest to the whole frame
@@ -243,15 +243,15 @@ cmdPlotMptcpOwd :: (
   -> Handle
   -> [ConnectionRole]
   -> TcpConnection
-  -> MergedPcap
+  -> MergedFrame
   -> Sem m RetCode
 cmdPlotMptcpOwd tempPath _ destinations con mergedRes = do
   Log.info "plotting MPTCP OWDs "
   -- look at https://hackage.haskell.org/package/vinyl-0.13.0/docs/Data-Vinyl-Functor.html#t::.
   -- could use showRow as well
-  P.embed $ dumpRec $ head justRecs
-  P.trace $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
-  P.trace $ (concat . showFields) (head justRecs)
+  -- P.embed $ dumpRec $ head justRecs
+  -- P.trace $ "There are " ++ show (length justRecs) ++ " valid merged rows (out of " ++ show (length mergedRes) ++ " merged rows)"
+  -- P.trace $ (concat . showFields) (head justRecs)
   -- P.embed $ putStrLn $ "retyped column" ++ (concat . showFields) (newCol)
   embed $ toFile def tempPath $ do
       layout_title .= "MPTCP One-way delays"
@@ -261,15 +261,15 @@ cmdPlotMptcpOwd tempPath _ destinations con mergedRes = do
 
 
   -- embed $ putStrLn $ showConnection (ffTcpCon tcpFrame)
-  embed $ writeDSV defaultParserOptions "mptcp-owd-debug.csv" (toFrame justRecs)
+  -- embed $ writeDSV defaultParserOptions "mptcp-owd-debug.csv" (toFrame justRecs)
   embed $ writeDSV defaultParserOptions "mptcp-owd-converted.csv" sndRcvFrame
   -- P.embed $ putStrLn $ "OWDs:" ++ show owd
   -- so for now we assume an innerJoin (but fix it later)
 
   return Continue
   where
-    mbRecs = map recMaybe mergedRes
-    justRecs = catMaybes mbRecs
+    -- mbRecs = map recMaybe mergedRes
+    -- justRecs = catMaybes mbRecs
     sndRcvFrame = convertToSenderReceiver mergedRes
     dumpRec x = putStrLn $ show x
     -- add dest to the whole frame

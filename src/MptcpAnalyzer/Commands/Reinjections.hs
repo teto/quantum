@@ -176,8 +176,8 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) destination
           -- Log.info $ "Result of the analysis; reinjections:"
             -- <> tshow (showReinjects justRecs)
           -- Log.debug $ "reinjectionsOf in host1 frame " <> tshow $ showFrame myFrame
-          Log.debug $ "showing merged res" <> tshow (showMergedRes $ take 3 mergedRes)
-          P.embed $ writeMergedPcap ("mergedRes-"  ++ ".csv") mergedRes
+          -- Log.debug $ "showing merged res" <> tshow (showMergedRes $ take 3 mergedRes)
+          -- P.embed $ writeMergedPcap ("mergedRes-"  ++ ".csv") mergedRes
           trace $ "Size after conversion to sender/receiver " ++ show (frameLength myFrame) 
                   ++ "( " ++ show (length mergedRes) ++ ")"
           -- trace $ "Number of reinjected packets: " ++ show (frameLength reinjectedPacketsFrame)
@@ -197,7 +197,26 @@ cmdQualifyReinjections (PcapMapping pcap1 streamId1 pcap2 streamId2) destination
     -- mergedPcap
     -- reinjectedPackets = filterFrame (sndReinjectionOf) (toFrame justRecs)
 
+-- buildTcpConnectionFromSndRecord :: (
+--   SndIpSource ∈ rs, SndIpDest ∈ rs, SndTcpSrcPort ∈ rs, SndTcpDestPort ∈ rs, SndTcpStream ∈ rs
+--     -- rs ⊆ HostCols
+--   )
+--   => Record rs -> TcpConnection
+-- buildTcpConnectionFromRecord r =
+--   TcpConnection {
+--     conTcpClientIp = r ^. sndIpSource
+--     , conTcpServerIp = r ^. sndIpDest
+--     , conTcpClientPort = r ^. sndTcpSrcPort
+--     , conTcpServerPort = r ^. sndTcpDestPort
+--     , conTcpStreamId = r ^. sndTcpStream
+--   }
+
+
+-- buildConnectionFromSndPacket :: Record SenderReceiverCols -> TcpConnection
+-- buildConnectionFromSndPacket row -> 
+
 -- TODO there should be a classification on a per mptcp basis
+-- Here we should be able to tell who is the sender
 qualifyReinjections :: Members '[
     Log, P.State MyState
     , Cache
@@ -205,10 +224,11 @@ qualifyReinjections :: Members '[
     , Embed IO
     ] r
     => FrameRec SenderReceiverCols
-    -> (Frame Packet, Frame Packet) -- ^ (host1, host2) pcaps
+    -- (host1, host2) pcaps
+    -> (Frame Packet, Frame Packet) 
     -> ConnectionRole
     -> Sem r ()
-qualifyReinjections frame (frameH1, frameH2) dest = do
+qualifyReinjections frame (aframeH1, aframeH2) dest = do
     let
       -- "dest"frame
       dstFrame = filterFrame (\x -> x ^. tcpDest == dest) frame
@@ -228,13 +248,19 @@ qualifyReinjections frame (frameH1, frameH2) dest = do
         hostType = rgetField @SenderHost row
 
         -- should be only one
-        originalPacket = filterFrame (\x -> x ^. sndPacketId) dstFrame
+        originalPacket = filterFrame (\x -> x ^. packetId == initialPktId) aframeH1
+
+        -- ((frameRow originalPacket 0) ^. senderHost)
+        hostBool = if frameLength originalPacket > 0 then show hostType else "unknown"
+
+        -- TODO we want to find
+        -- buildTcpConnectionFromSndRecord
 
         initialPktId = D.traceShowId $ head reinjectOf
       -- of packet id " ++ show initialPktId
       -- from host" ++ show hostType
       trace $ show (row ^. sndPacketId) ++ " is a reinjection of packet id " ++ show initialPktId
-      trace $ "number of original packets " ++ show (frameLength originalPacket)
+      trace $ "number of original packets " ++ show (frameLength originalPacket) ++ " Host " ++ show hostType 
       -- TODO check if pktId is available
 
     where

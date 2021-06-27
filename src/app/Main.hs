@@ -372,8 +372,8 @@ runPlotCommand (PlotSettings mbOut _mbTitle displayPlot mptcpPlot) specificArgs 
         res <- case (eframe1, eframe2 ) of
           (Right aframe1, Right aframe2) -> do
               mergedRes <- mergeMptcpConnectionsFromKnownStreams aframe1 aframe2
-              let mbRecs = map recMaybe mergedRes
-              let justRecs = catMaybes mbRecs
+              -- let mbRecs = map recMaybe mergedRes
+              -- let justRecs = catMaybes mbRecs
               -- Plots.cmdPlotMptcpOwd tempPath handle (getDests dest) (ffCon aframe1) mergedRes
               error "not implemented"
           (Left err, _) -> return $ CMD.Error err

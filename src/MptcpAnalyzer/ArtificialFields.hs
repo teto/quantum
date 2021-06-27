@@ -30,6 +30,8 @@ artificialFields :: FieldDescriptions
 artificialFields = fromList [
     ("tcpDest", TsharkFieldDesc "" ''ConnectionRole Nothing False)
     , ("mptcpDest", TsharkFieldDesc "" ''ConnectionRole Nothing False)
+    -- 
+    , ("conDest", TsharkFieldDesc "" ''ConnectionRole Nothing False)
     , ("packetHash", TsharkFieldDesc "" ''ConnectionRole Nothing False)
   ]
 
