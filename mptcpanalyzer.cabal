@@ -224,6 +224,14 @@ executable mptcpanalyzer
     ghc-options: 
       -threaded -rtsopts -O0
 
+-- benchmark joins
+--   type:             exitcode-stdio-1.0
+--   main-is:          JoinsBench.hs
+--   hs-source-dirs:   benchmarks
+--   build-depends:    base, Frames, criterion
+--   ghc-options:      -O2
+--   default-language: Haskell2010
+
 
 Test-Suite test
   -- 2 types supported, exitcode is based on ... exit codes ....
