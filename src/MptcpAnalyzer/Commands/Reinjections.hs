@@ -271,14 +271,14 @@ qualifyReinjections frame (aframeH1, aframeH2) dest = do
         hostType = rgetField @SenderHost row
         senderDest = rgetField @SenderDest row
 
-        originalFrame = if senderDest == RoleClient then (ffFrame aframeH2) else (ffFrame aframeH1)
+        -- originalFrame = if senderDest == RoleClient then (ffFrame aframeH2) else (ffFrame aframeH1)
+        originalFrame = frame
 
         -- should be only one
-        originalPacket = filterFrame (\x -> x ^. packetId == initialPktId) originalFrame
-        -- originalPacket = filterFrame (\x -> x ^. packetId == initialPktId) aframeH1
+        originalPackets = filterFrame (\x -> x ^. sndPacketId == initialPktId) originalFrame
 
         -- ((frameRow originalPacket 0) ^. senderHost)
-        hostBool = if frameLength originalPacket > 0 then show hostType else "unknown"
+        hostBool = if frameLength originalPackets > 0 then show hostType else "unknown"
 
         -- TODO we want to find
         -- buildTcpConnectionFromSndRecord
@@ -288,7 +288,8 @@ qualifyReinjections frame (aframeH1, aframeH2) dest = do
       -- of packet id " ++ show initialPktId
       -- from host" ++ show hostType
       trace $ show (row ^. sndPacketId) ++ " is a reinjection of packet id " ++ show initialPktId
-      trace $ "number of original packets " ++ show (frameLength originalPacket) ++ " Host " ++ show senderDest
+      trace $ "number of original packets " ++ show (frameLength originalPackets) ++ " Host " ++ show senderDest
+      trace $ describeReinjection row originalPackets
       -- TODO check if pktId is available
 
     where
@@ -297,3 +298,27 @@ qualifyReinjections frame (aframeH1, aframeH2) dest = do
           intercalate "," rows
           where
             rows = Pipes.toList (F.mapM_ (Pipes.yield . show ) frame2)
+
+        describeReinjection reinjectedPacket originalPackets = case frameLength originalPackets of
+          0 -> "No original packets found FISHY ?!"
+          _otherwise -> let
+                originalPacket = frameRow originalPackets 0
+                reinjArrivalTime = reinjectedPacket ^. rcvAbsTime
+                originalArrivalTime = originalPacket ^. rcvAbsTime
+                reinj_delta = reinjArrivalTime - originalArrivalTime
+
+            in
+            if reinj_delta < 0 then
+                "Efficient reinjection: latency gain: " ++ show reinj_delta
+
+            else
+              "Redundant reinjection : latency delta = " ++ show reinj_delta
+              --
+
+            --     # print("GOT A failed reinjection")
+            --     df_all.loc[df_all[_sender("packetid")] == reinjection.packetid, "redundant"] = True
+            --     #TODO set reinj_delta for reinjection.packetid
+            -- else:
+            --     # print("GOT a successful reinjection")
+            --     pass
+
