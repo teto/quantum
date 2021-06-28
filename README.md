@@ -70,16 +70,26 @@ $ cabal build
 
 `nix develop`
 
-##  Run the tests
+## Run the tests
 
-Tests are run via [REPLica].
-
+Tests are run via [REPLica]. They are written in tests/*.dhall and converted to
+json.
 ```
 make tests
 ```
 
 ```
 make test-integration
+```
+
+To run tests
+```sh
+$ replica run tests/tcp.json
+```
+
+To regenerate the tests:
+```sh
+$ replica run -i tests/tcp.json
 ```
 
 
