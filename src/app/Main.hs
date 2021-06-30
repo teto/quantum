@@ -4,6 +4,25 @@ Maintainer  : matt
 Stability   : testing
 Portability : Linux
 
+ accepts as input(s) capture file(s) (\*.pcap) and depending on from there can :
+
+* list the MPTCP connections in the pcap
+* display some statistics on a specific MPTCP connection (list of subflows etc...);
+* convert packet capture files (\*.pcap) to \*.csv files
+* plot data sequence numbers for all subflows
+* `XDG compliance <http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html>`_, i.e., 
+  |prog| looks for files in certain directories. will try to load your configuration from `$XDG_CONFIG_HOME/mptcpanalyzer/config`
+* caching mechanism: mptcpanalyzer compares your pcap creation time and will
+  regenerate the cache if it exists in `$XDG_CACHE_HOME/mptcpanalyzer/<path_to_the_file>`
+* support 3rd party plugins (plots or commands)
+
+Most commands are self documented and/or with autocompletion.
+
+Then you have an interpreter with autocompletion that can generate & display plots such as the following:
+
+![Data Sequence Number (DSN) per subflow plot](examples/dsn.png)
+
+
 -}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
