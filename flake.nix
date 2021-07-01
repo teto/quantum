@@ -127,12 +127,14 @@
           replica.packages."${system}".build
           inputs.hls.packages."${system}"."haskell-language-server-${compilerVersion}"
           haskellPackages.stan
+          haskellPackages.threadscope
           cairo # for chart-cairo
           dhall-json  # for dhall-to-json
           glib
           hsEnv
           pkg-config
           zlib
+          dhall-lsp-server
         ];
 
         shellHook = ''

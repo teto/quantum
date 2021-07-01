@@ -1,11 +1,13 @@
 let Replica = https://raw.githubusercontent.com/berewt/REPLica/main/dhall/replica.dhall
 let args = "--log-level Info"
+let lib = ./lib.dhall
 in {
 
   list-tcp = Replica.Minimal::{
-    command = ''
-      mptcpanalyzer "load-pcap examples/client_2_filtered.pcapng" "tcp-summary --full 0" "quit"
-      ''
+    command = lib.wrapCmd [
+      "load-pcap examples/client_2_filtered.pcapng"
+      , "tcp-summary --full 0"
+    ]
     , tags = [ "tcp" ]
   },
   map-tcp = Replica.Minimal::{
