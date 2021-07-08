@@ -115,9 +115,12 @@ import qualified Frames.InCore                  as I
 -- shadow type to know if it was filtered or not
 -- Make it a record ?
 
+-- |
 data TsharkParams = TsharkParams {
       tsharkBinary     :: String,
+      -- |(Name, Value) of tshark options, see 'defaultTsharkOptions'
       tsharkOptions    :: [(String, String)],
+      -- |
       csvDelimiter     :: Char,
       tsharkReadFilter :: Maybe String
     }

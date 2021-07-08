@@ -46,13 +46,10 @@ mptcpanalyzer "load-pcap examples/client_2_filtered.pcapng"
 
 I use [vd](visidata).
 
-# How to develop
+# How to develop/contribute
 
-Enter the nix-shell then run your typical cabal commands
-```
-$ nix-shell
-$ cabal build
-```
+See [CONTRIBUTING](./CONTRIBUTING.md).
+
 ## Dependencies
 
 - [polysemy](polysemy) to handle effects
@@ -60,38 +57,6 @@ $ cabal build
 - [haskell-chart](haskell-chart) with the svg backend
 - [wireshark](wireshark-mptcp) to convert packet captures (.pcapng) to csv files.
 
-
-## Debug splices
-
-`-ddump-splices -ddump-to-file -dth-dec-file`
-
-
-# How to contribute ?
-
-`nix develop`
-
-## Run the tests
-
-Tests are run via [REPLica]. They are written in tests/*.dhall and converted to
-json.
-```
-make tests
-```
-
-```
-make test-integration
-```
-
-To run tests
-```sh
-$ replica run tests/tcp.json
-```
-
-To regenerate the tests:
-```sh
-make tests/tcp.json  # generates tcp.json from its tests/tcp.dhall spec
-$ replica run -i tests/tcp.json  # -i interactive
-```
 
 
 # Roadmap

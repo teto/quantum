@@ -1,10 +1,18 @@
+{-
+Module      : Tshark.Fields
+Description : Interface between wireshark output format and haskell
+Maintainer  : matt
+
+This module is in charge of loading TCP packets in a haskell format.
+This is done by converting between wireshark formats (.pcapng -> .csv) and
+using "Frames" to load the resulting data into a frame.
+
+-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE PackageImports         #-}
--- {-# LANGUAGE DerivingVia         #-}
--- {-# LANGUAGE DerivingStrategies         #-}
 module Tshark.Fields
 where
 import MptcpAnalyzer.Stream
@@ -43,20 +51,20 @@ type MbMptcpDsn = Maybe Word64
 type MbMptcpDack = Maybe Word64
 type MbWord64 = Maybe Word64
 
+
 data TsharkFieldDesc = TsharkFieldDesc {
         tfieldFullname :: Text
-        -- ^Test
+        -- ^Full wireshark name of the field
         , tfieldColType :: Name
-        -- , colType :: Q Type
+        -- ^Haskell type so that we can generate the proper raw type via templateHaskell
         , tfieldLabel :: Maybe String
-        -- ^How to reference it in plot
+        -- ^Pretty field name used as label in plots
         , tfieldHashable :: Bool
-        -- ^Wether to take into account this field when creating a hash of a packet
+        -- ^Wether to take into account this field when creating the hash of a packet
+        -- see hash
     }
 
-    -- deriving (Read, Generic)
--- TODO as a map
--- type FieldDescriptions = [(Text, TsharkFieldDesc)]
+
 type FieldDescriptions = Map Text TsharkFieldDesc
 
 type MbWord32 = Maybe Word32
@@ -65,10 +73,7 @@ type MbWord32 = Maybe Word32
 -- TODO add this ?
 -- data Field = FieldPacketId | FieldInterfaceName
 
--- MUST BE KEPT IN SYNC WITH  Pcap.hs HostCols
--- ORDER INCLUDED !
--- until we can automate this
--- get Name
+-- MUST BE KEPT IN SYNC WITH  Pcap.hs HostCols ORDER INCLUDED !
 baseFields :: FieldDescriptions
 baseFields = fromList [
     ("packetId", TsharkFieldDesc "frame.number" ''Word64 Nothing False)

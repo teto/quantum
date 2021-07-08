@@ -1,3 +1,12 @@
+{-
+Module      : MptcpAnalyzer.ArtificialFields
+Description : A set of artifical fields to ease dataframe processing
+Maintainer  : matt
+
+
+generated in a postprocess step
+
+-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric         #-}
@@ -30,7 +39,6 @@ artificialFields :: FieldDescriptions
 artificialFields = fromList [
     ("tcpDest", TsharkFieldDesc "" ''ConnectionRole Nothing False)
     , ("mptcpDest", TsharkFieldDesc "" ''ConnectionRole Nothing False)
-    -- 
     , ("conDest", TsharkFieldDesc "" ''ConnectionRole Nothing False)
     , ("packetHash", TsharkFieldDesc "" ''ConnectionRole Nothing False)
   ]

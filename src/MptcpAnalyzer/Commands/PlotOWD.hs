@@ -1,3 +1,8 @@
+{-
+Module      : MptcpAnalyzer.Merge
+Description : Merges 2 dataframes into a single one with the format sender -> receiver
+Maintainer  : matt
+-}
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE DataKinds   #-}
 {-# LANGUAGE DataKinds           #-}

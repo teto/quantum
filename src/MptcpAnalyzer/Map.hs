@@ -1,7 +1,21 @@
+{-
+Module      : MptcpAnalyzer.Maps
+Description : Maps Packets and Tcp streams between two frames
+Maintainer  : matt
+
+
+Helper functions to map (mp)tcp.stream from one pcap to the one in another pcap.
+
+For MPTCP, the association of mptcp.stream is done by identifying the same sendkey
+in both pcaps.
+For TCP, there is a similarity score computed on (IP, port) numbers. This could be
+improved for sure (by comparing number of packets and other fields).
+
+See "MptcpAnalyzer.Merge"
+-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
--- {-# LANGUAGE PackageImports #-}
 module MptcpAnalyzer.Map
 where
 

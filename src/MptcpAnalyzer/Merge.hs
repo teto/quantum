@@ -1,4 +1,24 @@
-{- Merge 2 dataframes
+{-
+Module      : MptcpAnalyzer.Merge
+Description : Merges 2 dataframes into a single one with the format sender -> receiver
+Maintainer  : matt
+
+To compute some statistics, it is necessary
+to be able to map packets captured on the server to the ones mapped on the client.
+
+For instance if clocks on both hosts are synchronized and we know the mapping, we can compute the One-Way-Delay (OWD). It is usually assumed to be half the roundtrip, also because there is almost no tooling to measure it.
+
+Another example where it is useful is when dealing with retransmissions, you may want
+to identify what transmission arrived first in order to classify between successful
+and penalizing retransmissons.
+A similar analysis applies to MPTCP streams as reinjections can happen cross-subflows.
+If we can distinguish the first successful transmission from the redundant ones,
+it becomes possible to compute the real contribution ("goodput") of a subflow to
+the overall MPTCP transmission.
+We can thus compare different retransmissions schemes, a crucial area of research 
+in the MPTCP community.
+
+You can easily generate retransmissions using the "redundant scheduler".
 
 -}
 {-# LANGUAGE TypeApplications             #-}
