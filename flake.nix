@@ -26,6 +26,11 @@
 
     # haskellNix.url = "github:input-output-hk/haskell.nix?ref=hkm/nixpkgs-unstable-update";
     haskellNix.url = "github:input-output-hk/haskell.nix";
+
+    flake-compat = {
+      url = "github:edolstra/flake-compat";
+      flake = false;
+    };
   };
 
   outputs = { self, nixpkgs, flake-utils, poetry, haskellNix, replica, ... }@inputs:
