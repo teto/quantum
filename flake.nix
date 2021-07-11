@@ -14,7 +14,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/master";
-    replica.url = "github:berewt/REPLica";
+    replica.url = "github:berewt/REPLica?rev=31ca9b01c61a0875137c8388fd50f9d70fdc5454";
 
     # temporary until this gets fixed upstream
     # poetry.url = "github:teto/poetry2nix/fix_tag";
@@ -37,6 +37,7 @@
     flake-utils.lib.eachSystem ["x86_64-linux"] (system: let
 
       compilerVersion = "8104";
+      # compilerVersion = "901";
 
       ## haskell.nix trial
       overlays = [
